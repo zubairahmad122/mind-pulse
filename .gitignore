@@ -17,6 +17,7 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+.smart-sleep-app
 
 # Metro
 .metro-health-check*
@@ -31,7 +32,13 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+
+# Firebase credentials (never commit these)
+firebase-cread.json
+google-services.json
+firebase-debug.log
 
 # typescript
 *.tsbuildinfo
