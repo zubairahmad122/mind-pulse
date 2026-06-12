@@ -1,17 +1,18 @@
-import { IoniconName } from './navigation';
+import type { LucideIcon } from 'lucide-react-native';
+import { Moon, Music, Eye, Heart } from 'lucide-react-native';
 
 export type QuickAction = {
   id: string;
   label: string;
-  icon: IoniconName;
+  icon: LucideIcon;
   route: string;
 };
 
 export const QUICK_ACTIONS: QuickAction[] = [
-  { id: 'sleep', label: 'Start Sleep', icon: 'moon-outline', route: '/(app)/(tabs)/sleep?tab=tonight' },
-  { id: 'audio', label: 'Guided Audio', icon: 'musical-notes-outline', route: '/(app)/(tabs)/relax' },
-  { id: 'eye', label: 'Eye Relax', icon: 'eye-outline', route: '/(app)/(tabs)/eye-relax' },
-  { id: 'stress', label: 'Stress Relief', icon: 'leaf-outline', route: '/(app)/(tabs)/relax' },
+  { id: 'sleep', label: 'Start Sleep', icon: Moon, route: '/(app)/(tabs)/sleep?tab=tonight' },
+  { id: 'audio', label: 'Guided Audio', icon: Music, route: '/(app)/(tabs)/relax' },
+  { id: 'eye', label: 'Eye Relax', icon: Eye, route: '/(app)/(tabs)/eye-relax' },
+  { id: 'stress', label: 'Stress Relief', icon: Heart, route: '/(app)/(tabs)/relax' },
 ];
 
 export type PlanItem = { id: string; title: string; subtitle: string; emoji: string; route: string };

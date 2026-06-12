@@ -3,7 +3,7 @@ import { COLORS } from '@/constants';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
-import { getScoreStatus } from '@/utils/scoreCalculator';
+import { pulseScoreTheme } from '@/utils/scoring';
 
 type DayEntry = { date: string; mindPulseScore: number } | null;
 
@@ -25,7 +25,7 @@ export function ScoreTrendChart({ days }: Props) {
           const isToday   = entry?.date === TODAY_KEY;
           const score     = entry?.mindPulseScore ?? 0;
           const hasData   = entry !== null;
-          const barColor  = hasData ? getScoreStatus(score).color : 'rgba(255,255,255,0.08)';
+          const barColor  = hasData ? pulseScoreTheme(score).color : 'rgba(255,255,255,0.08)';
           const barHeight = hasData ? Math.max(6, Math.round((score / 100) * CHART_H)) : 6;
           const dayLabel  = entry ? DAY_LABELS[new Date(entry.date + 'T12:00:00').getDay()] : DAY_LABELS[new Date(new Date().setDate(new Date().getDate() - (days.length - 1 - i))).getDay()];
 

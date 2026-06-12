@@ -4,3 +4,4 @@ export { GlassCard } from './GlassCard';
 export { default as Input } from './Input';
 export { OutlineButton } from './OutlineButton';
 export { PrimaryButton } from './PrimaryButton';
+export { ScoreBreakdownCard } from './ScoreBreakdownCard';

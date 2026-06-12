@@ -497,6 +497,7 @@ export default function BreatheSessionScreen() {
 
   function exitEarly() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    stop();
     router.replace({
       pathname: '/(app)/stress/breathe-done',
       params: { modeId: mode.id, durationSec: mode.durationMin * 30 }, // ~half session on early exit

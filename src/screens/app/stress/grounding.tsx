@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -40,6 +40,7 @@ export default function GroundingScreen() {
   const [step, setStep]                 = useState(0);
   const [running, setRunning]           = useState(false);
   const [introPlaying, setIntroPlaying] = useState(false);
+  const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sessLang = toSessLang(langCode);
   const en       = GROUNDING_SCRIPTS.en;
@@ -64,13 +65,18 @@ export default function GroundingScreen() {
     }
   }, [step, done, running, introPlaying, sessLang]);
 
-  useEffect(() => () => stop(), []);
+  useEffect(() => {
+    return () => {
+      if (introTimerRef.current) clearTimeout(introTimerRef.current);
+      stop();
+    };
+  }, []);
 
   function begin() {
     setRunning(true);
     setIntroPlaying(true);
     guide(GROUNDING_SCRIPTS[sessLang].intro, 200);
-    setTimeout(() => setIntroPlaying(false), 2200);
+    introTimerRef.current = setTimeout(() => setIntroPlaying(false), 2200);
   }
 
   function advance() {

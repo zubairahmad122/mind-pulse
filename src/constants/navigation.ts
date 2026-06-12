@@ -1,18 +1,19 @@
-import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
+import type { LucideIcon } from 'lucide-react-native';
+import { Home, Moon, Leaf, Eye } from 'lucide-react-native';
 
-export type IoniconName = ComponentProps<typeof Ionicons>['name'];
+/** @deprecated Use LucideIcon from 'lucide-react-native' instead. Kept for backward compat. */
+export type IoniconName = LucideIcon;
 
 export type MainAppTabConfig = {
   name: string;
   title: string;
-  icon: IoniconName;
-  iconFocused: IoniconName;
+  icon: LucideIcon;
+  iconFocused: LucideIcon;
 };
 
 export const MAIN_APP_TABS: MainAppTabConfig[] = [
-  { name: 'home', title: 'Home', icon: 'home-outline', iconFocused: 'home' },
-  { name: 'sleep', title: 'Sleep', icon: 'moon-outline', iconFocused: 'moon' },
-  { name: 'relax', title: 'Relax', icon: 'leaf-outline', iconFocused: 'leaf' },
-  { name: 'eye-relax', title: 'Eye', icon: 'eye-outline', iconFocused: 'eye' },
+  { name: 'home', title: 'Home', icon: Home, iconFocused: Home },
+  { name: 'sleep', title: 'Sleep', icon: Moon, iconFocused: Moon },
+  { name: 'relax', title: 'Relax', icon: Leaf, iconFocused: Leaf },
+  { name: 'eye-relax', title: 'Eye', icon: Eye, iconFocused: Eye },
 ];

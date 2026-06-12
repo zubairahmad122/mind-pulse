@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircle, ChevronRight, Eye, Moon, Smartphone, Timer, type LucideIcon } from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { COLORS } from '@/constants';
-import type { IoniconName } from '@/constants';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
@@ -14,7 +13,7 @@ import { saveRecoverySession } from '@/services/recoveryPersistence';
 
 interface RecoveryOption {
   id: string;
-  icon: IoniconName;
+  icon: LucideIcon;
   iconColor: string;
   title: string;
   subtitle: string;
@@ -25,7 +24,7 @@ interface RecoveryOption {
 const OPTIONS: RecoveryOption[] = [
   {
     id: 'no-phone',
-    icon: 'phone-portrait-outline',
+    icon: Smartphone,
     iconColor: '#f97316',
     title: '20 min no phone',
     subtitle: 'Phone down, brain up',
@@ -34,7 +33,7 @@ const OPTIONS: RecoveryOption[] = [
   },
   {
     id: 'eye-break',
-    icon: 'eye-outline',
+    icon: Eye,
     iconColor: '#6ee7b7',
     title: 'Eye break (20-20-20)',
     subtitle: 'Look away, recover fast',
@@ -43,7 +42,7 @@ const OPTIONS: RecoveryOption[] = [
   },
   {
     id: 'focus',
-    icon: 'timer-outline',
+    icon: Timer,
     iconColor: '#f59e0b',
     title: 'Focus session',
     subtitle: 'Deep work mode',
@@ -52,7 +51,7 @@ const OPTIONS: RecoveryOption[] = [
   },
   {
     id: 'sleep-prep',
-    icon: 'moon-outline',
+    icon: Moon,
     iconColor: COLORS.purpleLight,
     title: 'Sleep prep mode',
     subtitle: 'Wind down for tonight',
@@ -115,12 +114,12 @@ export default function RecoveryScreen() {
   };
 
   if (activeOption) {
+    const ActiveIcon = activeOption.icon;
     return (
       <SafeAreaView style={styles.timerScreen} edges={['top', 'bottom']}>
         <AnimatedBackground />
         <View style={styles.timerContent}>
-          <Ionicons
-            name={activeOption.icon}
+          <ActiveIcon
             size={52}
             color={activeOption.iconColor}
           />
@@ -129,7 +128,7 @@ export default function RecoveryScreen() {
 
           {done ? (
             <View style={styles.doneWrap}>
-              <Ionicons name="checkmark-circle" size={80} color="#6ee7b7" />
+              <CheckCircle size={80} color="#6ee7b7" />
               <Text style={styles.doneText}>Done! Great work.</Text>
             </View>
           ) : (
@@ -156,26 +155,29 @@ export default function RecoveryScreen() {
       <Text style={styles.header}>Recovery Mode</Text>
       <Text style={styles.subtitle}>Small actions. Real impact.</Text>
 
-      {OPTIONS.map(opt => (
-        <TouchableOpacity
-          key={opt.id}
-          style={styles.optionCard}
-          onPress={() => startTimer(opt)}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.optionIconWrap, { backgroundColor: opt.iconColor + '1a' }]}>
-            <Ionicons name={opt.icon} size={26} color={opt.iconColor} />
-          </View>
-          <View style={styles.optionInfo}>
-            <Text style={styles.optionTitle}>{opt.title}</Text>
-            <Text style={styles.optionSub}>{opt.subtitle}</Text>
-          </View>
-          <View style={styles.optionRight}>
-            <Text style={styles.optionDurationText}>{opt.durationLabel}</Text>
-            <Ionicons name="chevron-forward" size={14} color={colors.text.tertiary} />
-          </View>
-        </TouchableOpacity>
-      ))}
+      {OPTIONS.map(opt => {
+        const OptIcon = opt.icon;
+        return (
+          <TouchableOpacity
+            key={opt.id}
+            style={styles.optionCard}
+            onPress={() => startTimer(opt)}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.optionIconWrap, { backgroundColor: opt.iconColor + '1a' }]}>
+              <OptIcon size={26} color={opt.iconColor} />
+            </View>
+            <View style={styles.optionInfo}>
+              <Text style={styles.optionTitle}>{opt.title}</Text>
+              <Text style={styles.optionSub}>{opt.subtitle}</Text>
+            </View>
+            <View style={styles.optionRight}>
+              <Text style={styles.optionDurationText}>{opt.durationLabel}</Text>
+              <ChevronRight size={14} color={colors.text.tertiary} />
+            </View>
+          </TouchableOpacity>
+        );
+      })}
     </ScreenShell>
   );
 }

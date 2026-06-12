@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { Leaf, AlertCircle, Cloud, ZapOff, Moon, Flame, Hand, Compass, Clock, PlayCircle, ChevronRight, CheckCircle, type LucideIcon } from 'lucide-react-native';
 
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import {
@@ -19,22 +19,26 @@ import {
 } from '@/constants/relaxSessions';
 import { useRelaxContext } from '@/context/RelaxContext';
 import { useAuth } from '@/context/AuthContext';
-import { useLanguage } from '@/context/LanguageContext';
-import type { IoniconName } from '@/constants/navigation';
 import { colors } from '@/constants/colors';
-import { LANGUAGES } from '@/constants/languages';
 
-const CATEGORIES: { id: SessionCategory; label: string; icon: IoniconName; color: string }[] = [
-  { id: 'breathe', label: 'Breathing', icon: 'flame', color: '#FF9800' },
-  { id: 'release', label: 'Release', icon: 'hand-left', color: '#FF6B9D' },
-  { id: 'ground', label: 'Ground', icon: 'compass', color: '#4CAF50' },
-  { id: 'sleep', label: 'Sleep', icon: 'moon', color: '#7B61FF' },
+const CATEGORIES: { id: SessionCategory; label: string; icon: LucideIcon; color: string }[] = [
+  { id: 'breathe', label: 'Breathing', icon: Flame, color: '#FF9800' },
+  { id: 'release', label: 'Release', icon: Hand, color: '#FF6B9D' },
+  { id: 'ground', label: 'Ground', icon: Compass, color: '#4CAF50' },
+  { id: 'sleep', label: 'Sleep', icon: Moon, color: '#7B61FF' },
 ];
+
+const EMOTION_ICONS: Record<EmotionalState, LucideIcon> = {
+  'at-ease': Leaf,
+  'tense': AlertCircle,
+  'overwhelmed': Cloud,
+  'drained': ZapOff,
+  'sleepy': Moon,
+};
 
 export default function RelaxHome() {
   const router = useRouter();
   const { user } = useAuth();
-  const { langCode, setLang } = useLanguage();
   const [selectedEmotion, setSelectedEmotion] = useState<EmotionalState | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<SessionCategory>('breathe');
   const [completedThisWeek, setCompletedThisWeek] = useState(0);
@@ -81,33 +85,16 @@ export default function RelaxHome() {
                   : 'How are you feeling today?'}
               </Text>
             </View>
-            {/* Language selector */}
-            <View style={styles.langSelector}>
-              {LANGUAGES.map(lang => (
-                <TouchableOpacity
-                  key={lang.code}
-                  onPress={() => {
-                    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setLang(lang.code);
-                  }}
-                  style={[
-                    styles.langSelectorBtn,
-                    langCode === lang.code && styles.langSelectorBtnActive,
-                  ]}
-                >
-                  <Text style={styles.langFlag}>{lang.flag}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
           </View>
         </View>
 
-        {/* Emotional Check-In - Premium */}
+        {/* Emotional Check-In */}
         <View style={styles.emotionSection}>
           <Text style={styles.sectionLabel}>Your mood</Text>
           <View style={styles.emotionGrid}>
             {EMOTIONAL_STATES.map(emotion => {
               const isSelected = selectedEmotion === emotion.state;
+              const EmotionIcon = EMOTION_ICONS[emotion.state];
               return (
                 <Pressable
                   key={emotion.state}
@@ -117,8 +104,7 @@ export default function RelaxHome() {
                     isSelected && { backgroundColor: emotion.color + '18', borderColor: emotion.color, borderWidth: 1.5 },
                   ]}
                 >
-                  <Ionicons
-                    name={getEmotionIcon(emotion.state)}
+                  <EmotionIcon
                     size={28}
                     color={isSelected ? emotion.color : colors.text.tertiary}
                   />
@@ -136,7 +122,7 @@ export default function RelaxHome() {
           </View>
         </View>
 
-        {/* Recommended Session - Premium Card */}
+        {/* Recommended Session */}
         {recommendedSession && (
           <TouchableOpacity
             onPress={() => handleStartSession(recommendedSession.id)}
@@ -156,23 +142,24 @@ export default function RelaxHome() {
                 <Text style={styles.recommendedTag}>Recommended for you</Text>
                 <Text style={styles.recommendedTitle}>{recommendedSession.title}</Text>
                 <View style={styles.recommendedMeta}>
-                  <Ionicons name="time-outline" size={14} color={colors.text.tertiary} />
+                  <Clock size={14} color={colors.text.tertiary} />
                   <Text style={styles.recommendedDuration}>
                     {Math.ceil(recommendedSession.durationSeconds / 60)} min
                   </Text>
                 </View>
               </View>
-              <Ionicons name="play-circle" size={28} color={recommendedSession.color} />
+              <PlayCircle size={28} color={recommendedSession.color} />
             </View>
           </TouchableOpacity>
         )}
 
-        {/* Category Tabs - Premium */}
+        {/* Category Tabs */}
         <View style={styles.categorySection}>
           <Text style={styles.sectionLabel}>Browse sessions</Text>
           <View style={styles.categoryTabs}>
             {CATEGORIES.map(cat => {
               const isActive = selectedCategory === cat.id;
+              const CatIcon = cat.icon;
               const count = getSessionsByCategory(cat.id).length;
               return (
                 <Pressable
@@ -190,8 +177,7 @@ export default function RelaxHome() {
                     },
                   ]}
                 >
-                  <Ionicons
-                    name={cat.icon}
+                  <CatIcon
                     size={20}
                     color={isActive ? cat.color : colors.text.tertiary}
                   />
@@ -212,9 +198,9 @@ export default function RelaxHome() {
           </View>
         </View>
 
-        {/* Sessions - Premium List */}
+        {/* Sessions List */}
         <View style={styles.sessionsSection}>
-          {categorySessions.map((session, idx) => (
+          {categorySessions.map((session) => (
             <TouchableOpacity
               key={session.id}
               onPress={() => handleStartSession(session.id)}
@@ -233,7 +219,7 @@ export default function RelaxHome() {
                   {session.description}
                 </Text>
                 <View style={styles.sessionItemMeta}>
-                  <Ionicons name="time-outline" size={12} color={colors.text.tertiary} />
+                  <Clock size={12} color={colors.text.tertiary} />
                   <Text style={styles.sessionItemDuration}>
                     {Math.ceil(session.durationSeconds / 60)} min
                   </Text>
@@ -241,26 +227,26 @@ export default function RelaxHome() {
                   <Text style={styles.sessionItemDifficulty}>{session.difficulty}</Text>
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={session.color} />
+              <ChevronRight size={20} color={session.color} />
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Stats Section - Premium */}
+        {/* Stats Section */}
         {totalCompleted > 0 && (
           <View style={styles.statsSection}>
             <Text style={styles.sectionLabel}>Your progress</Text>
             <View style={styles.statsCards}>
               <View style={styles.statCard}>
                 <View style={styles.statIconBox}>
-                  <Ionicons name="flame" size={20} color="#FF9800" />
+                  <Flame size={20} color="#FF9800" />
                 </View>
                 <Text style={styles.statValue}>{completedThisWeek}</Text>
                 <Text style={styles.statLabel}>This week</Text>
               </View>
               <View style={styles.statCard}>
                 <View style={styles.statIconBox}>
-                  <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                  <CheckCircle size={20} color="#4CAF50" />
                 </View>
                 <Text style={styles.statValue}>{totalCompleted}</Text>
                 <Text style={styles.statLabel}>Total sessions</Text>
@@ -280,17 +266,6 @@ function getTimeOfDay(): string {
   if (hour < 12) return 'morning';
   if (hour < 18) return 'afternoon';
   return 'evening';
-}
-
-function getEmotionIcon(state: EmotionalState): IoniconName {
-  const map: Record<EmotionalState, IoniconName> = {
-    'at-ease': 'leaf',
-    'tense': 'alert-circle',
-    'overwhelmed': 'cloud',
-    'drained': 'flash-off',
-    'sleepy': 'moon',
-  };
-  return map[state] || 'help-circle';
 }
 
 const styles = StyleSheet.create({
@@ -323,31 +298,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  langSelector: {
-    flexDirection: 'column',
-    gap: 4,
-    alignItems: 'center',
-  },
-
-  langSelectorBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-
-  langSelectorBtnActive: {
-    backgroundColor: 'rgba(123,97,255,0.15)',
-    borderColor: 'rgba(123,97,255,0.4)',
-  },
-
-  langFlag: {
-    fontSize: 18,
-  },
 
   sectionLabel: {
     fontSize: 12,

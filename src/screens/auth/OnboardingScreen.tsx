@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import Reanimated, {
   cancelAnimation,
   Easing,
@@ -20,12 +21,15 @@ export default function OnboardingScreen() {
   const safeIndex = Math.min(Math.max(index, 0), ONBOARDING_SLIDES.length - 1);
   const slide = ONBOARDING_SLIDES[safeIndex];
   const isLast = safeIndex === ONBOARDING_SLIDES.length - 1;
+  const totalSlides = ONBOARDING_SLIDES.length;
 
   // Defensive: bail out if the slides array is empty/undefined during fast-refresh.
   if (!slide) return null;
 
   // Icon orb breathing
   const breathScale = useSharedValue(1);
+  // Progress bar animation
+  const progressWidth = useSharedValue(0);
 
   useEffect(() => {
     breathScale.value = 1;
@@ -37,15 +41,25 @@ export default function OnboardingScreen() {
       -1,
       true,
     );
+    // Animate progress bar to current step
+    progressWidth.value = withTiming(((safeIndex + 1) / totalSlides) * 100, {
+      duration: 400,
+      easing: Easing.out(Easing.ease),
+    });
     return () => cancelAnimation(breathScale);
-  }, [index]);
+  }, [index, safeIndex, totalSlides]);
 
   const breathStyle = useAnimatedStyle(() => ({
     transform: [{ scale: breathScale.value }],
   }));
 
+  const progressAnimStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
+
   const goNext = () => {
-    if (isLast) router.replace(ROUTES.authAgeInput);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (isLast) router.replace(ROUTES.authSignUp);
     else setIndex(i => i + 1);
   };
 
@@ -53,13 +67,49 @@ export default function OnboardingScreen() {
     <View className="flex-1 px-6 pt-[56px] pb-12">
       <AnimatedBackground /> 
 
-      <TouchableOpacity
-        className="self-end"
-        onPress={() => router.replace(ROUTES.authAgeInput)}
-        activeOpacity={0.7}
-      >
-        <Text className="text-app-muted text-[14px] font-semibold">Skip</Text>
-      </TouchableOpacity>
+      <View className="flex-row items-center justify-between mb-8">
+        {/* Step indicator with animated progress bar */}
+        <View style={styles.progressContainer}>
+          <Reanimated.View style={[styles.progressBar, progressAnimStyle]} />
+        </View>
+        <TouchableOpacity
+          onPress={() => router.replace(ROUTES.authSignUp)}
+          activeOpacity={0.7}
+          className="ml-4"
+        >
+          <Text className="text-app-muted text-[14px] font-semibold">Skip</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Step labels */}
+      <View className="flex-row justify-between mb-6 px-1">
+        {ONBOARDING_SLIDES.map((s, i) => (
+          <View key={i} className="items-center" style={{ width: '30%' }}>
+            <View
+              style={[
+                styles.stepDot,
+                {
+                  backgroundColor: i <= safeIndex ? slide.accent : 'transparent',
+                  borderColor: i <= safeIndex ? slide.accent : 'rgba(255,255,255,0.2)',
+                },
+              ]}
+            >
+              <Text style={[styles.stepNumber, { color: i <= safeIndex ? '#fff' : 'rgba(255,255,255,0.3)' }]}>
+                {i + 1}
+              </Text>
+            </View>
+            <Text
+              style={[
+                styles.stepLabel,
+                { color: i <= safeIndex ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)' },
+              ]}
+              numberOfLines={1}
+            >
+              {i === 0 ? 'Eyes' : i === 1 ? 'Sleep' : 'Mind'}
+            </Text>
+          </View>
+        ))}
+      </View>
 
       <View className="flex-1 items-center justify-center gap-8">
         {/* Breathing icon orb */}
@@ -80,20 +130,6 @@ export default function OnboardingScreen() {
       </View>
 
       <View className="gap-8 items-center">
-        {/* Pill dot indicators */}
-        <View className="flex-row gap-2 items-center">
-          {ONBOARDING_SLIDES.map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                i === index
-                  ? { width: 28, backgroundColor: COLORS.purple }
-                  : { width: 6, backgroundColor: COLORS.border },
-              ]}
-            />
-          ))}
-        </View>
         <Button label={isLast ? 'Get Started' : 'Continue'} onPress={goNext} />
       </View>
     </View>
@@ -101,6 +137,18 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
+  progressContainer: {
+    flex: 1,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: COLORS.purple,
+  },
   orb: {
     width: 184, height: 184, borderRadius: 92,
     borderWidth: 1.5,
@@ -110,5 +158,23 @@ const styles = StyleSheet.create({
     width: 152, height: 152, borderRadius: 76,
     alignItems: 'center', justifyContent: 'center',
   },
-  dot: { height: 6, borderRadius: 3 },
+  stepDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  stepNumber: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  stepLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
 });

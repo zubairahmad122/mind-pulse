@@ -9,35 +9,20 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { getScoreMessage } from '@/constants/eyeRoast';
-import { scoreTheme } from '@/utils/eyeStressScore';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+import { ScoreResult } from '@/utils/scoring';
 
 interface Props {
-  score: number;
-  primaryReason: string;
+  result: ScoreResult;
   loading: boolean;
 }
 
-const SCORE_SEGMENTS = [
-  { label: 'Healthy', color: '#6ee7b7', threshold: 0 },
-  { label: 'Moderate', color: '#f59e0b', threshold: 33 },
-  { label: 'High', color: '#f97316', threshold: 66 },
-  { label: 'Critical', color: '#e24b4a', threshold: 85 },
-];
+const SEGMENT_MARKS = [25, 50, 75];
 
-function getSegmentColor(score: number) {
-  for (let i = SCORE_SEGMENTS.length - 1; i >= 0; i--) {
-    if (score >= SCORE_SEGMENTS[i].threshold) return SCORE_SEGMENTS[i].color;
-  }
-  return SCORE_SEGMENTS[0].color;
-}
-
-export function EyeScoreCard({ score, primaryReason, loading }: Props) {
-  const theme = scoreTheme(score);
-  const message = getScoreMessage(score, 'gentle');
+export function EyeScoreCard({ result, loading }: Props) {
+  const { score, theme } = result;
 
   const scoreScale   = useSharedValue(0.6);
   const scoreOpacity = useSharedValue(0);
@@ -48,9 +33,9 @@ export function EyeScoreCard({ score, primaryReason, loading }: Props) {
     if (loading) return;
     scoreScale.value   = withDelay(100, withSpring(1, { damping: 12, stiffness: 120 }));
     scoreOpacity.value = withDelay(100, withTiming(1, { duration: 400 }));
-    glowOpacity.value  = withDelay(300, withTiming(score >= 76 ? 0.5 : 0.35, { duration: 700 }));
+    glowOpacity.value  = withDelay(300, withTiming(score >= 75 ? 0.5 : 0.35, { duration: 700 }));
 
-    if (score >= 76) {
+    if (score >= 75) {
       pulseScale.value = withRepeat(
         withSequence(withTiming(1.06, { duration: 900 }), withTiming(1, { duration: 900 })),
         -1,
@@ -73,7 +58,7 @@ export function EyeScoreCard({ score, primaryReason, loading }: Props) {
     <View style={styles.card}>
       {/* Label row */}
       <View style={styles.labelRow}>
-        <Text style={styles.cardLabel}>EYE STRESS SCORE</Text>
+        <Text style={styles.cardLabel}>EYE SCORE</Text>
         {!loading && (
           <View style={[styles.statusPill, { backgroundColor: theme.color + '22', borderColor: theme.color + '55' }]}>
             <Text style={[styles.statusPillText, { color: theme.color }]}>
@@ -83,11 +68,11 @@ export function EyeScoreCard({ score, primaryReason, loading }: Props) {
         )}
       </View>
 
-      {/* Score + info row */}
+      {/* Score circle */}
       <View style={styles.scoreRow}>
         <Animated.View style={pulseAnim}>
           <Animated.View style={[styles.scoreGlow, { backgroundColor: theme.color }, glowAnim]} />
-          <Animated.View style={[styles.scoreCircle, { borderColor: theme.color, backgroundColor: theme.bg + 'cc' }, scoreAnim]}>
+          <Animated.View style={[styles.scoreCircle, { borderColor: theme.color, backgroundColor: colors.background.secondary + 'cc' }, scoreAnim]}>
             <Text style={[styles.scoreNumber, { color: theme.color }]}>
               {loading ? '–' : score}
             </Text>
@@ -96,20 +81,11 @@ export function EyeScoreCard({ score, primaryReason, loading }: Props) {
         </Animated.View>
 
         <View style={styles.scoreInfo}>
-          <Text style={styles.messageTitle}>{loading ? '…' : message.title}</Text>
-          <Text style={styles.messageSub} numberOfLines={3}>
-            {loading ? '' : message.sub}
+          <Text style={styles.messageSub}>
+            Higher is better. See the breakdown below for exactly why your score is what it is today.
           </Text>
         </View>
       </View>
-
-      {/* Reason chip */}
-      {!loading && primaryReason ? (
-        <View style={[styles.reasonRow, { borderLeftColor: theme.color }]}>
-          <View style={[styles.reasonDot, { backgroundColor: theme.color }]} />
-          <Text style={styles.reasonText} numberOfLines={2}>{primaryReason}</Text>
-        </View>
-      ) : null}
 
       {/* Score bar with segment markers */}
       <View style={styles.barSection}>
@@ -117,18 +93,14 @@ export function EyeScoreCard({ score, primaryReason, loading }: Props) {
           <Animated.View
             style={[styles.barFill, { width: `${barWidth}%`, backgroundColor: theme.color }]}
           />
-          {/* Segment dividers */}
-          {SCORE_SEGMENTS.slice(1).map(seg => (
-            <View
-              key={seg.threshold}
-              style={[styles.segmentMark, { left: `${seg.threshold}%` as any }]}
-            />
+          {SEGMENT_MARKS.map(mark => (
+            <View key={mark} style={[styles.segmentMark, { left: `${mark}%` as any }]} />
           ))}
         </View>
         <View style={styles.barLabels}>
-          <Text style={styles.barLabelText}>Healthy</Text>
-          <Text style={styles.barLabelText}>Moderate</Text>
-          <Text style={styles.barLabelText}>Critical</Text>
+          <Text style={styles.barLabelText}>Needs Recovery</Text>
+          <Text style={styles.barLabelText}>Balanced</Text>
+          <Text style={styles.barLabelText}>Feeling Fresh</Text>
         </View>
       </View>
     </View>
@@ -209,40 +181,10 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 6,
   },
-  messageTitle: {
-    ...typography.bodyLarge,
-    color: colors.text.primary,
-    fontWeight: '700',
-    lineHeight: 22,
-  },
   messageSub: {
     ...typography.caption,
     color: colors.text.secondary,
     lineHeight: 17,
-  },
-
-  /* Reason */
-  reasonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 10,
-    borderLeftWidth: 3,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 7,
-  },
-  reasonDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    flexShrink: 0,
-  },
-  reasonText: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    flex: 1,
-    lineHeight: 16,
   },
 
   /* Bar */

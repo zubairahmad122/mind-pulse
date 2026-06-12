@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Leaf, Clock } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -60,7 +60,7 @@ function IconSpark({ color }: { color: string }) {
 
   return (
     <Animated.View style={[styles.iconWrap, { backgroundColor: color + '18', borderColor: color + '35' }, style]}>
-      <Ionicons name="leaf-outline" size={40} color={color} />
+      <Leaf size={40} color={color} />
     </Animated.View>
   );
 }
@@ -139,13 +139,13 @@ export default function BreatheCompleteScreen() {
         {/* ── Stats card ── */}
         <Animated.View style={[styles.statCard, { borderColor: mode.color + '30' }, cardStyle]}>
           <View style={styles.statRow}>
-            <Ionicons name="time-outline" size={14} color={mode.color} />
+            <Clock size={14} color={mode.color} />
             <Text style={styles.statLabel}>Duration</Text>
             <Text style={[styles.statValue, { color: mode.color }]}>{durationLabel}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.statRow}>
-            <Ionicons name={mode.icon} size={14} color={mode.color} />
+            {(() => { const ModeIcon = mode.icon; return <ModeIcon size={14} color={mode.color} />; })()}
             <Text style={styles.statLabel}>Session</Text>
             <Text style={[styles.statValue, { color: mode.color }]}>{mode.title}</Text>
           </View>

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Music } from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BREATHING_MUSIC, type BreathingMusicId } from '@/constants/breathingMusic';
 import { colors } from '@/constants/colors';
@@ -17,7 +17,7 @@ export function AmbientSoundDock({ selectedId, onSelect, accentColor, compact }:
     <View style={[styles.row, compact && styles.rowCompact]}>
       {!compact && (
         <>
-          <Ionicons name="musical-notes-outline" size={13} color={colors.text.tertiary} style={styles.icon} />
+          <Music size={13} color={colors.text.tertiary} style={styles.icon} />
           <Text style={styles.label}>Ambient sound</Text>
         </>
       )}
@@ -36,7 +36,10 @@ export function AmbientSoundDock({ selectedId, onSelect, accentColor, compact }:
                 active && { backgroundColor: tint + '22', borderColor: tint },
               ]}
             >
-              <Ionicons name={m.icon} size={compact ? 16 : 14} color={active ? tint : colors.text.tertiary} />
+              {(() => {
+                const MIcon = m.icon;
+                return <MIcon size={compact ? 16 : 14} color={active ? tint : colors.text.tertiary} />;
+              })()}
               {!compact && (
                 <Text style={[styles.chipLabel, active && { color: tint }]}>{m.label}</Text>
               )}

@@ -8,12 +8,3 @@ export interface SleepSchedule {
   reminderMinutes: number;
 }
 
-export interface SleepSessionRecord {
-  id: string;
-  uid: string;
-  date: Date;
-  sleepTime: string;
-  wakeTime: string;
-  duration: number;
-  score: number;
-}

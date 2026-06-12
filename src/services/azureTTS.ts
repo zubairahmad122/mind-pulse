@@ -13,12 +13,14 @@ const AZURE_VOICES: Record<SessionLang, string> = {
   en: 'en-US-AriaNeural',
   hi: 'hi-IN-SwaraNeural',
   ur: 'ur-PK-UzmaNeural',
+  ps: 'ur-PK-UzmaNeural', // Pashto falls back to Urdu (closest match)
 };
 
 const AZURE_LANGS: Record<SessionLang, string> = {
   en: 'en-US',
   hi: 'hi-IN',
   ur: 'ur-PK',
+  ps: 'ur-PK', // Pashto falls back to Urdu
 };
 
 const CACHE_DIR = `${FileSystem.cacheDirectory ?? ''}tts_cache/`;

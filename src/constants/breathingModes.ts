@@ -1,5 +1,6 @@
+import type { LucideIcon } from 'lucide-react-native';
+import { Radio, StopCircle, Moon, Droplets } from 'lucide-react-native';
 import type { BreathingMusicId } from './breathingMusic';
-import type { IoniconName } from './navigation';
 
 export type BreathModeId = 'calm-flow' | 'box-release' | 'sleep-drop' | 'reset-wave';
 
@@ -20,7 +21,7 @@ export interface BreathMode {
   color:       string;       // primary accent
   bgFrom:      string;       // gradient top
   bgTo:        string;       // gradient bottom
-  icon:        IoniconName;
+  icon:        LucideIcon;
   ambientId:   BreathingMusicId;
   voice:       VoiceEntry[];
 }
@@ -37,7 +38,7 @@ export const BREATH_MODES: BreathMode[] = [
     color:       '#7B61FF',
     bgFrom:      '#0D0B2E',
     bgTo:        '#1a1535',
-    icon:        'radio-outline',
+    icon:        Radio,
     ambientId:   'forest',
     voice: [
       {
@@ -102,7 +103,7 @@ export const BREATH_MODES: BreathMode[] = [
     color:       '#B39DDB',
     bgFrom:      '#0D0B2E',
     bgTo:        '#130F35',
-    icon:        'stop-circle-outline',
+    icon:        StopCircle,
     ambientId:   'forest',
     voice: [
       {
@@ -173,7 +174,7 @@ export const BREATH_MODES: BreathMode[] = [
     color:       '#C4A265',
     bgFrom:      '#050412',
     bgTo:        '#0A0820',
-    icon:        'moon-outline',
+    icon:        Moon,
     ambientId:   'rain',
     voice: [
       {
@@ -238,7 +239,7 @@ export const BREATH_MODES: BreathMode[] = [
     color:       '#4FC3F7',
     bgFrom:      '#050D1A',
     bgTo:        '#0A1628',
-    icon:        'water-outline',
+    icon:        Droplets,
     ambientId:   'ocean',
     voice: [
       {

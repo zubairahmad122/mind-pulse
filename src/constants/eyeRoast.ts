@@ -1,32 +1,5 @@
 export type RoastLevel = 'gentle' | 'savage';
 
-interface ScoreMessage {
-  title: string;
-  sub: string;
-}
-
-const SCORE_MESSAGES: Record<RoastLevel, ScoreMessage[]> = {
-  gentle: [
-    { title: 'Your eyes are well-rested ✨', sub: 'Excellent habits. Your eyes are thanking you.' },
-    { title: 'Looking pretty good', sub: 'A short protocol session would help maintain this.' },
-    { title: 'Your eyes need some attention', sub: 'Run the daily protocol to recover.' },
-    { title: 'Eye strain warning', sub: 'Your eyes are under significant stress today.' },
-    { title: 'Critical eye strain', sub: 'Complete the full protocol now and take breaks.' },
-  ],
-  savage: [
-    { title: 'Suspiciously healthy 🌿', sub: 'Are you even using a phone? Weirdo.' },
-    { title: 'Not totally cooked 🙂', sub: 'Your eyes are tired but still clocking in. Barely.' },
-    { title: 'Eyes filed a complaint 😤', sub: 'HR has been notified. You blink like a malfunctioning robot.' },
-    { title: 'Corneas: fully cooked 🔥', sub: 'You stare at screens more than a sleep-deprived raccoon.' },
-    { title: 'EYES: OFFLINE 💀', sub: 'You blink less than a dead fish. Your eyes submitted their formal letter of resignation.' },
-  ],
-};
-
-export function getScoreMessage(score: number, level: RoastLevel): ScoreMessage {
-  const i = score <= 20 ? 0 : score <= 40 ? 1 : score <= 60 ? 2 : score <= 80 ? 3 : 4;
-  return SCORE_MESSAGES[level][i];
-}
-
 interface StepCopy {
   what: string;
   tip: string;

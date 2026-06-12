@@ -21,6 +21,6 @@ export type NativeAlarmModule = {
 };
 
 export const ALARM_NATIVE_EVENTS = {
-  fired: 'SmartSleepAlarmFired',
-  stopped: 'SmartSleepAlarmStopped',
+  fired: 'MindPulseAlarmFired',
+  stopped: 'MindPulseAlarmStopped',
 } as const;

@@ -30,7 +30,7 @@ import { useVoiceGuide } from '@/hooks/useVoiceGuide';
 export default function RelaxSessionPlayer() {
   const router = useRouter();
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
-  const { guide, stop } = useVoiceGuide();
+  const { guide, stop, scripts } = useVoiceGuide();
   const { langCode } = useLanguage();
 
   // Validate session ID before proceeding
@@ -92,8 +92,8 @@ export default function RelaxSessionPlayer() {
     setCurrentPhaseIndex(0);
     lastSpokenPhaseRef.current = -1;
     // Stagger voice guidance to allow natural playback without cuts
-    guide('Relax and get comfortable', 500, voiceVolLocal);
-    guide('Focus on your breathing', 3500, voiceVolLocal);
+    guide(scripts.breatheSettleIntro, 500, voiceVolLocal);
+    guide(scripts.boxBreathIntro, 3500, voiceVolLocal);
   }, [guide, voiceVolLocal]);
 
   const handlePause = useCallback(() => {
@@ -193,9 +193,9 @@ export default function RelaxSessionPlayer() {
             runOnJS(setPhaseSecondsRemaining)(secsRemaining);
 
             let displayText = '';
-            if (phaseDef.name === 'inhale') displayText = 'Breathe in';
-            else if (phaseDef.name === 'exhale') displayText = 'Breathe out';
-            else if (phaseDef.name.includes('hold')) displayText = 'Hold';
+            if (phaseDef.name === 'inhale') displayText = scripts.breatheIn;
+            else if (phaseDef.name === 'exhale') displayText = scripts.breatheOut;
+            else if (phaseDef.name.includes('hold')) displayText = scripts.holdBreath;
 
             if (i !== lastSpokenPhaseRef.current && secsRemaining === phaseDef.duration) {
               lastSpokenPhaseRef.current = i;
@@ -290,7 +290,13 @@ export default function RelaxSessionPlayer() {
         <View style={styles.initContainer}>
           {/* Back + orb row */}
           <View style={styles.initTop}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <TouchableOpacity
+              onPress={() => {
+                stop();
+                router.back();
+              }}
+              style={styles.backBtn}
+            >
               <Ionicons name="chevron-back" size={22} color="rgba(255,255,255,0.6)" />
             </TouchableOpacity>
           </View>
@@ -385,7 +391,7 @@ export default function RelaxSessionPlayer() {
             )}
 
             {sessionPhase === 'ending' && (
-              <Text style={styles.endingText}>Take one last slow breath…</Text>
+              <Text style={styles.endingText}>{scripts.sessionComplete}</Text>
             )}
           </View>
         </View>

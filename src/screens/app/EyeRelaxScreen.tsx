@@ -13,6 +13,7 @@ import { EyeRelaxIcon, eyeRelaxIconBg } from '@/components/eye/icons/EyeRelaxIco
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { EyeScoreCard } from '@/components/eye/EyeScoreCard';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { ScoreBreakdownCard } from '@/components/ui/ScoreBreakdownCard';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { EYE_GAMES, RECOVERY_SESSIONS, ROUTES } from '@/constants';
 import { colors } from '@/constants/colors';
@@ -22,7 +23,7 @@ import type { EyeActivity } from '@/constants/eyeRelax';
 import { useAuth } from '@/context/AuthContext';
 import { useEyeBreakEnforcer } from '@/hooks/useEyeBreakEnforcer';
 import { useEyeProgress } from '@/hooks/useEyeProgress';
-import { useEyeStressScore } from '@/hooks/useEyeStressScore';
+import { useEyeScore } from '@/hooks/useEyeScore';
 import { useGameRecord } from '@/hooks/useGameRecord';
 import { useDailyEyeGoals } from '@/hooks/useDailyEyeGoals';
 import { useLastBreakTime } from '@/hooks/useLastBreakTime';
@@ -118,7 +119,7 @@ export default function EyeRelaxScreen() {
 
   const { todayDone, streak, weekDots, loading: progressLoading } = useEyeProgress(user?.uid);
   const { enabled: breakEnabled, loading: breakLoading, toggle: toggleBreak } = useEyeBreakEnforcer(user?.uid);
-  const { score, primaryReason, loading: scoreLoading } = useEyeStressScore(user?.uid);
+  const eyeScore = useEyeScore(user?.uid);
   const goals = useDailyEyeGoals(user?.uid ?? undefined);
   const { minutesAgo } = useLastBreakTime(user?.uid ?? undefined);
 
@@ -150,8 +151,16 @@ export default function EyeRelaxScreen() {
     <ScreenShell>
       <ScreenHeader title="Eye Training" subtitle="Recover · train · protect" />
 
-      {/* 1. Eye Stress Score */}
-      <EyeScoreCard score={score} primaryReason={primaryReason} loading={scoreLoading} />
+      {/* 1. Eye Score */}
+      <EyeScoreCard result={eyeScore} loading={eyeScore.loading} />
+      {!eyeScore.loading && (
+        <ScoreBreakdownCard
+          title="WHY THIS SCORE?"
+          score={eyeScore.score}
+          theme={eyeScore.theme}
+          breakdown={eyeScore.breakdown}
+        />
+      )}
 
       {/* 2. Today's Progress + Goals */}
       <GlassCard style={styles.goalsCard}>

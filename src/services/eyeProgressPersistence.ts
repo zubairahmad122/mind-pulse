@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import firestore from '@react-native-firebase/firestore';
 
 export type EyeSessionType = 'cvs-protocol' | 'eye-reset';
 
@@ -24,6 +25,12 @@ function notifIdKey(uid?: string): string {
   return `@mindpulse/eye-break-notif-id:${uid ?? 'guest'}`;
 }
 
+/** Firestore ref for a user's eye sessions subcollection. */
+function eyeSessionsRef(uid: string) {
+  return firestore().collection('users').doc(uid).collection('eyeSessions');
+}
+
+/** Load from local cache (fast). */
 async function loadSessions(uid?: string): Promise<EyeSessionRecord[]> {
   try {
     const raw = await AsyncStorage.getItem(sessionKey(uid));
@@ -33,6 +40,7 @@ async function loadSessions(uid?: string): Promise<EyeSessionRecord[]> {
   }
 }
 
+/** Save to local cache (with 90-day pruning). */
 async function saveSessions(uid: string | undefined, records: EyeSessionRecord[]): Promise<void> {
   const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
   const pruned = records.filter(r => r.completedAt >= cutoff);
@@ -47,16 +55,44 @@ export async function recordEyeCompletion(
   uid: string | undefined,
   type: EyeSessionType,
 ): Promise<void> {
-  const sessions = await loadSessions(uid);
   const record: EyeSessionRecord = {
     dateKey: todayKey(),
     completedAt: Date.now(),
     type,
   };
+
+  // Firestore (cloud backup) — only for logged-in users
+  if (uid) {
+    try {
+      await eyeSessionsRef(uid).add(record);
+    } catch {
+      // offline — local cache is sufficient
+    }
+  }
+
+  // Local cache (always)
+  const sessions = await loadSessions(uid);
   await saveSessions(uid, [record, ...sessions]);
 }
 
 export async function loadEyeSessions(uid?: string): Promise<EyeSessionRecord[]> {
+  // For logged-in users: try Firestore first for cross-device sync
+  if (uid) {
+    try {
+      const snap = await eyeSessionsRef(uid)
+        .orderBy('completedAt', 'desc')
+        .limit(300)
+        .get();
+      const cloud = snap.docs.map(d => d.data() as EyeSessionRecord);
+      if (cloud.length > 0) {
+        // Update local cache in background
+        void saveSessions(uid, cloud);
+        return cloud;
+      }
+    } catch {
+      // offline — fall through to local cache
+    }
+  }
   return loadSessions(uid);
 }
 

@@ -1,33 +1,42 @@
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowUp, ArrowDown, Minus, Check, UserCircle, Activity, Lightbulb, BarChart3, Zap, Flame, Smartphone, Eye, Book, Moon, RefreshCw, Target } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AIRecommendation } from '@/components/home/AIRecommendation';
+import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { DailyChallenge } from '@/components/home/DailyChallenge';
-import { DailyTip } from '@/components/home/DailyTip';
 import { QuickActions } from '@/components/home/QuickActions';
 import { SleepGoalCard } from '@/components/home/SleepGoalCard';
-import { TodaysPlan } from '@/components/home/TodaysPlan';
 import { ScreenShell } from '@/components/layout/ScreenShell';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { COLORS, ROUTES } from '@/constants';
-import type { IoniconName } from '@/constants';
-import { DAILY_TIP } from '@/constants/homeDashboard';
+import type { LucideIcon } from 'lucide-react-native';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { useAuth } from '@/context/AuthContext';
 import { useSleep } from '@/context/SleepContext';
-import { useEyeStressScore } from '@/hooks/useEyeStressScore';
+import { useDailyEyeGoals } from '@/hooks/useDailyEyeGoals';
+import { useEyeProgress } from '@/hooks/useEyeProgress';
+import { useEyeScore } from '@/hooks/useEyeScore';
 import { useGreeting } from '@/hooks/useGreeting';
+import { useJournal } from '@/hooks/useJournal';
 import { useMindScore } from '@/hooks/useMindScore';
 import { useSleepSchedule } from '@/hooks/useSleepSchedule';
+import { useSleepScore } from '@/hooks/useSleepScore';
 import {
   getDailyScoreStreak,
   getYesterdayScore,
   saveDailyScore,
 } from '@/services/dailyScorePersistence';
-import { calculateMindPulseScore, getInsightMessage, getScoreStatus, getWorstArea } from '@/utils/scoreCalculator';
-import { calculateSleepScore } from '@/utils/sleepUtils';
+import {
+  calculateMindPulseScore,
+  getFocusArea,
+  getHomeInsight,
+  pulseScoreTheme,
+} from '@/utils/scoring';
+
+// ──────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────
 
 function formatBedtime(time24: string): string {
   const [hStr, mStr] = time24.split(':');
@@ -36,6 +45,28 @@ function formatBedtime(time24: string): string {
   const h12 = h % 12 || 12;
   return `${h12}:${mStr} ${ampm}`;
 }
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Context-aware tagline that changes based on the user's real data. */
+function getDynamicTagline(focusArea: string, score: number, hour: number): string {
+  if (score >= 75) return 'Your numbers are looking great — keep up the momentum';
+  if (score >= 50) {
+    if (focusArea === 'Eyes') return 'A little eye care would go a long way today';
+    if (focusArea === 'Sleep') return 'A bit more rest would help you feel sharper';
+    return 'A moment of calm could help your mind today';
+  }
+  if (hour >= 22 || hour < 5) return 'Late night — your body is craving rest';
+  if (hour < 12) return 'Fresh start — let\'s build healthy momentum today';
+  if (hour < 17) return 'Midday check — small breaks keep your numbers stable';
+  return 'Winding down — prepare for quality rest tonight';
+}
+
+// ──────────────────────────────────────────────
+// Sub-components
+// ──────────────────────────────────────────────
 
 function ScoreGauge({ score, statusColor, isLoading }: { score: number; statusColor: string; isLoading?: boolean }) {
   return (
@@ -50,196 +81,384 @@ function ScoreGauge({ score, statusColor, isLoading }: { score: number; statusCo
   );
 }
 
-function StatCard({ icon, value, label }: { icon: IoniconName; value: string; label: string }) {
+function TrendArrow({ today, yesterday }: { today: number; yesterday: number | null }) {
+  if (yesterday === null) return null;
+  const diff = today - yesterday;
+  if (diff > 3) {
+    return (
+      <View style={styles.trendBadge}>
+        <ArrowUp size={12} color="#6ee7b7" />
+        <Text style={[styles.trendText, { color: '#6ee7b7' }]}>+{diff}</Text>
+      </View>
+    );
+  }
+  if (diff < -3) {
+    return (
+      <View style={styles.trendBadge}>
+        <ArrowDown size={12} color="#e24b4a" />
+        <Text style={[styles.trendText, { color: '#e24b4a' }]}>{diff}</Text>
+      </View>
+    );
+  }
   return (
-    <View style={styles.statCard}>
-      <Ionicons name={icon} size={20} color={COLORS.purpleLight} />
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <View style={styles.trendBadge}>
+      <Minus size={12} color={colors.text.tertiary} />
+      <Text style={[styles.trendText, { color: colors.text.tertiary }]}>0</Text>
     </View>
   );
 }
 
-function FooterStat({ icon, value, label }: { icon: IoniconName; value: string; label: string }) {
+/** A compact horizontal bar showing one sub-score (Eyes / Sleep / Mind) with a mini progress fill. */
+function SubScoreBar({
+  icon: Icon,
+  score,
+  label,
+  color,
+  onPress,
+  loading,
+  isFocus,
+}: {
+  icon: LucideIcon;
+  score: number;
+  label: string;
+  color: string;
+  onPress: () => void;
+  loading?: boolean;
+  isFocus?: boolean;
+}) {
+  return (
+    <Pressable onPress={onPress} style={[styles.subScoreItem, isFocus && styles.subScoreItemFocus]}>
+      <View style={styles.subScoreHeader}>
+        <Icon size={16} color={color} />
+        <Text style={[styles.subScoreValue, { color }]}>{loading ? '–' : score}</Text>
+      </View>
+      <View style={[styles.subScoreTrack, { backgroundColor: color + '1a' }]}>
+        <View style={[styles.subScoreFill, { width: `${score}%`, backgroundColor: color }]} />
+      </View>
+      <Text style={styles.subScoreLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function TodayPulseItem({
+  done,
+  icon: IconComponent,
+  label,
+  detail,
+}: {
+  done: boolean;
+  icon: LucideIcon;
+  label: string;
+  detail: string;
+}) {
+  return (
+    <View style={styles.pulseItem}>
+      <View style={[styles.pulseDot, done && styles.pulseDotDone]}>
+        {done ? (
+          <Check size={12} color="#0A0E1A" />
+        ) : (
+          <IconComponent size={12} color="rgba(255,255,255,0.5)" strokeWidth={2.5} />
+        )}
+      </View>
+      <View style={styles.pulseInfo}>
+        <Text style={[styles.pulseLabel, done && styles.pulseLabelDone]}>{label}</Text>
+        <Text style={styles.pulseDetail}>{detail}</Text>
+      </View>
+    </View>
+  );
+}
+
+function FooterStat({ icon: Icon, value, label }: { icon: LucideIcon; value: string; label: string }) {
   return (
     <View style={styles.footerItem}>
-      <Ionicons name={icon} size={18} color={COLORS.purpleLight} />
+      <Icon size={16} color={colors.accent.purple} />
       <Text style={styles.footerValue}>{value}</Text>
       <Text style={styles.footerLabel}>{label}</Text>
     </View>
   );
 }
 
-function TrendArrow({ today, yesterday }: { today: number; yesterday: number | null }) {
-  if (yesterday === null) return null;
-  const diff = today - yesterday;
-  if (diff > 3) {
-    return <Ionicons name="arrow-up" size={14} color="#e24b4a" />;
-  }
-  if (diff < -3) {
-    return <Ionicons name="arrow-down" size={14} color="#6ee7b7" />;
-  }
-  return <Ionicons name="remove" size={14} color={colors.text.tertiary} />;
-}
+// ──────────────────────────────────────────────
+// Main Screen
+// ──────────────────────────────────────────────
 
 export default function HomeDashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { sessions } = useSleep();
-  const { score: eyesScore, loading: eyesLoading } = useEyeStressScore(user?.uid ?? undefined);
-  const { score: mindScoreNum, theme: mindTheme, loading: mindLoading, reasons: mindReasons } = useMindScore(user?.uid ?? undefined);
-  const mindScore = mindScoreNum;
-
+  const eyeResult = useEyeScore(user?.uid ?? undefined);
+  const mindResult = useMindScore(user?.uid ?? undefined);
+  const sleepResult = useSleepScore(user?.uid ?? undefined, user?.isAnonymous ?? true);
   const { schedule } = useSleepSchedule(user?.uid ?? undefined, user?.isAnonymous ?? true);
 
+  // ── Real data hooks for Today's Pulse ──
+  const { breaksTaken, protocolDone, gamePlayed, completedCount, recoveryPct } =
+    useDailyEyeGoals(user?.uid ?? undefined);
+  const { entries } = useJournal(user?.uid ?? undefined, user?.isAnonymous ?? true);
+  const { streak: eyeStreak } =
+    useEyeProgress(user?.uid ?? undefined);
+
+  // ── Derived values ──
   const displayName = user?.displayName ?? user?.email?.split('@')[0] ?? 'there';
   const greeting = useGreeting(displayName);
-  const sleepScore = calculateSleepScore(sessions);
-  const anyLoading = eyesLoading || mindLoading;
-  const eyes = eyesLoading ? 0 : eyesScore;
-  const mind = mindLoading ? 0 : mindScore;
+  const anyLoading = eyeResult.loading || mindResult.loading || sleepResult.loading;
+  const eyes = eyeResult.loading ? 0 : eyeResult.score;
+  const sleepScore = sleepResult.loading ? 0 : sleepResult.score;
+  const mind = mindResult.loading ? 0 : mindResult.score;
+  const mindPulseScore = anyLoading ? 0 : calculateMindPulseScore({ eyeScore: eyes, sleepScore, mindScore: mind });
+  const theme = pulseScoreTheme(mindPulseScore);
+  const focusArea = getFocusArea(eyes, sleepScore, mind);
+  const tagline = getDynamicTagline(focusArea, mindPulseScore, new Date().getHours());
+  const homeInsight = getHomeInsight({ eye: eyeResult, sleep: sleepResult, mind: mindResult });
 
-  const mindPulseScore = anyLoading ? 0 : calculateMindPulseScore({ eyesScore: eyes, sleepScore, mindScore: mind });
-  const status = getScoreStatus(mindPulseScore);
-  const worstArea = getWorstArea(eyes, sleepScore, mind);
+  // ── Today's journal entries count ──
+  const journalToday = entries.filter(e => {
+    const d = e.date instanceof Date ? e.date : new Date(e.date);
+    return d.toISOString().slice(0, 10) === todayKey();
+  }).length;
 
+  // ── Yesterday's score for trend ──
   const [yesterdayScore, setYesterdayScore] = useState<number | null>(null);
   const [scoreStreak, setScoreStreak] = useState(0);
   const fetchedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (eyesLoading || mindLoading || !user?.uid) return;
-
-    const uid = user.uid;
-
-    void saveDailyScore(uid, {
+    if (anyLoading || !user?.uid) return;
+    void saveDailyScore(user.uid, {
       mindPulseScore,
       eyesScore: eyes,
       sleepScore,
       mindScore: mind,
       savedAt: Date.now(),
     });
-  }, [eyesLoading, mindLoading, user?.uid, mindPulseScore, eyes, sleepScore, mind]);
+  }, [anyLoading, user?.uid, mindPulseScore, eyes, sleepScore, mind]);
 
   useEffect(() => {
     if (!user?.uid || fetchedRef.current === user.uid) return;
     fetchedRef.current = user.uid;
-
-    const uid = user.uid;
-    void getYesterdayScore(uid).then(data => {
+    void getYesterdayScore(user.uid).then(data => {
       if (data) setYesterdayScore(data.mindPulseScore);
     });
-    void getDailyScoreStreak(uid).then(setScoreStreak);
+    void getDailyScoreStreak(user.uid).then(setScoreStreak);
   }, [user?.uid]);
+
+  const isLoading = anyLoading;
 
   return (
     <ScreenShell>
-      {/* Header */}
+      {/* ── Header ── */}
       <View style={styles.headerRow}>
-        <Text style={styles.appName}>MindPulse</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.appName}>MindPulse</Text>
+          <TrendArrow today={mindPulseScore} yesterday={yesterdayScore} />
+        </View>
         <TouchableOpacity
           style={styles.profileBtn}
           onPress={() => router.push(ROUTES.appProfile as never)}
           activeOpacity={0.8}
         >
-          <Ionicons name="person-circle-outline" size={32} color={colors.text.primary} />
+          <UserCircle size={30} color={colors.text.primary} />
         </TouchableOpacity>
       </View>
 
-      {/* Greeting */}
+      {/* ── Greeting + Dynamic Tagline ── */}
       <Text style={styles.greeting}>{greeting}</Text>
-      <Text style={styles.tagline}>Your screen is shaping your mind</Text>
+      <Text style={[styles.tagline, { color: isLoading ? colors.text.tertiary : theme.color + 'cc' }]}>
+        {isLoading ? 'Crunching your numbers…' : tagline}
+      </Text>
 
-      {/* MindPulse Score Card */}
-      <View style={styles.scoreCard}>
+      {/* ── MindPulse Hero Score ── */}
+      <GlassCard style={styles.scoreCard}>
         <View style={styles.scoreLabelRow}>
+          <Activity size={14} color={colors.accent.purple} />
           <Text style={styles.sectionLabel}>MINDPULSE SCORE</Text>
-          <TrendArrow today={mindPulseScore} yesterday={yesterdayScore} />
         </View>
+
         <View style={styles.scoreCardBody}>
-          <ScoreGauge score={mindPulseScore} statusColor={status.color} isLoading={anyLoading} />
+          <ScoreGauge score={mindPulseScore} statusColor={theme.color} isLoading={isLoading} />
           <View style={styles.scoreCardRight}>
-            <Text style={[styles.statusLabel, { color: anyLoading ? colors.text.tertiary : status.color }]}>
-              {anyLoading ? 'Calculating…' : `${status.emoji}  ${status.label}`}
+            <Text style={[styles.statusLabel, { color: isLoading ? colors.text.tertiary : theme.color }]}>
+              {isLoading ? 'Calculating…' : `${theme.emoji}  ${theme.label}`}
             </Text>
-            {!anyLoading && (
+            {!isLoading && (
               <View style={styles.worstBadge}>
-                <Ionicons name="alert-circle-outline" size={13} color={colors.text.secondary} />
-                <Text style={styles.worstBadgeText}>Main issue: {worstArea}</Text>
+                <Lightbulb size={13} color={colors.text.secondary} />
+                <Text style={styles.worstBadgeText}>Focus: {focusArea}</Text>
               </View>
             )}
+            {/* Contextual insight from real data */}
+            <Text style={styles.contextInsight} numberOfLines={2}>
+              {homeInsight}
+            </Text>
           </View>
         </View>
 
-        {/* Flex-based progress bar */}
+        {/* Progress bar */}
         <View style={styles.barTrack}>
-          <View style={[styles.barFill, { flex: mindPulseScore, backgroundColor: status.color }]} />
-          <View style={{ flex: 100 - mindPulseScore }} />
+          <View style={[styles.barFill, { flex: mindPulseScore || 1, backgroundColor: theme.color }]} />
+          <View style={{ flex: Math.max(100 - mindPulseScore, 1) || 1 }} />
         </View>
         <View style={styles.barLabelsRow}>
-          <Text style={styles.barLabelText}>Recovering</Text>
-          <Text style={styles.barLabelText}>Critical</Text>
+          <Text style={styles.barLabelText}>Needs Focus</Text>
+          <Text style={styles.barLabelText}>Thriving</Text>
         </View>
-      </View>
+      </GlassCard>
 
-      {/* Three stat cards */}
-      <View style={styles.statRow}>
-        <StatCard icon="eye-outline" value={eyesLoading ? '–' : String(eyesScore)} label="Eyes" />
-        <StatCard icon="moon-outline" value={String(sleepScore)} label="Sleep" />
-        <StatCard icon="pulse-outline" value={mindLoading ? '–' : String(mindScore)} label="Mind" />
-      </View>
+      {/* ── Three Sub-Scores (cohesive bar row) ── */}
+      <GlassCard style={styles.subScoreCard}>
+        <Text style={styles.sectionLabel}>BREAKDOWN</Text>
+        <View style={styles.subScoreRow}>
+          <SubScoreBar
+            icon={Eye}
+            score={eyes}
+            label="Eyes"
+            color="#6ee7b7"
+            loading={eyeResult.loading}
+            isFocus={focusArea === 'Eyes'}
+            onPress={() => router.push(ROUTES.appEyeRelax as never)}
+          />
+          <View style={styles.subScoreDivider} />
+          <SubScoreBar
+            icon={Moon}
+            score={sleepScore}
+            label="Sleep"
+            color="#a78bfa"
+            loading={sleepResult.loading}
+            isFocus={focusArea === 'Sleep'}
+            onPress={() => router.push(`${ROUTES.appSleep}?tab=tonight` as never)}
+          />
+          <View style={styles.subScoreDivider} />
+          <SubScoreBar
+            icon={Activity}
+            score={mind}
+            label="Mind"
+            color="#4FC3F7"
+            loading={mindResult.loading}
+            isFocus={focusArea === 'Mind'}
+            onPress={() => router.push(ROUTES.appRelax as never)}
+          />
+        </View>
+      </GlassCard>
 
-      {/* AI Insight */}
-      <AIRecommendation message={getInsightMessage(worstArea, mindPulseScore, new Date().getHours())} />
+      {/* ── Today's Pulse (real activity summary) ── */}
+      <GlassCard style={styles.pulseCard}>
+        <View style={styles.pulseHeader}>
+          <View style={styles.scoreLabelRow}>
+            <BarChart3 size={14} color="#4FC3F7" />
+            <Text style={styles.sectionLabel}>TODAY'S PULSE</Text>
+          </View>
+          <View style={styles.pulseRingSmall}>
+            <Text style={styles.pulseRingPct}>{recoveryPct}%</Text>
+          </View>
+        </View>
 
-      {/* Daily Challenge */}
-      <DailyChallenge worstArea={worstArea} />
+        <View style={styles.pulseItems}>
+          <TodayPulseItem
+            done={breaksTaken >= 3}
+            icon={Eye}
+            label="Eye Breaks"
+            detail={`${breaksTaken} / 3 taken`}
+          />
+          <TodayPulseItem
+            done={protocolDone}
+            icon={RefreshCw}
+            label="Eye Reset Protocol"
+            detail={protocolDone ? 'Completed' : 'Not yet'}
+          />
+          <TodayPulseItem
+            done={journalToday > 0}
+            icon={Book}
+            label="Journal"
+            detail={journalToday > 0 ? `${journalToday} entr${journalToday > 1 ? 'ies' : 'y'} today` : 'No entry yet'}
+          />
+          <TodayPulseItem
+            done={gamePlayed}
+            icon={Target}
+            label="Eye Game"
+            detail={gamePlayed ? 'Played today' : 'Not played'}
+          />
+        </View>
 
-      {/* Today's Plan */}
-      <TodaysPlan worstArea={worstArea} />
+        {/* Overall today's progress bar */}
+        <View style={styles.pulseProgressWrap}>
+          <View style={styles.pulseProgressTrack}>
+            <View
+              style={[
+                styles.pulseProgressFill,
+                { width: `${recoveryPct}%`, backgroundColor: recoveryPct >= 100 ? '#6ee7b7' : '#4FC3F7' },
+              ]}
+            />
+          </View>
+          <Text style={styles.pulseProgressText}>
+            {completedCount} / 3 goals met
+          </Text>
+        </View>
+      </GlassCard>
 
-      {/* Daily Tip */}
-      <DailyTip tip={DAILY_TIP} />
+      {/* ── Daily Challenge ── */}
+      <DailyChallenge worstArea={focusArea} />
 
-      {/* Tonight's sleep goal */}
+      {/* ── Tonight's sleep goal ── */}
       <SleepGoalCard
         bedtime={formatBedtime(schedule?.bedtime ?? '23:00')}
         sleepScore={sleepScore}
       />
 
-      {/* Quick Actions */}
+      {/* ── Quick Actions ── */}
       <QuickActions />
 
-      {/* CTA */}
+      {/* ── CTA ── */}
       <TouchableOpacity
         style={styles.ctaBtn}
         onPress={() => router.push(ROUTES.appRecovery as never)}
         activeOpacity={0.85}
       >
-        <Ionicons name="flash" size={18} color={COLORS.bg} />
+        <Zap size={18} color={COLORS.bg} />
         <Text style={styles.ctaText}>Start Recovery Mode</Text>
       </TouchableOpacity>
 
-      {/* Footer: score streak + sessions */}
-      <View style={styles.footerRow}>
-        <FooterStat icon="flame-outline" value={String(scoreStreak)} label="score streak" />
+      {/* ── Enhanced Footer — all real data ── */}
+      <GlassCard style={styles.footerRow}>
+        <FooterStat icon={Flame} value={String(scoreStreak)} label="score streak" />
         <View style={styles.footerDivider} />
         <FooterStat
-          icon="phone-portrait-outline"
+          icon={Smartphone}
           value={String(sessions.length)}
           label="sessions logged"
         />
-      </View>
+        <View style={styles.footerDivider} />
+        <FooterStat
+          icon={Eye}
+          value={String(eyeStreak)}
+          label="eye streak"
+        />
+        <View style={styles.footerDivider} />
+        <FooterStat
+          icon={Book}
+          value={String(entries.length)}
+          label="journal entries"
+        />
+      </GlassCard>
     </ScreenShell>
   );
 }
 
+// ──────────────────────────────────────────────
+// Styles
+// ──────────────────────────────────────────────
+
 const styles = StyleSheet.create({
+  // ── Header ──
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.sm,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   appName: {
     fontSize: 26,
@@ -255,6 +474,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  // ── Greeting ──
   greeting: {
     ...typography.headingLarge,
     color: colors.text.primary,
@@ -262,16 +483,28 @@ const styles = StyleSheet.create({
   },
   tagline: {
     ...typography.body,
-    color: colors.text.secondary,
-    marginBottom: spacing.lg,
-  },
-  scoreCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 20,
-    padding: spacing.md,
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    fontWeight: '500',
+  },
+
+  // ── Trend badge ──
+  trendBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.background.card,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+  trendText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  // ── MindPulse Hero Score ──
+  scoreCard: {
+    marginBottom: spacing.md,
     gap: spacing.sm,
   },
   scoreLabelRow: {
@@ -319,7 +552,7 @@ const styles = StyleSheet.create({
   },
   scoreCardRight: {
     flex: 1,
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   statusLabel: {
     fontSize: 17,
@@ -339,6 +572,12 @@ const styles = StyleSheet.create({
   worstBadgeText: {
     fontSize: 12,
     color: colors.text.secondary,
+  },
+  contextInsight: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    lineHeight: 16,
+    marginTop: spacing.xs,
   },
   barTrack: {
     flexDirection: 'row',
@@ -361,48 +600,144 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     fontWeight: '600',
   },
-  statRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+
+  // ── Sub-Score Breakdown ──
+  subScoreCard: {
     marginBottom: spacing.md,
+    gap: spacing.md,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    gap: 4,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.text.primary,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: colors.text.secondary,
-    fontWeight: '600',
-  },
-  insightCard: {
+  subScoreRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: 'rgba(167,139,250,0.08)',
-    borderRadius: 12,
-    padding: spacing.md,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(167,139,250,0.2)',
   },
-  insightText: {
+  subScoreItem: {
     flex: 1,
-    ...typography.body,
-    color: colors.text.secondary,
-    lineHeight: 18,
+    gap: spacing.xs,
+    borderRadius: 10,
+    padding: 6,
   },
+  subScoreItemFocus: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: colors.accent.purpleBorder,
+  },
+  subScoreHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  subScoreValue: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  subScoreTrack: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  subScoreFill: {
+    height: 4,
+    borderRadius: 2,
+  },
+  subScoreLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.text.tertiary,
+  },
+  subScoreDivider: {
+    width: 1,
+    height: 48,
+    backgroundColor: colors.accent.purpleBorder,
+    marginHorizontal: spacing.sm,
+  },
+
+  // ── Today's Pulse ──
+  pulseCard: {
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  pulseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pulseRingSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: colors.accent.purple,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accent.purpleLight,
+  },
+  pulseRingPct: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.accent.purple,
+  },
+  pulseItems: {
+    gap: spacing.sm,
+  },
+  pulseItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  pulseDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.background.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.accent.purpleBorder,
+  },
+  pulseDotDone: {
+    backgroundColor: '#6ee7b7',
+    borderColor: '#6ee7b7',
+  },
+
+  pulseInfo: {
+    flex: 1,
+  },
+  pulseLabel: {
+    ...typography.bodyLarge,
+    color: colors.text.primary,
+    fontWeight: '500',
+  },
+  pulseLabelDone: {
+    color: colors.text.secondary,
+    textDecorationLine: 'line-through',
+  },
+  pulseDetail: {
+    ...typography.caption,
+    color: colors.text.tertiary,
+  },
+  pulseProgressWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  pulseProgressTrack: {
+    flex: 1,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  pulseProgressFill: {
+    height: 4,
+    borderRadius: 2,
+  },
+  pulseProgressText: {
+    ...typography.caption,
+    color: colors.text.tertiary,
+    fontWeight: '600',
+  },
+
+  // ── CTA ──
   ctaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -418,33 +753,34 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.bg,
   },
+
+  // ── Footer ──
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.lg,
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    paddingVertical: spacing.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    gap: 0,
   },
   footerItem: {
+    flex: 1,
     alignItems: 'center',
     gap: 3,
+    paddingVertical: spacing.xs,
   },
   footerValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: colors.text.primary,
   },
   footerLabel: {
-    fontSize: 11,
+    fontSize: 9,
     color: colors.text.secondary,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   footerDivider: {
     width: 1,
-    height: 40,
-    backgroundColor: COLORS.border,
+    height: 36,
+    backgroundColor: colors.accent.purpleBorder,
   },
 });

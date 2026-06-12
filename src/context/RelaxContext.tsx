@@ -1,6 +1,9 @@
-import React, { createContext, ReactNode, useState, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import firestore from '@react-native-firebase/firestore';
+import React, { createContext, ReactNode, useCallback, useEffect, useState } from 'react';
 import type { EmotionalState } from '@/constants/emotionalStates';
 import type { BreathingMusicId } from '@/constants/breathingMusic';
+import { useAuth } from './AuthContext';
 
 export interface SessionCompletionRecord {
   sessionId: string;
@@ -46,7 +49,15 @@ interface RelaxProviderProps {
   children: ReactNode;
 }
 
+const RELAX_STORAGE_KEY = '@mindpulse/relax-sessions';
+
+/** Firestore ref for a user's relax sessions subcollection. */
+function relaxSessionsRef(uid: string) {
+  return firestore().collection('users').doc(uid).collection('relaxSessions');
+}
+
 export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
+  const { user } = useAuth();
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessionPaused, setSessionPaused] = useState(false);
   const [sessionElapsed, setSessionElapsed] = useState(0);
@@ -55,6 +66,56 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
   const [selectedSound, setSelectedSound] = useState<BreathingMusicId>('ocean');
   const [lastEmotion, setLastEmotion] = useState<EmotionalState | null>(null);
   const [completedSessions, setCompletedSessions] = useState<SessionCompletionRecord[]>([]);
+
+  // Restore persisted sessions on mount — try Firestore first for logged-in users
+  useEffect(() => {
+    async function load() {
+      const uid = user?.uid;
+
+      if (uid) {
+        try {
+          const snap = await relaxSessionsRef(uid)
+            .orderBy('completedAt', 'desc')
+            .limit(100)
+            .get();
+          if (!snap.empty) {
+            const cloud = snap.docs.map(d => d.data() as SessionCompletionRecord);
+            setCompletedSessions(cloud);
+            // Update local cache in background
+            void AsyncStorage.setItem(RELAX_STORAGE_KEY, JSON.stringify(cloud));
+            return;
+          }
+        } catch {
+          // offline — fall through to AsyncStorage
+        }
+      }
+
+      // Local cache fallback (guests or offline)
+      const raw = await AsyncStorage.getItem(RELAX_STORAGE_KEY);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw) as SessionCompletionRecord[];
+          if (Array.isArray(parsed)) {
+            setCompletedSessions(parsed);
+          }
+        } catch {
+          // Corrupted data — ignore
+        }
+      }
+    }
+
+    void load();
+  }, [user?.uid]);
+
+  function persistSessions(sessions: SessionCompletionRecord[]): void {
+    void AsyncStorage.setItem(RELAX_STORAGE_KEY, JSON.stringify(sessions));
+  }
+
+  function persistSessionsToFirestore(uid: string, record: SessionCompletionRecord): void {
+    void relaxSessionsRef(uid).add(record).catch(() => {
+      // offline — local cache is sufficient
+    });
+  }
 
   const handleStartSession = useCallback((sessionId: string, emotion: EmotionalState | null) => {
     setCurrentSessionId(sessionId);
@@ -93,11 +154,21 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
       rating: rating > 0 ? rating : null,
     };
 
-    setCompletedSessions(prev => [...prev, newRecord]);
+    setCompletedSessions(prev => {
+      const next = [...prev, newRecord];
+      persistSessions(next);
+      return next;
+    });
+
+    // Firestore (cloud backup) — only for logged-in users
+    if (user?.uid) {
+      persistSessionsToFirestore(user.uid, newRecord);
+    }
+
     setCurrentSessionId(null);
     setSessionElapsed(0);
     setSessionPaused(false);
-  }, [currentSessionId, lastEmotion, selectedSound]);
+  }, [currentSessionId, lastEmotion, selectedSound, user?.uid]);
 
   const handleSetVoiceVolume = useCallback((volume: number) => {
     setVoiceVolume(Math.max(0, Math.min(1, volume)));

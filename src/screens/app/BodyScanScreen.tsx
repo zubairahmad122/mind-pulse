@@ -59,6 +59,7 @@ export default function BodyScanScreen() {
   const cardOpacity  = useSharedValue(1);
   const cardScale    = useSharedValue(1);
   const timerRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function clearTimer() {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -104,7 +105,7 @@ export default function BodyScanScreen() {
   function begin() {
     setPhase('running');
     guide(BODY_SCAN_SCRIPTS[toSessionLang(langCode)].intro, 200);
-    setTimeout(() => startZone(0), 2200);
+    introTimerRef.current = setTimeout(() => startZone(0), 2200);
   }
 
   function skipNext() {
@@ -135,7 +136,13 @@ export default function BodyScanScreen() {
     setLang(next.code);
   }
 
-  useEffect(() => () => { clearTimer(); stop(); }, []);
+  useEffect(() => {
+    return () => {
+      if (introTimerRef.current) clearTimeout(introTimerRef.current);
+      clearTimer();
+      stop();
+    };
+  }, []);
 
   const langOpt      = RELAX_LANGS.find(l => l.code === langCode) ?? RELAX_LANGS[0];
   const en           = BODY_SCAN_SCRIPTS.en;

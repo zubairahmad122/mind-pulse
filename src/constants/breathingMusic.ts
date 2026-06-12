@@ -1,53 +1,54 @@
-import type { IoniconName } from './navigation';
+import type { LucideIcon } from 'lucide-react-native';
+import { VolumeX, Droplets, Leaf, CloudRain, Flame, Disc } from 'lucide-react-native';
 
 export type BreathingMusicId = 'none' | 'ocean' | 'forest' | 'rain' | 'fire' | 'brown-noise';
 
 export const BREATHING_MUSIC: Array<{
   id: BreathingMusicId;
   label: string;
-  icon: IoniconName;
+  icon: LucideIcon;
   color: string;
   url: string;
 }> = [
   {
     id:    'none',
     label: 'Silent',
-    icon:  'volume-mute-outline',
+    icon:  VolumeX,
     color: '#6b7280',
     url:   '',
   },
   {
     id:    'ocean',
     label: 'Ocean',
-    icon:  'water-outline',
+    icon:  Droplets,
     color: '#4FC3F7',
     url:   require('@/assets/sounds/releax/helkimer-ocean-ambient-chillout-music-258921.mp3'),
   },
   {
     id:    'forest',
     label: 'Forest',
-    icon:  'leaf-outline',
+    icon:  Leaf,
     color: '#4CAF50',
     url:   require('@/assets/sounds/releax/forest.mp3'),
   },
   {
     id:    'rain',
     label: 'Rain',
-    icon:  'rainy-outline',
+    icon:  CloudRain,
     color: '#64B5F6',
     url:   require('@/assets/sounds/releax/rain.mp3'),
   },
   {
     id:    'fire',
     label: 'Fireplace',
-    icon:  'flame',
+    icon:  Flame,
     color: '#FF7043',
     url:   require('@/assets/sounds/releax/fire.mp3'),
   },
   {
     id:    'brown-noise',
     label: 'Brown Noise',
-    icon:  'disc-outline',
+    icon:  Disc,
     color: '#A1887F',
     url:   require('@/assets/sounds/releax/brown-noise.mp3'),
   },

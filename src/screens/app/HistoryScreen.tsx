@@ -99,7 +99,10 @@ export default function HistoryScreen() {
                 <Text style={styles.sessionDuration}>
                   {formatDuration(session.durationMinutes)}
                 </Text>
-                <Text style={{ fontSize: 20 }}>{qualityEmojiForRating(session.quality)}</Text>
+                {(() => {
+                  const QualityIcon = qualityEmojiForRating(session.quality);
+                  return <QualityIcon size={20} color="rgba(255,255,255,0.6)" />;
+                })()}
               </View>
             </View>
           ))}

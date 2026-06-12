@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,19 +28,16 @@ export default function AppTabsLayout() {
         },
       }}
     >
-      {MAIN_APP_TABS.map(({ name, title, icon, iconFocused }) => (
+      {MAIN_APP_TABS.map(({ name, title, icon: Icon, iconFocused: IconFocused }) => (
         <Tabs.Screen
           key={name}
           name={name}
           options={{
             title,
-            tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons
-                name={focused ? iconFocused : icon}
-                color={color}
-                size={focused ? size + 1 : size}
-              />
-            ),
+            tabBarIcon: ({ color, size, focused }) => {
+              const TabIcon = focused ? IconFocused : Icon;
+              return <TabIcon size={focused ? size + 1 : size} color={color} strokeWidth={1.8} />;
+            },
           }}
         />
       ))}

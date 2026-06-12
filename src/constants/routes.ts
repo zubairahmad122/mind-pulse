@@ -29,6 +29,7 @@ export const ROUTES = {
   appBreathe:        '/(app)/stress/breathe',
   appBreatheSession: '/(app)/stress/breathe-session',
   appBreatheDone:    '/(app)/stress/breathe-done',
+  appAlarmSettings:  '/(app)/alarm-settings',
   appRelaxPlayer:    '/(app)/relax/player',
   appRelaxLibrary:   '/(app)/relax/library',
   appRelaxCompletion: '/(app)/relax/completion',

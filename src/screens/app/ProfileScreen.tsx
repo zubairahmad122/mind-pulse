@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Globe, Edit3, Clock, Trophy, ChevronRight, LogOut } from 'lucide-react-native';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { COLORS, ROUTES, type IoniconName } from '@/constants';
+import { COLORS, ROUTES } from '@/constants';
 import { LANGUAGES } from '@/constants/languages';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
@@ -12,21 +12,24 @@ import { typography } from '@/constants/typography';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSleep } from '@/context/SleepContext';
-import { useEyeStressScore } from '@/hooks/useEyeStressScore';
+import { useEyeScore } from '@/hooks/useEyeScore';
 import { useMindScore } from '@/hooks/useMindScore';
-import { calculateMindPulseScore } from '@/utils/scoreCalculator';
-import { calculateSleepScore, calculateStreak } from '@/utils/sleepUtils';
+import { useSleepScore } from '@/hooks/useSleepScore';
+import { calculateMindPulseScore } from '@/utils/scoring';
+import { calculateStreak } from '@/utils/sleepUtils';
+
+import type { LucideIcon } from 'lucide-react-native';
 
 type MenuItem = {
   label: string;
-  icon: IoniconName;
+  icon: LucideIcon;
   route: string;
 };
 
 const MENU: MenuItem[] = [
-  { label: 'Edit Profile', icon: 'create-outline', route: ROUTES.appEditProfile },
-  { label: 'Sleep History', icon: 'time-outline', route: ROUTES.appHistory },
-  { label: 'Achievements', icon: 'trophy-outline', route: ROUTES.appAchievements },
+  { label: 'Edit Profile', icon: Edit3, route: ROUTES.appEditProfile },
+  { label: 'Sleep History', icon: Clock, route: ROUTES.appHistory },
+  { label: 'Achievements', icon: Trophy, route: ROUTES.appAchievements },
 ];
 
 export default function ProfileScreen() {
@@ -35,18 +38,20 @@ export default function ProfileScreen() {
   const { langCode, setLang } = useLanguage();
   const router = useRouter();
 
-  const { score: eyesScore, loading: eyesLoading } = useEyeStressScore(user?.uid ?? undefined);
-  const { score: mindScoreNum, loading: mindLoading } = useMindScore(user?.uid ?? undefined);
+  const eyeResult = useEyeScore(user?.uid ?? undefined);
+  const mindResult = useMindScore(user?.uid ?? undefined);
+  const sleepResult = useSleepScore(user?.uid ?? undefined, user?.isAnonymous ?? true);
 
   const isGuest = user?.isAnonymous ?? true;
   const displayName = isGuest
     ? 'Guest'
     : (user?.displayName ?? user?.email?.split('@')[0] ?? 'User');
   const streak = calculateStreak(sessions);
-  const sleepScore = calculateSleepScore(sessions);
-  const eyes = eyesLoading ? 0 : eyesScore;
-  const mind = mindLoading ? 0 : mindScoreNum;
-  const mindPulseScore = calculateMindPulseScore({ eyesScore: eyes, sleepScore, mindScore: mind });
+  const anyLoading = eyeResult.loading || mindResult.loading || sleepResult.loading;
+  const eyes = eyeResult.loading ? 0 : eyeResult.score;
+  const sleepScore = sleepResult.loading ? 0 : sleepResult.score;
+  const mind = mindResult.loading ? 0 : mindResult.score;
+  const mindPulseScore = calculateMindPulseScore({ eyeScore: eyes, sleepScore, mindScore: mind });
 
   const handleSignOut = () => {
     Alert.alert(
@@ -60,7 +65,7 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await signOut();
-              router.replace(ROUTES.authOnboarding);
+              router.replace(ROUTES.welcome);
             } catch (error: unknown) {
               const message = error instanceof Error ? error.message : 'Could not sign out.';
               Alert.alert('Error', message);
@@ -93,24 +98,28 @@ export default function ProfileScreen() {
           <Text style={styles.statLabel}>Sessions</Text>
         </GlassCard>
         <GlassCard style={styles.stat}>
-          <Text style={styles.statValue}>{(eyesLoading || mindLoading) ? '–' : sessions.length > 0 ? String(mindPulseScore) : '—'}</Text>
+          <Text style={styles.statValue}>{anyLoading ? '–' : sessions.length > 0 ? String(mindPulseScore) : '—'}</Text>
           <Text style={styles.statLabel}>Score</Text>
         </GlassCard>
       </View>
 
       {/* Language selector */}
       <GlassCard style={styles.langCard}>
-        <Text style={styles.langTitle}>Voice Language</Text>
+        <View style={styles.langHeader}>
+          <Globe size={20} color={colors.accent.purple} />
+          <Text style={styles.langTitle}>Voice Language</Text>
+        </View>
         <View style={styles.langRow}>
           {LANGUAGES.map(l => (
             <TouchableOpacity
               key={l.code}
               onPress={() => setLang(l.code)}
               style={[styles.langBtn, langCode === l.code && styles.langBtnActive]}
+              activeOpacity={0.7}
             >
               <Text style={styles.langFlag}>{l.flag}</Text>
               <Text style={[styles.langLabel, langCode === l.code && styles.langLabelActive]}>
-                {l.label}
+                {l.labelEn}
               </Text>
             </TouchableOpacity>
           ))}
@@ -120,9 +129,9 @@ export default function ProfileScreen() {
       {MENU.map(item => (
         <TouchableOpacity key={item.route} onPress={() => router.push(item.route as never)}>
           <GlassCard style={styles.menuRow}>
-            <Ionicons name={item.icon} size={20} color={colors.accent.purple} />
+            <item.icon size={20} color={colors.accent.purple} />
             <Text style={styles.menuLabel}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
+            <ChevronRight size={18} color={colors.text.tertiary} />
           </GlassCard>
         </TouchableOpacity>
       ))}
@@ -134,7 +143,7 @@ export default function ProfileScreen() {
       )}
 
       <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-        <Ionicons name="log-out-outline" size={18} color={COLORS.textMuted} />
+        <LogOut size={18} color={COLORS.textMuted} />
         <Text style={styles.signOutText}>{isGuest ? 'Exit Guest Mode' : 'Log Out'}</Text>
       </TouchableOpacity>
     </ScreenShell>
@@ -162,29 +171,37 @@ const styles = StyleSheet.create({
   statLabel: { ...typography.caption, color: colors.text.secondary },
   langCard: {
     marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  langHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
-  langTitle: { ...typography.label, color: colors.text.secondary },
+  langTitle: { ...typography.label, color: colors.text.primary, fontSize: 16, fontWeight: '600' },
   langRow: {
     flexDirection: 'row',
     gap: spacing.sm,
+    justifyContent: 'space-between',
   },
   langBtn: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: spacing.sm,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.1)',
     backgroundColor: 'rgba(255,255,255,0.03)',
   },
   langBtnActive: {
     borderColor: colors.accent.purple,
-    backgroundColor: colors.accent.purpleLight,
+    backgroundColor: 'rgba(157, 138, 255, 0.15)',
   },
-  langFlag: { fontSize: 18 },
-  langLabel: { ...typography.caption, color: colors.text.secondary, fontSize: 10 },
+  langFlag: { fontSize: 24 },
+  langLabel: { ...typography.caption, color: colors.text.secondary, fontSize: 11, fontWeight: '500' },
   langLabelActive: { color: colors.accent.purple, fontWeight: '700' },
   menuRow: {
     flexDirection: 'row',

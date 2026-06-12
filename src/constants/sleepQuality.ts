@@ -1,14 +1,21 @@
-export const SLEEP_QUALITY_OPTIONS = [
-  { value: 1, emoji: '😫', label: 'Terrible' },
-  { value: 2, emoji: '😕', label: 'Poor' },
-  { value: 3, emoji: '😐', label: 'Okay' },
-  { value: 4, emoji: '😊', label: 'Good' },
-  { value: 5, emoji: '😴', label: 'Amazing' },
-] as const;
+import { Frown, Meh, Minus, Smile, Sparkles, type LucideIcon } from 'lucide-react-native';
 
-export type SleepQualityOption = (typeof SLEEP_QUALITY_OPTIONS)[number];
+export interface SleepQualityOption {
+  value: number;
+  icon: LucideIcon;
+  label: string;
+  color: string;
+}
 
-export function qualityEmojiForRating(quality: number): string {
+export const SLEEP_QUALITY_OPTIONS: SleepQualityOption[] = [
+  { value: 1, icon: Frown, label: 'Terrible', color: '#F44336' },
+  { value: 2, icon: Meh, label: 'Poor', color: '#FF9800' },
+  { value: 3, icon: Minus, label: 'Okay', color: '#9e9e9e' },
+  { value: 4, icon: Smile, label: 'Good', color: '#4FC3F7' },
+  { value: 5, icon: Sparkles, label: 'Amazing', color: '#7B61FF' },
+];
+
+export function qualityEmojiForRating(quality: number): LucideIcon {
   const row = SLEEP_QUALITY_OPTIONS.find(o => o.value === quality);
-  return row?.emoji ?? '—';
+  return row?.icon ?? Minus;
 }

@@ -1,5 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Modal, Text, TouchableOpacity, View } from 'react-native';
@@ -11,6 +10,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import { Bed, Bell, ChevronRight, Clock, Flame, Moon, MoonStar, RefreshCw, Settings, Sparkles, Star, Sun } from 'lucide-react-native';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { CircularSleepSlider } from '@/components/sleep/CircularSleepSlider';
 import { BreatheToDismiss } from '@/components/sleep/BreatheToDismiss';
@@ -20,6 +20,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import {
   COLORS,
   NIGHT_PRESETS,
+  ROUTES,
   getPresetById,
   resolvePresetMinutes,
   streakEncouragementMessage,
@@ -29,7 +30,6 @@ import { useGreeting } from '@/hooks/useGreeting';
 import { usePersistedSleepTracker } from '@/hooks/usePersistedSleepTracker';
 import { useSleep } from '@/context/SleepContext';
 import { useSleepSchedule } from '@/hooks/useSleepSchedule';
-import { useTranslation, useLanguage } from '@/context/LanguageContext';
 import { formatWakeTime } from '@/services/sleepAlarm';
 import { avgDuration, calculateStreak, formatDuration, formatElapsed } from '@/utils/sleepUtils';
 import { formatAlarmCountdown, formatPresetDuration } from '@/utils/sleepDisplay';
@@ -82,12 +82,10 @@ function StatsRow({
   streakDays: number;
   message: string;
 }) {
-  const t = useTranslation();
-
   const STAT_CARDS = [
-    { key: 'last', label: t.last_night, icon: 'moon-outline' as const, color: '#9d8aff' },
-    { key: 'avg', label: t.average, icon: 'analytics-outline' as const, color: '#4FC3F7' },
-    { key: 'streak', label: t.streak, icon: 'flame-outline' as const, color: '#FF9800' },
+    { key: 'last', label: 'Last night', icon: 'moon', color: '#9d8aff' },
+    { key: 'avg', label: 'Average', icon: 'clock', color: '#4FC3F7' },
+    { key: 'streak', label: 'Streak', icon: 'flame', color: '#FF9800' },
   ];
 
   const statValues: Record<string, string> = {
@@ -96,31 +94,42 @@ function StatsRow({
     streak: `${streakDays}d`,
   };
 
+  const iconMap: Record<string, typeof Moon> = {
+    moon: Moon,
+    clock: Clock,
+    flame: Flame,
+  };
+
   return (
     <View className="mt-4">
       <View className="flex-row gap-2.5">
-        {STAT_CARDS.map(s => (
-          <View key={s.key} className="flex-1">
-            <View className="rounded-2xl border border-white/[0.06] overflow-hidden">
-              {/* Gradient header bar */}
-              <View style={{ backgroundColor: s.color + '18', height: 3 }} />
-              <View className="bg-white/[0.03] px-3 py-3 items-center gap-1.5">
-                <Ionicons name={s.icon} size={14} color={s.color} />
-                <Text className="text-[9px] font-bold text-white/40 uppercase tracking-[1]">
-                  {s.label}
-                </Text>
-                <Text className="text-lg font-extrabold text-white" style={{ lineHeight: 22 }}>
-                  {statValues[s.key]}
-                </Text>
+        {STAT_CARDS.map(s => {
+          const StatIcon = iconMap[s.icon];
+          return (
+            <View key={s.key} className="flex-1">
+              <View className="rounded-2xl border border-white/[0.06] overflow-hidden">
+                {/* Gradient header bar */}
+                <View style={{ backgroundColor: s.color + '18', height: 3 }} />
+                <View className="bg-white/[0.03] px-3 py-3 items-center gap-1.5">
+                  <View style={{ width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}>
+                    <StatIcon size={14} color={s.color} />
+                  </View>
+                  <Text className="text-[9px] font-bold text-white/40 uppercase tracking-[1]">
+                    {s.label}
+                  </Text>
+                  <Text className="text-lg font-extrabold text-white" style={{ lineHeight: 22 }}>
+                    {statValues[s.key]}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </View>
       <View className="flex-row items-center justify-center gap-2 mt-3">
-        <View className="w-1 h-1 rounded-full bg-app-purple-light" />
+        <View className="w-1 h-1 rounded-full bg-[#9d8aff]" />
         <Text className="text-[12px] text-white/40 text-center leading-[18px] flex-1">{message}</Text>
-        <View className="w-1 h-1 rounded-full bg-app-purple-light" />
+        <View className="w-1 h-1 rounded-full bg-[#9d8aff]" />
       </View>
     </View>
   );
@@ -315,13 +324,12 @@ type Params = { tab?: string; preset?: string };
 
 export default function SleepScreen() {
   const params = useLocalSearchParams<Params>();
+  const router = useRouter();
   const { user } = useAuth();
   const displayName = user?.displayName ?? user?.email?.split('@')[0] ?? 'Sleeper';
   const greeting = useGreeting(displayName);
   const { sessions, addSession } = useSleep();
   const { schedule } = useSleepSchedule(user?.uid);
-  const t = useTranslation();
-  const { rtl } = useLanguage();
 
   // ── Default preset ────────────────────────────────────────────────────────
   const defaultNight = NIGHT_PRESETS.find(p => p.id === 'night-7.5') ?? NIGHT_PRESETS[2];
@@ -532,42 +540,62 @@ export default function SleepScreen() {
   return (
     <ScreenShell safeBottom>
       <View className="px-1 pt-1 pb-4">
-        {/* Header */}
-        <View className="mb-5">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-[30px] font-extrabold text-white tracking-tight">{t.sleep}</Text>
-            <View className="flex-row items-center gap-1.5 bg-white/[0.04] px-3 py-1.5 rounded-full border border-white/10">
-              <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <Text className="text-[11px] font-semibold text-white/50 tracking-[0.5]">
-                {tracking ? t.tracking : t.ready}
-              </Text>
+        {/* Night sky atmospheric header */}
+        <View className="mb-5 relative overflow-hidden">
+          {/* Ambient glow behind header */}
+          <View className="absolute -top-10 -left-6 w-36 h-36 rounded-full bg-[#7B61FF]/10" />
+          <View className="absolute -top-6 -right-8 w-28 h-28 rounded-full bg-[#4FC3F7]/8" />
+          <View className="absolute top-4 left-20 w-2 h-2 rounded-full bg-white/30" />
+          <View className="absolute top-2 right-28 w-1.5 h-1.5 rounded-full bg-white/20" />
+          <View className="absolute top-8 right-16 w-1 h-1 rounded-full bg-white/15" />
+
+          <View className="relative z-10 flex-row items-center justify-between">
+            <View className="flex-row items-end gap-2">
+              <Text className="text-[30px] font-extrabold text-white tracking-tight">Sleep</Text>
+              <View className="mb-1.5">
+                <Text className="text-[11px] font-semibold text-white/30 tracking-[0.5]" style={{ lineHeight: 14 }}>
+                  {schedule ? `${schedule.bedtime} — ${schedule.wakeTime}` : ''}
+                </Text>
+              </View>
+            </View>
+            <View className="flex-row items-center gap-2">
+              {/* Alarm settings button */}
+              <TouchableOpacity
+                onPress={() => router.push(ROUTES.appAlarmSettings)}
+                activeOpacity={0.7}
+                className="w-9 h-9 rounded-full items-center justify-center bg-white/[0.04] border border-white/10"
+              >
+                <Settings size={16} color="rgba(255,255,255,0.5)" />
+              </TouchableOpacity>
+              <View className="flex-row items-center gap-1.5 bg-white/[0.04] px-3 py-1.5 rounded-full border border-white/10">
+                <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <Text className="text-[11px] font-semibold text-white/50 tracking-[0.5]">
+                  {tracking ? 'Tracking' : 'Ready'}
+                </Text>
+              </View>
             </View>
           </View>
-          <Text className="text-[15px] text-white/60 mt-1">{greeting}</Text>
+          <Text className="text-[15px] text-white/60 mt-1 relative z-10">{greeting}</Text>
         </View>
 
         {/* Tab toggle */}
         {!tracking && (
-          <View className="flex-row gap-2 mb-5 p-1 rounded-xl bg-white/[0.03] border border-white/10">
-            {([
-              { id: 'tonight' as const, label: t.tonight, icon: 'moon' as const },
-              { id: 'routine' as const, label: t.my_routine, icon: 'calendar' as const },
+          <View className="flex-row gap-2 mb-5 p-1 rounded-xl bg-white/[0.03] border border-white/10">              {([
+              { id: 'tonight' as const, label: 'Tonight', icon: Moon, iconFocused: MoonStar },
+              { id: 'routine' as const, label: 'My Routine', icon: Clock },
             ]).map(tab => {
               const active = segment === tab.id;
+              const TabIcon = active && tab.iconFocused ? tab.iconFocused : tab.icon;
               return (
                 <TouchableOpacity
                   key={tab.id}
                   onPress={() => setSegment(tab.id)}
                   activeOpacity={0.85}
                   className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-lg ${
-                    active ? 'bg-app-purple/20 border border-app-purple/50' : ''
+                    active ? 'bg-[#7B61FF]/20 border border-[#7B61FF]/50' : ''
                   }`}
                 >
-                  <Ionicons
-                    name={tab.icon as any}
-                    size={15}
-                    color={active ? '#fff' : 'rgba(255,255,255,0.35)'}
-                  />
+                  <TabIcon size={15} color={active ? '#fff' : 'rgba(255,255,255,0.35)'} />
                   <Text className={`text-[13px] font-bold ${active ? 'text-white' : 'text-white/40'}`}>
                     {tab.label}
                   </Text>
@@ -634,7 +662,7 @@ export default function SleepScreen() {
                   className={`w-[124px] h-[124px] rounded-full items-center justify-center gap-1 ${busy ? 'opacity-55' : ''}`}
                   style={{ backgroundColor: '#FF9800' }}
                 >
-                  <Ionicons name="sunny" size={36} color="#0a0720" />
+                  <Sun size={32} color="#0a0720" strokeWidth={2.5} />
                   <Text className="text-[13px] font-extrabold tracking-[2]" style={{ color: '#0a0720' }}>WAKE UP</Text>
                 </TouchableOpacity>
               </View>
@@ -648,7 +676,7 @@ export default function SleepScreen() {
                 activeOpacity={0.75}
                 className="flex-row items-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/[0.04]"
               >
-                <Ionicons name="alarm-outline" size={18} color="rgba(255,255,255,0.6)" />
+                <Bell size={18} color="rgba(255,255,255,0.6)" />
                 <Text className="text-[15px] font-bold text-white/70">Snooze 10 min</Text>
                 <Text className="text-[11px] text-white/30 ml-1">
                   ({3 - snoozeCount} left)
@@ -679,7 +707,7 @@ export default function SleepScreen() {
                   activeOpacity={0.7}
                   className="flex-row items-center gap-1.5 mt-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/10"
                 >
-                  <Ionicons name="sync-outline" size={12} color="rgba(255,255,255,0.4)" />
+                  <RefreshCw size={12} color="rgba(255,255,255,0.4)" />
                   <Text className="text-[11px] text-white/40 font-medium">Reset to schedule</Text>
                 </TouchableOpacity>
               )}
@@ -704,32 +732,33 @@ export default function SleepScreen() {
                 }}
               >
                 <View className="w-9 h-9 items-center justify-center">
-                  <Ionicons name="moon" size={22} color="#fff" />
+                  <MoonStar size={22} color="#fff" />
                 </View>
                 <View className="items-start">
-                  <Text className="text-[15px] font-extrabold text-white tracking-[2]">{t.start_sleep}</Text>
+                  <Text className="text-[15px] font-extrabold text-white tracking-[2]">START SLEEP</Text>
                   <Text className="text-[9px] font-bold text-white/50 uppercase tracking-[1.5]">
-                    {t.wake_at} {formatTimeAmPm(sliderWakeTime)}
+                    Wake at {formatTimeAmPm(sliderWakeTime)}
                   </Text>
                 </View>
-                <Ionicons name="arrow-forward" size={18} color="rgba(255,255,255,0.6)" />
+                <ChevronRight size={18} color="rgba(255,255,255,0.6)" />
               </TouchableOpacity>
             </GlassCard>
 
             {/* Quick duration presets */}
             <View className="gap-3">
               <View className="flex-row items-center gap-2 px-1">
-                <Ionicons name="timer-outline" size={14} color="rgba(255,255,255,0.4)" />
-                <Text className="text-[11px] font-bold text-white/40 uppercase tracking-[1.5]">{t.duration}</Text>
+                <Clock size={14} color="rgba(255,255,255,0.4)" />
+                <Text className="text-[11px] font-bold text-white/40 uppercase tracking-[1.5]">Duration</Text>
                 <View className="flex-1 h-px bg-white/[0.06]" />
               </View>
               <View className="flex-row gap-2.5 justify-center">
                 {[
-                  { id: 'night-7', label: '7h', icon: 'moon-outline' as const, sub: t.min_sleep },
-                  { id: 'night-7.5', label: '7.5h', icon: 'time-outline' as const, sub: t.sweet_sleep },
-                  { id: 'night-8', label: '8h', icon: 'star-outline' as const, sub: t.optimal_sleep },
-                  { id: 'night-9', label: '9h', icon: 'bed-outline' as const, sub: t.extra_sleep },
+                  { id: 'night-7', label: '7h', icon: Moon, sub: 'Min' },
+                  { id: 'night-7.5', label: '7.5h', icon: Star, sub: 'Sweet' },
+                  { id: 'night-8', label: '8h', icon: Sparkles, sub: 'Optimal' },
+                  { id: 'night-9', label: '9h', icon: Bed, sub: 'Extra' },
                 ].map(p => {
+                  const PresetIcon = p.icon;
                   const preset = getPresetById(p.id) as SleepPreset;
                   const active = selectedPreset.id === p.id;
                   return (
@@ -746,24 +775,26 @@ export default function SleepScreen() {
                         setSliderWakeTime(addMinutesToTime(nowStr, mins));
                       }}
                       activeOpacity={0.75}
-                      className={`flex-1 items-center py-3 rounded-2xl border ${
+                      className={`flex-1 items-center py-3.5 rounded-2xl border ${
                         active
-                          ? 'bg-app-purple/[0.15] border-app-purple/60'
+                          ? 'bg-[#7B61FF]/15 border-[#7B61FF]/60'
                           : 'bg-white/[0.03] border-white/10'
                       }`}
                     >
-                      <Ionicons name={p.icon} size={20} color={active ? '#9d8aff' : 'rgba(255,255,255,0.4)'} style={{ marginBottom: 4 }} />
-                      <Text className={`text-[13px] font-extrabold ${active ? 'text-white' : 'text-white/60'}`}>
+                      <PresetIcon size={18} color={active ? '#9d8aff' : 'rgba(255,255,255,0.4)'} />
+                      <Text className={`text-[13px] font-extrabold mt-1 ${active ? 'text-white' : 'text-white/60'}`}>
                         {p.label}
                       </Text>
                       <Text className={`text-[9px] font-bold uppercase tracking-[1] mt-0.5 ${
-                        active ? 'text-app-purple-light' : 'text-white/30'
+                        active ? 'text-[#9d8aff]' : 'text-white/30'
                       }`}>
                         {p.sub}
                       </Text>
-                      {/* Active indicator */}
+                      {/* Active indicator pill */}
                       {active && (
-                        <View style={{ position: 'absolute', alignSelf: 'center', top: -3, width: 28, height: 3, backgroundColor: '#7B61FF', borderRadius: 2 }} />
+                        <View style={{ position: 'absolute', top: -1, alignSelf: 'center', paddingHorizontal: 8, paddingVertical: 2, backgroundColor: '#7B61FF', borderRadius: 10 }}>
+                          <Text className="text-[8px] font-bold text-white tracking-[0.5]">SELECTED</Text>
+                        </View>
                       )}
                     </TouchableOpacity>
                   );
@@ -777,11 +808,11 @@ export default function SleepScreen() {
                 <View className="flex-1 gap-1">
                   <View className="flex-row items-center gap-2">
                     <View className="w-7 h-7 rounded-full bg-app-purple/20 items-center justify-center">
-                      <Ionicons name="alarm-outline" size={14} color="#9d8aff" />
+                      <Bell size={14} color="#9d8aff" />
                     </View>
                     <View className="flex-1">
                       <View className="flex-row items-center gap-2">
-                        <Text className="text-[13px] font-bold text-white">{t.smart_stage_alarm}</Text>
+                        <Text className="text-[13px] font-bold text-white">Smart Stage Alarm</Text>
                         {smartAlarmEnabled && (
                           <View className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30">
                             <Text className="text-[9px] font-bold text-emerald-400 uppercase tracking-[0.5]">On</Text>
@@ -789,13 +820,34 @@ export default function SleepScreen() {
                         )}
                       </View>
                       <Text className="text-[10px] text-white/50 leading-[14px] mt-0.5">
-                        {t.wakes_gently}
+                        Wakes you gently during light sleep
                       </Text>
                     </View>
                   </View>
                 </View>
-                <ToggleSwitch value={smartAlarmEnabled} onToggle={() => setSmartAlarmEnabled(!smartAlarmEnabled)} />
+                <View className="flex-row items-center gap-1.5">
+                  <TouchableOpacity
+                    onPress={() => router.push(ROUTES.appAlarmSettings)}
+                    activeOpacity={0.7}
+                    className="w-8 h-8 rounded-full items-center justify-center bg-white/[0.04] border border-white/10"
+                  >
+                    <Settings size={13} color="rgba(255,255,255,0.35)" />
+                  </TouchableOpacity>
+                  <ToggleSwitch value={smartAlarmEnabled} onToggle={() => setSmartAlarmEnabled(!smartAlarmEnabled)} />
+                </View>
               </View>
+              {/* Configure link */}
+              <TouchableOpacity
+                onPress={() => router.push(ROUTES.appAlarmSettings)}
+                activeOpacity={0.7}
+                className="flex-row items-center justify-between mt-2.5 pt-2.5 border-t border-white/[0.06]"
+              >
+                <View className="flex-row items-center gap-1.5">
+                  <Settings size={11} color="rgba(255,255,255,0.25)" />
+                  <Text className="text-[11px] text-white/35 font-medium">Ringtone, vibration & more</Text>
+                </View>
+                <ChevronRight size={13} color="rgba(255,255,255,0.2)" />
+              </TouchableOpacity>
             </GlassCard>
 
             {/* AI recommendation */}
@@ -804,8 +856,8 @@ export default function SleepScreen() {
               <View className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-app-purple/10" />
               <View className="relative z-10">
                 <View className="flex-row items-center gap-1.5 mb-1.5">
-                  <Ionicons name="sparkles" size={14} color="#9d8aff" />
-                  <Text className="text-[11px] font-bold text-app-purple-light tracking-[0.5] uppercase">{t.ai_insight}</Text>
+                  <Sparkles size={14} color="#9d8aff" />
+                  <Text className="text-[11px] font-bold text-[#9d8aff] tracking-[0.5] uppercase">Tip</Text>
                 </View>
                 <Text className="text-[14px] text-white/80 leading-[20px]">{sleepRecommendation()}</Text>
               </View>

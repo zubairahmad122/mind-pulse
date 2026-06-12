@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { X, Clock, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -49,7 +49,7 @@ function ModeCard({ mode, index, onPress }: { mode: BreathMode; index: number; o
       >
         {/* Left: icon + intensity */}
         <View style={[styles.iconBox, { backgroundColor: mode.color + '18', borderColor: mode.color + '35' }]}>
-          <Ionicons name={mode.icon} size={26} color={mode.color} />
+          {(() => { const ModeIcon = mode.icon; return <ModeIcon size={26} color={mode.color} />; })()}
         </View>
 
         {/* Center: text */}
@@ -82,14 +82,14 @@ function ModeCard({ mode, index, onPress }: { mode: BreathMode; index: number; o
             </View>
             {/* Duration */}
             <View style={styles.durationChip}>
-              <Ionicons name="time-outline" size={10} color={colors.text.tertiary} />
+              <Clock size={10} color={colors.text.tertiary} />
               <Text style={styles.durationText}>{mode.durationMin} min</Text>
             </View>
           </View>
         </View>
 
         {/* Right: enter arrow */}
-        <Ionicons name="chevron-forward" size={16} color={mode.color + '80'} />
+        <ChevronRight size={16} color={mode.color + '80'} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -106,7 +106,7 @@ export default function BreatheSelectScreen() {
           onPress={() => router.back()}
           style={styles.closeBtn}
         >
-          <Ionicons name="close" size={18} color={colors.text.secondary} />
+          <X size={18} color={colors.text.secondary} />
         </TouchableOpacity>
         <View style={styles.headerCenter} />
         <View style={{ width: 36 }} />

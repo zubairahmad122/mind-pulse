@@ -22,15 +22,6 @@ export function calculateStreak(sessions: SleepSession[]): number {
   return streak;
 }
 
-export function calculateSleepScore(sessions: SleepSession[]): number {
-  const streak = calculateStreak(sessions);
-  const qualityValues = sessions.map(s => s.quality).filter(Boolean);
-  const avgQuality = qualityValues.length > 0
-    ? qualityValues.reduce((a, b) => a + b, 0) / qualityValues.length
-    : 3;
-  return Math.min(100, Math.round(30 + streak * 6 + avgQuality * 8 + sessions.length * 1.5));
-}
-
 export function avgDuration(sessions: SleepSession[]): number {
   if (sessions.length === 0) return 0;
   return Math.round(sessions.reduce((sum, s) => sum + s.durationMinutes, 0) / sessions.length);

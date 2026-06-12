@@ -1,35 +1,36 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Activity, BarChart3, Eye, Flame, Moon, Share2, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScoreTrendChart } from '@/components/report/ScoreTrendChart';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { COLORS } from '@/constants';
-import type { IoniconName } from '@/constants';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { useAuth } from '@/context/AuthContext';
 import { useSleep } from '@/context/SleepContext';
-import { useEyeStressScore } from '@/hooks/useEyeStressScore';
+import { useEyeScore } from '@/hooks/useEyeScore';
 import { useMindScore } from '@/hooks/useMindScore';
+import { useSleepScore } from '@/hooks/useSleepScore';
+import { ScoreBreakdownCard } from '@/components/ui/ScoreBreakdownCard';
 import { getLastNDayScores } from '@/services/dailyScorePersistence';
-import { calculateSleepScore, calculateStreak } from '@/utils/sleepUtils';
+import { calculateStreak } from '@/utils/sleepUtils';
 import {
   calculateMindPulseScore,
-  getScoreStatus,
-  getWorstArea,
-} from '@/utils/scoreCalculator';
+  getFocusArea,
+  pulseScoreTheme,
+} from '@/utils/scoring';
 
-const WORST_AREA_ICON: Record<string, IoniconName> = {
-  Sleep: 'moon-outline',
-  Eyes: 'eye-outline',
-  Mind: 'pulse-outline',
+const FOCUS_AREA_ICON: Record<string, LucideIcon> = {
+  Sleep: Moon,
+  Eyes: Eye,
+  Mind: Activity,
 };
 
-function StatRow({ icon, label, value }: { icon: IoniconName; label: string; value: string }) {
+function StatRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <View style={styles.statRow}>
-      <Ionicons name={icon} size={16} color={colors.text.secondary} />
+      <Icon size={16} color={colors.text.secondary} />
       <Text style={styles.statLabel}>{label}</Text>
       <Text style={styles.statValue}>{value}</Text>
     </View>
@@ -37,17 +38,17 @@ function StatRow({ icon, label, value }: { icon: IoniconName; label: string; val
 }
 
 function BreakdownItem({
-  icon,
+  icon: Icon,
   label,
   value,
 }: {
-  icon: IoniconName;
+  icon: LucideIcon;
   label: string;
   value: number;
 }) {
   return (
     <View style={styles.breakdownItem}>
-      <Ionicons name={icon} size={24} color={colors.text.secondary} />
+      <Icon size={24} color={colors.text.secondary} />
       <Text style={styles.breakdownLabel}>{label}</Text>
       <Text style={styles.breakdownValue}>{value}</Text>
     </View>
@@ -64,18 +65,19 @@ export default function ReportScreen() {
     void getLastNDayScores(user.uid, 7).then(setWeekData);
   }, [user?.uid]);
   const { sessions } = useSleep();
-  const { score: eyesScore, loading: eyesLoading } = useEyeStressScore(user?.uid ?? undefined);
-  const { score: mindScore, loading: mindLoading } = useMindScore(user?.uid ?? undefined);
+  const eyeResult = useEyeScore(user?.uid ?? undefined);
+  const mindResult = useMindScore(user?.uid ?? undefined);
+  const sleepResult = useSleepScore(user?.uid ?? undefined, user?.isAnonymous ?? true);
 
   const streak = calculateStreak(sessions);
-  const sleepScore = calculateSleepScore(sessions);
-  const anyLoading = eyesLoading || mindLoading;
-  const eyes = eyesLoading ? 0 : eyesScore;
-  const mind = mindLoading ? 0 : mindScore;
+  const anyLoading = eyeResult.loading || mindResult.loading || sleepResult.loading;
+  const eyes = eyeResult.loading ? 0 : eyeResult.score;
+  const sleepScore = sleepResult.loading ? 0 : sleepResult.score;
+  const mind = mindResult.loading ? 0 : mindResult.score;
 
-  const mindPulseScore = anyLoading ? 0 : calculateMindPulseScore({ eyesScore: eyes, sleepScore, mindScore: mind });
-  const status = getScoreStatus(mindPulseScore);
-  const worstArea = getWorstArea(eyes, sleepScore, mind);
+  const mindPulseScore = anyLoading ? 0 : calculateMindPulseScore({ eyeScore: eyes, sleepScore, mindScore: mind });
+  const theme = pulseScoreTheme(mindPulseScore);
+  const focusArea = getFocusArea(eyes, sleepScore, mind);
 
   const today = new Date().toLocaleDateString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric',
@@ -83,8 +85,8 @@ export default function ReportScreen() {
 
   const handleShare = async () => {
     const caption =
-      `My MindPulse Score today: ${mindPulseScore}/100 ${status.emoji}. ` +
-      `${worstArea} is destroying me. Track yours → mindpulse.app`;
+      `My MindPulse Score today: ${mindPulseScore}/100 ${theme.emoji}. ` +
+      `Focusing on ${focusArea} today. Track yours → mindpulse.app`;
     try {
       await Share.share({ message: caption });
     } catch {
@@ -99,10 +101,10 @@ export default function ReportScreen() {
 
       {/* Stats list */}
       <View style={styles.statsList}>
-        <StatRow icon="moon-outline" label="Sleep sessions logged" value={String(sessions.length)} />
-        <StatRow icon="eye-outline" label="Eye stress score" value={`${eyes}/100`} />
-        <StatRow icon="flame-outline" label="Day streak" value={`${streak} days`} />
-        <StatRow icon="stats-chart-outline" label="Sleep score" value={`${sleepScore}/100`} />
+        <StatRow icon={Moon} label="Sleep sessions logged" value={String(sessions.length)} />
+        <StatRow icon={Eye} label="Eye score" value={`${eyes}/100`} />
+        <StatRow icon={Flame} label="Day streak" value={`${streak} days`} />
+        <StatRow icon={BarChart3} label="Sleep score" value={`${sleepScore}/100`} />
       </View>
 
       {/* 7-day trend */}
@@ -111,11 +113,11 @@ export default function ReportScreen() {
       {/* Big score display */}
       <View style={styles.bigScore}>
         <Text style={styles.bigScoreLabel}>YOUR MINDPULSE SCORE</Text>
-        <Text style={[styles.bigScoreNum, { color: anyLoading ? colors.text.tertiary : status.color }]}>
+        <Text style={[styles.bigScoreNum, { color: anyLoading ? colors.text.tertiary : theme.color }]}>
           {anyLoading ? '–' : mindPulseScore}
         </Text>
-        <Text style={[styles.bigScoreStatus, { color: anyLoading ? colors.text.tertiary : status.color }]}>
-          {anyLoading ? 'Calculating…' : `${status.emoji}  ${status.label}`}
+        <Text style={[styles.bigScoreStatus, { color: anyLoading ? colors.text.tertiary : theme.color }]}>
+          {anyLoading ? 'Calculating…' : `${theme.emoji}  ${theme.label}`}
         </Text>
       </View>
 
@@ -123,48 +125,56 @@ export default function ReportScreen() {
       <View style={styles.shareCard}>
         <View style={styles.shareCardHeader}>
           <View style={styles.shareCardBrand}>
-            <Ionicons name="pulse-outline" size={16} color={COLORS.purpleLight} />
+            <Activity size={16} color={COLORS.purpleLight} />
             <Text style={styles.shareCardTitle}>MindPulse</Text>
           </View>
           <Text style={styles.shareCardDate}>{today}</Text>
         </View>
 
         <View style={styles.shareCardScore}>
-          <Text style={[styles.shareCardScoreNum, { color: status.color }]}>{mindPulseScore}</Text>
-          <Text style={[styles.shareCardScoreStatus, { color: status.color }]}>
-            {status.emoji}  {status.label}
+          <Text style={[styles.shareCardScoreNum, { color: theme.color }]}>{mindPulseScore}</Text>
+          <Text style={[styles.shareCardScoreStatus, { color: theme.color }]}>
+            {theme.emoji}  {theme.label}
           </Text>
         </View>
 
         <View style={styles.shareCardDivider} />
 
         <View style={styles.shareCardBreakdown}>
-          <BreakdownItem icon="eye-outline" label="Eyes" value={eyes} />
-          <BreakdownItem icon="moon-outline" label="Sleep" value={sleepScore} />
-          <BreakdownItem icon="pulse-outline" label="Mind" value={mind} />
+          <BreakdownItem icon={Eye} label="Eyes" value={eyes} />
+          <BreakdownItem icon={Moon} label="Sleep" value={sleepScore} />
+          <BreakdownItem icon={Activity} label="Mind" value={mind} />
         </View>
 
-        <Text style={styles.shareCardTagline}>Your screen is shaping your mind</Text>
+        <Text style={styles.shareCardTagline}>Every small step counts toward a healthier you</Text>
       </View>
 
-      {/* Worst area callout */}
+      {/* Focus area callout */}
       <View style={styles.worstCard}>
         <View style={styles.worstIconWrap}>
-          <Ionicons
-            name={WORST_AREA_ICON[worstArea]}
-            size={28}
-            color={status.color}
-          />
+          {(() => {
+            const FocusIcon = FOCUS_AREA_ICON[focusArea];
+            return <FocusIcon size={28} color={theme.color} />;
+          })()}
         </View>
         <View style={styles.worstInfo}>
-          <Text style={styles.worstTitle}>{worstArea} is your main issue</Text>
-          <Text style={styles.worstSub}>Focus your recovery on this today</Text>
+          <Text style={styles.worstTitle}>{focusArea} could use some love today</Text>
+          <Text style={styles.worstSub}>Focus your recovery on this for the biggest boost</Text>
         </View>
       </View>
+
+      {/* Why this score? — full transparency breakdowns */}
+      {!anyLoading && (
+        <>
+          <ScoreBreakdownCard title="WHY THIS EYE SCORE?" score={eyeResult.score} theme={eyeResult.theme} breakdown={eyeResult.breakdown} />
+          <ScoreBreakdownCard title="WHY THIS SLEEP SCORE?" score={sleepResult.score} theme={sleepResult.theme} breakdown={sleepResult.breakdown} />
+          <ScoreBreakdownCard title="WHY THIS MIND SCORE?" score={mindResult.score} theme={mindResult.theme} breakdown={mindResult.breakdown} />
+        </>
+      )}
 
       {/* Share button */}
       <TouchableOpacity style={styles.shareBtn} onPress={handleShare} activeOpacity={0.85}>
-        <Ionicons name="share-outline" size={18} color={COLORS.bg} />
+        <Share2 size={18} color={COLORS.bg} />
         <Text style={styles.shareBtnText}>Share My Score</Text>
       </TouchableOpacity>
     </ScreenShell>
