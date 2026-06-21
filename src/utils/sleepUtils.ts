@@ -10,8 +10,8 @@ export type SleepSession = {
 export function calculateStreak(sessions: SleepSession[]): number {
   if (sessions.length === 0) return 0;
   const dates = [...new Set(sessions.map(s => s.date))].sort().reverse();
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('sv');
+  const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('sv');
   if (dates[0] !== today && dates[0] !== yesterday) return 0;
   let streak = 1;
   for (let i = 1; i < dates.length; i++) {

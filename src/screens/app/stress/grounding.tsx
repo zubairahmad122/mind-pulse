@@ -15,7 +15,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useVoiceGuide } from '@/hooks/useVoiceGuide';
 
 // Sense icons per step (5 SEE, 4 TOUCH, 3 HEAR, 2 SMELL, 1 TASTE)
-const STEP_ICONS: Array<keyof typeof Ionicons.glyphMap> = [
+const STEP_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
   'eye-outline',
   'hand-right-outline',
   'volume-medium-outline',

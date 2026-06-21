@@ -193,7 +193,7 @@ export const PremiumRelaxControls = memo(function PremiumRelaxControls({
   accentColor,
 }: PremiumRelaxControlsProps) {
   const countdownScale = useSharedValue(1);
-  const beepPlayer = useAudioPlayer(require('@/assets/sounds/hit.wav'));
+  const beepPlayer = useAudioPlayer(require('@/assets/sounds/effects/hit.mp3'));
 
   useEffect(() => {
     if (isCountdown && countdownNum === 2) {

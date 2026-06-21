@@ -181,20 +181,20 @@ export default function RelaxCompletion() {
             <Text style={styles.sectionTitle}>Rate your session</Text>
 
             <View style={styles.starsRow}>
-              {[1, 2, 3, 4, 5].map(rating => (
-                <TouchableOpacity
-                  key={rating}
-                  onPress={() => handleRate(rating)}
-                  style={styles.starButton}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons
-                    name="star"
-                    size={36}
-                    color={rating <= 3 ? '#FFC107' : rating <= 4 ? '#FF9800' : '#4FC3F7'}
-                  />
-                </TouchableOpacity>
-              ))}
+              {[1, 2, 3, 4, 5].map(rating => {
+                const starColors = ['#fbbf24', '#fbbf24', '#f59e0b', '#f97316', '#ea580c'];
+                const color = starColors[rating - 1];
+                return (
+                  <TouchableOpacity
+                    key={rating}
+                    onPress={() => handleRate(rating)}
+                    style={[styles.starButton, { borderColor: color + '40', backgroundColor: color + '12' }]}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="star" size={32} color={color} />
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         )}
@@ -382,20 +382,19 @@ const styles = StyleSheet.create({
 
   starsRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 14,
     justifyContent: 'center',
+    paddingHorizontal: 4,
     marginTop: 20,
   },
 
   starButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
 
   // Next session

@@ -26,7 +26,7 @@ export default function AchievementsScreen() {
       let recoveryToday = 0;
       if (recoveryRaw) {
         try {
-          const arr: Array<{ completedAt: number }> = JSON.parse(recoveryRaw);
+          const arr: { completedAt: number }[] = JSON.parse(recoveryRaw);
           recoveryToday = arr.filter(s => new Date(s.completedAt).toISOString().slice(0, 10) === todayKey()).length;
         } catch { /* ignore */ }
       }

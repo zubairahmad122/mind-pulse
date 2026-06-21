@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { PanResponder, Text, View } from 'react-native';
+import { PanResponder, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Defs, G, LinearGradient, Stop, Circle as SvgCircle, Path, Text as SvgText, Line } from 'react-native-svg';
 import { COLORS } from '@/constants/colors';
+import { TimePickerModal } from '@/components/sleep/TimePickerModal';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -72,6 +73,9 @@ interface Props {
 export function CircularSleepSlider({ bedtime, wakeTime, onChange, size = 280 }: Props) {
   const containerRef = useRef<View>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
+
+  // Which time the custom picker is editing (null = closed).
+  const [editing, setEditing] = useState<'bedtime' | 'wake' | null>(null);
 
   const bedH = toHours(bedtime);
   const wakeH = toHours(wakeTime);
@@ -362,7 +366,7 @@ export function CircularSleepSlider({ bedtime, wakeTime, onChange, size = 280 }:
 
       {/* Time labels below */}
       <View className="flex-row items-center justify-between w-full mt-3 px-2">
-        <View className="items-center">
+        <TouchableOpacity className="items-center" activeOpacity={0.7} onPress={() => setEditing('bedtime')}>
           {/* Moon indicator */}
           <View className="w-7 h-7 rounded-full items-center justify-center" style={{ backgroundColor: 'rgba(157, 138, 255, 0.2)' }}>
             <Svg width={14} height={14} viewBox="0 0 24 24">
@@ -374,7 +378,7 @@ export function CircularSleepSlider({ bedtime, wakeTime, onChange, size = 280 }:
           </View>
           <Text className="text-[9px] font-bold tracking-[1.5] uppercase mt-1" style={{ color: 'rgba(255, 255, 255, 0.4)' }}>Bedtime</Text>
           <Text className="text-[16px] font-bold mt-0.5" style={{ color: '#9d8aff' }}>{formatTimeAmPm(bedH)}</Text>
-        </View>
+        </TouchableOpacity>
 
         <View className="items-center">
           {/* Clock indicator */}
@@ -391,7 +395,7 @@ export function CircularSleepSlider({ bedtime, wakeTime, onChange, size = 280 }:
           </Text>
         </View>
 
-        <View className="items-center">
+        <TouchableOpacity className="items-center" activeOpacity={0.7} onPress={() => setEditing('wake')}>
           {/* Sun indicator */}
           <View className="w-7 h-7 rounded-full items-center justify-center" style={{ backgroundColor: 'rgba(255, 152, 0, 0.2)' }}>
             <Svg width={14} height={14} viewBox="0 0 24 24">
@@ -408,13 +412,30 @@ export function CircularSleepSlider({ bedtime, wakeTime, onChange, size = 280 }:
           </View>
           <Text className="text-[9px] font-bold tracking-[1.5] uppercase mt-1" style={{ color: 'rgba(255, 255, 255, 0.4)' }}>Wake</Text>
           <Text className="text-[16px] font-bold mt-0.5" style={{ color: '#4FC3F7' }}>{formatTimeAmPm(wakeH)}</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Drag hint */}
       <Text className="text-[10px] text-white/30 mt-2 text-center">
-        Drag the 🌙 moon or ☀️ sun to set your sleep window
+        Drag the 🌙 moon or ☀️ sun — or tap a time to set it exactly
       </Text>
+
+      {/* Custom time picker — tap Bedtime / Wake to dial an exact time */}
+      <TimePickerModal
+        visible={editing !== null}
+        title={editing === 'wake' ? 'Set wake time' : 'Set bedtime'}
+        accent={editing === 'wake' ? gradientTo : gradientFrom}
+        initialTime={editing === 'wake' ? wakeTime : bedtime}
+        onCancel={() => setEditing(null)}
+        onConfirm={time => {
+          if (editing === 'wake') {
+            onChange(bedtime, time);
+          } else if (editing === 'bedtime') {
+            onChange(time, wakeTime);
+          }
+          setEditing(null);
+        }}
+      />
     </View>
   );
 }

@@ -1,5 +1,4 @@
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
-import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { ScreenShell } from '@/components/layout/ScreenShell';
@@ -7,7 +6,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { OutlineButton } from '@/components/ui/OutlineButton';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { ROUTES } from '@/constants';
+import { PaywallGate } from '@/components/paywall/PaywallGate';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
@@ -21,7 +20,6 @@ type Props = {
 };
 
 export default function AudioPlayerContent({ track }: Props) {
-  const router = useRouter();
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sleepTimerOn, setSleepTimerOn] = useState(false);
 
@@ -73,43 +71,45 @@ export default function AudioPlayerContent({ track }: Props) {
     Alert.alert('Sleep timer', 'Audio will stop in 15 minutes.');
   };
 
+  const playerContent = (
+    <View style={styles.center}>
+      <GlassCard style={styles.art}>
+        {isBuffering && !isPlaying ? (
+          <ActivityIndicator color={colors.accent.purple} size="large" />
+        ) : (
+          <Text style={styles.artEmoji}>🎧</Text>
+        )}
+      </GlassCard>
+      <Text style={styles.trackTitle}>{track.title}</Text>
+      <Text style={styles.trackSub}>{track.description}</Text>
+      <Text style={styles.time}>
+        {formatDurationSeconds(elapsed)} / {formatDurationSeconds(total)}
+      </Text>
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${progress}%` }]} />
+      </View>
+      <View style={styles.controls}>
+        <PrimaryButton
+          label={isPlaying ? 'Pause' : 'Play'}
+          onPress={togglePlay}
+          style={styles.playBtn}
+        />
+        <OutlineButton
+          label={sleepTimerOn ? 'Cancel sleep timer' : 'Sleep timer · 15 min'}
+          onPress={toggleSleepTimer}
+        />
+      </View>
+    </View>
+  );
+
   return (
     <ScreenShell scroll={false} safeBottom>
       <ScreenHeader title={track.title} showBack />
-      <View style={styles.center}>
-        <GlassCard style={styles.art}>
-          {isBuffering && !isPlaying ? (
-            <ActivityIndicator color={colors.accent.purple} size="large" />
-          ) : (
-            <Text style={styles.artEmoji}>🎧</Text>
-          )}
-        </GlassCard>
-        <Text style={styles.trackTitle}>{track.title}</Text>
-        <Text style={styles.trackSub}>{track.description}</Text>
-        <Text style={styles.time}>
-          {formatDurationSeconds(elapsed)} / {formatDurationSeconds(total)}
-        </Text>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
-        </View>
-        <View style={styles.controls}>
-          <PrimaryButton
-            label={isPlaying ? 'Pause' : 'Play'}
-            onPress={togglePlay}
-            style={styles.playBtn}
-          />
-          <OutlineButton
-            label={sleepTimerOn ? 'Cancel sleep timer' : 'Sleep timer · 15 min'}
-            onPress={toggleSleepTimer}
-          />
-          {track.isPremium ? (
-            <OutlineButton
-              label="Unlock full library"
-              onPress={() => router.push(ROUTES.appPremium as never)}
-            />
-          ) : null}
-        </View>
-      </View>
+      {track.featureId ? (
+        <PaywallGate featureId={track.featureId}>{playerContent}</PaywallGate>
+      ) : (
+        playerContent
+      )}
     </ScreenShell>
   );
 }

@@ -1,0 +1,101 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="expo.modules.mindpulsealarm" >
+4
+5    <uses-sdk android:minSdkVersion="24" />
+6
+7    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+7-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:3:3-77
+7-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:3:20-74
+8    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+8-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:4:3-72
+8-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:4:20-69
+9    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+9-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:5:3-75
+9-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:5:20-72
+10    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+10-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:6:3-79
+10-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:6:20-76
+11    <uses-permission android:name="android.permission.WAKE_LOCK" />
+11-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:7:3-66
+11-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:7:20-63
+12    <uses-permission android:name="android.permission.VIBRATE" />
+12-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:8:3-64
+12-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:8:20-61
+13    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+13-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:9:3-75
+13-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:9:20-72
+14    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+14-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:10:3-90
+14-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:10:20-87
+15    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+15-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:11:3-79
+15-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:11:20-76
+16    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+16-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:12:3-93
+16-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:12:20-90
+17
+18    <application>
+18-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:14:3-46:17
+19        <receiver
+19-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:15:5-18:34
+20            android:name="expo.modules.mindpulsealarm.AlarmReceiver"
+20-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:16:7-36
+21            android:enabled="true"
+21-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:17:7-29
+22            android:exported="false" />
+22-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:18:7-31
+23        <receiver
+23-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:20:5-29:16
+24            android:name="expo.modules.mindpulsealarm.BootReceiver"
+24-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:21:7-35
+25            android:enabled="true"
+25-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:22:7-29
+26            android:exported="true" >
+26-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:23:7-30
+27            <intent-filter>
+27-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:24:7-28:23
+28                <action android:name="android.intent.action.BOOT_COMPLETED" />
+28-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:25:9-71
+28-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:25:17-68
+29                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+29-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:26:9-78
+29-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:26:17-75
+30                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+30-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:27:9-76
+30-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:27:17-73
+31            </intent-filter>
+32        </receiver>
+33
+34        <service
+34-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:31:5-35:55
+35            android:name="expo.modules.mindpulsealarm.AlarmService"
+35-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:32:7-35
+36            android:enabled="true"
+36-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:33:7-29
+37            android:exported="false"
+37-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:34:7-31
+38            android:foregroundServiceType="mediaPlayback" />
+38-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:35:7-52
+39
+40        <activity
+40-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:37:5-45:72
+41            android:name="expo.modules.mindpulsealarm.AlarmActivity"
+41-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:38:7-36
+42            android:excludeFromRecents="true"
+42-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:40:7-40
+43            android:exported="false"
+43-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:39:7-31
+44            android:launchMode="singleTask"
+44-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:41:7-38
+45            android:showOnLockScreen="true"
+45-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:42:7-38
+46            android:taskAffinity=""
+46-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:43:7-30
+47            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+47-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:45:7-69
+48            android:turnScreenOn="true" />
+48-->/home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:44:7-34
+49    </application>
+50
+51</manifest>

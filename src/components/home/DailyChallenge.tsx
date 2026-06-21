@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircle, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -67,11 +67,11 @@ export function DailyChallenge({ worstArea }: Props) {
             <Text style={styles.sub}>{challenge.subtitle}</Text>
           </View>
           <Animated.View style={checkStyle}>
-            <Ionicons
-              name={done ? 'checkmark-circle' : 'chevron-forward'}
-              size={22}
-              color={done ? challenge.color : colors.text.tertiary}
-            />
+            {done ? (
+              <CheckCircle size={22} color={challenge.color} strokeWidth={2} />
+            ) : (
+              <ChevronRight size={22} color={colors.text.tertiary} strokeWidth={2} />
+            )}
           </Animated.View>
         </GlassCard>
       </TouchableOpacity>

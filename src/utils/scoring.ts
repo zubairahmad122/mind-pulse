@@ -140,10 +140,10 @@ export function mindScoreTheme(score: number): ScoreTheme {
 }
 
 export function pulseScoreTheme(score: number): ScoreTheme {
-  if (score < 25) return { label: 'Getting Started', emoji: '🌱', color: '#f97316' };
-  if (score < 50) return { label: 'Building Momentum', emoji: '🌊', color: '#f59e0b' };
-  if (score < 75) return { label: 'On Track', emoji: '🙂', color: '#8BC34A' };
-  return { label: 'Thriving', emoji: '✨', color: '#6ee7b7' };
+  if (score < 25) return { label: 'Getting Started',   emoji: '🌱', color: '#f87171' };
+  if (score < 50) return { label: 'Building Momentum', emoji: '🌊', color: '#a78bfa' };
+  if (score < 75) return { label: 'On Track',          emoji: '🙂', color: '#60a5fa' };
+  return                 { label: 'Thriving',           emoji: '✨', color: '#34d399' };
 }
 
 // ──────────────────────────────────────────────
@@ -356,7 +356,7 @@ export function calculateMindScore({
   return { score, breakdown: finalBreakdown, theme: mindScoreTheme(score) };
 }
 
-export { consecutiveDayStreak };
+export { circularMinuteDiff, consecutiveDayStreak };
 
 // ──────────────────────────────────────────────
 // Composite MindPulse Score

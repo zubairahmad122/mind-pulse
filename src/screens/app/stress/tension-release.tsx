@@ -23,7 +23,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useVoiceGuide } from '@/hooks/useVoiceGuide';
 
 // Zone icons (no emoji)
-const ZONE_ICONS: Array<keyof typeof Ionicons.glyphMap> = [
+const ZONE_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
   'hand-left-outline',
   'body-outline',
   'happy-outline',

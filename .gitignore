@@ -37,7 +37,6 @@ yarn-error.*
 
 # Firebase credentials (never commit these)
 firebase-cread.json
-google-services.json
 firebase-debug.log
 
 # typescript
@@ -48,3 +47,4 @@ example
 # generated native folders
 /ios
 /android
+google-services.json

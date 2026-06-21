@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AuthScreenLayout, GoogleSignInButton } from '@/components/auth';
-import { AuthBackButton, Button } from '@/components/ui';
+import { AuthHeroLayout, GoogleSignInButton } from '@/components/auth';
+import { Button } from '@/components/ui';
 import { COLORS, ROUTES } from '@/constants';
 import { GoogleSignInCancelledError, useAuth } from '@/context/AuthContext';
 
@@ -37,17 +37,11 @@ export default function SignUpScreen() {
   };
 
   return (
-    <AuthScreenLayout>
-      <AuthBackButton />
-
+    <AuthHeroLayout>
       <View style={styles.center}>
-        <View style={styles.logoOrb}>
-          <Text style={styles.logoEmoji}>🌙</Text>
-        </View>
-
         <Text style={styles.title}>Save Your Progress</Text>
         <Text style={styles.subtitle}>
-          Create an account to sync your sleep{'\n'}data across all your devices.
+          Create an account to sync your wellness{'\n'}data across all your devices.
         </Text>
 
         <View style={styles.actions}>
@@ -80,31 +74,18 @@ export default function SignUpScreen() {
           Already have an account? <Text style={styles.footerLink}>Sign In</Text>
         </Text>
       </TouchableOpacity>
-    </AuthScreenLayout>
+    </AuthHeroLayout>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', gap: 12 },
-  logoOrb: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: COLORS.card,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderHi,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: 8,
-  },
-  logoEmoji: { fontSize: 40 },
-  title: { fontSize: 30, fontWeight: '700', color: COLORS.text, textAlign: 'center' },
+  title: { fontSize: 26, fontWeight: '800', color: COLORS.text, textAlign: 'center' },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: COLORS.textMuted,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 21,
     marginBottom: 8,
   },
   actions: { gap: 12 },

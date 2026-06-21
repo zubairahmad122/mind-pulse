@@ -1,22 +1,22 @@
 /** AuraSync design tokens — spec-aligned with legacy flat aliases */
 export const colors = {
   background: {
-    primary: '#0A0E1A',
+    primary: '#080D1A',
     secondary: '#0D1128',
     card: 'rgba(255, 255, 255, 0.05)',
   },
   accent: {
-    purple: '#7B61FF',
-    purpleLight: 'rgba(123, 97, 255, 0.15)',
-    purpleBorder: 'rgba(123, 97, 255, 0.3)',
-    purpleGlow: 'rgba(123, 97, 255, 0.2)',
-    blue: '#4FC3F7',
+    purple: '#1A8FFF',
+    purpleLight: 'rgba(26, 143, 255, 0.15)',
+    purpleBorder: 'rgba(26, 143, 255, 0.3)',
+    purpleGlow: 'rgba(26, 143, 255, 0.2)',
+    blue: '#00D4FF',
   },
   text: {
     primary: '#FFFFFF',
     secondary: 'rgba(255, 255, 255, 0.6)',
     tertiary: 'rgba(255, 255, 255, 0.3)',
-    purple: '#7B61FF',
+    purple: '#1A8FFF',
   },
   status: {
     success: '#4CAF50',
@@ -34,8 +34,8 @@ export const COLORS = {
   border: colors.accent.purpleBorder,
   borderHi: colors.accent.purple,
   purple: colors.accent.purple,
-  purpleLight: '#9d8aff',
-  purpleDim: 'rgba(123, 97, 255, 0.35)',
+  purpleLight: '#7EB8FF',
+  purpleDim: 'rgba(26, 143, 255, 0.35)',
   text: colors.text.primary,
   textMuted: colors.text.secondary,
   textDim: colors.text.tertiary,

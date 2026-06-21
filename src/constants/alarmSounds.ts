@@ -1,15 +1,30 @@
 import type { LucideIcon } from 'lucide-react-native';
-import { Bell, BellRing, Sunrise, Waves, Wind, Music, CloudMoon, Star } from 'lucide-react-native';
+import {
+  Music,
+  Music2,
+  Bell,
+  BellRing,
+  Sunrise,
+  Zap,
+  Siren,
+  AlertCircle,
+  Wind,
+  AlarmClock,
+  Radio,
+  CloudMoon,
+  Phone,
+  Waves,
+} from 'lucide-react-native';
 
 export interface AlarmRingtoneOption {
   id: string;
   label: string;
   subtitle: string;
   icon: LucideIcon;
-  /** Filename or resource identifier */
+  /** Local MP3 filename (bundled in assets/sounds/alarms/) */
   soundFile: string;
-  /** Demo URL for ringtone preview */
-  previewUrl: string;
+  /** Fallback remote URL (used when local asset is unavailable) */
+  remoteUrl: string;
   color: string;
 }
 
@@ -21,78 +36,156 @@ export interface VibrationPatternOption {
   pattern: number[];
 }
 
+/**
+ * Map ringtone IDs to local bundled audio assets via Expo's require().
+ * Returns the module ID that `createAudioPlayer` can consume directly.
+ */
+export function getRingtoneRequire(ringtoneId: string): number {
+  const map: Record<string, number> = {
+    'marimba-pulse': require('@/assets/sounds/alarms/marimba-pulse.mp3'),
+    'gentle-chime': require('@/assets/sounds/alarms/gentle-chime.mp3'),
+    'peaceful-morning': require('@/assets/sounds/alarms/peaceful-morning.mp3'),
+    'energy-pulse': require('@/assets/sounds/alarms/energy-pulse.mp3'),
+    'classic-siren': require('@/assets/sounds/alarms/classic-siren.mp3'),
+    'sharp-alert': require('@/assets/sounds/alarms/sharp-alert.mp3'),
+    'wind-chime': require('@/assets/sounds/alarms/wind-chime.mp3'),
+    'urgent-alarm': require('@/assets/sounds/alarms/urgent-alarm.mp3'),
+    'digital-pulse': require('@/assets/sounds/alarms/digital-pulse.mp3'),
+    'night-bells': require('@/assets/sounds/alarms/night-bells.mp3'),
+    'morning-alarm': require('@/assets/sounds/alarms/morning-alarm.mp3'),
+    'classic-ring': require('@/assets/sounds/alarms/classic-ring.mp3'),
+    'marimba-melody': require('@/assets/sounds/alarms/marimba-melody.mp3'),
+    'soft-ringtone': require('@/assets/sounds/alarms/soft-ringtone.mp3'),
+  };
+  return map[ringtoneId] ?? map['morning-alarm'];
+}
+
 export const ALARM_RINGTONES: AlarmRingtoneOption[] = [
   {
-    id: 'gentle-awake',
-    label: 'Gentle Awake',
-    subtitle: 'Soft rising tones',
-    icon: Bell,
-    soundFile: 'alarm_gentle.wav',
-    previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    color: '#4FC3F7',
-  },
-  {
-    id: 'sunrise-chime',
-    label: 'Sunrise Chime',
-    subtitle: 'Peaceful bells',
-    icon: Sunrise,
-    soundFile: 'alarm_sunrise.wav',
-    previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+    id: 'morning-alarm',
+    label: 'Morning Alarm',
+    subtitle: 'Classic wake-up tone',
+    icon: AlarmClock,
+    soundFile: 'morning-alarm.mp3',
+    remoteUrl: '',
     color: '#FF9800',
   },
   {
-    id: 'ocean-drift',
-    label: 'Ocean Drift',
-    subtitle: 'Wave ambience',
-    icon: Waves,
-    soundFile: 'alarm_ocean.wav',
-    previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-    color: '#26C6DA',
+    id: 'gentle-chime',
+    label: 'Gentle Chime',
+    subtitle: 'Soft car-chime tone',
+    icon: Bell,
+    soundFile: 'gentle-chime.mp3',
+    remoteUrl: '',
+    color: '#4FC3F7',
   },
   {
-    id: 'forest-birds',
-    label: 'Forest Birds',
-    subtitle: 'Nature melody',
+    id: 'peaceful-morning',
+    label: 'Peaceful Morning',
+    subtitle: 'Calm, gentle melody',
+    icon: Sunrise,
+    soundFile: 'peaceful-morning.mp3',
+    remoteUrl: '',
+    color: '#FFB74D',
+  },
+  {
+    id: 'wind-chime',
+    label: 'Wind Chime',
+    subtitle: 'Light, airy bells',
     icon: Wind,
-    soundFile: 'alarm_forest.wav',
-    previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+    soundFile: 'wind-chime.mp3',
+    remoteUrl: '',
     color: '#66BB6A',
   },
   {
-    id: 'deep-tone',
-    label: 'Deep Tone',
-    subtitle: 'Firm classic alarm',
-    icon: BellRing,
-    soundFile: 'alarm.wav',
-    previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-    color: '#FF5252',
-  },
-  {
-    id: 'lullaby-soft',
-    label: 'Lullaby Soft',
-    subtitle: 'Melodic lullaby',
-    icon: Music,
-    soundFile: 'alarm_lullaby.wav',
-    previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-    color: '#CE93D8',
-  },
-  {
-    id: 'night-stars',
-    label: 'Night Stars',
-    subtitle: 'Dreamy piano',
-    icon: Star,
-    soundFile: 'alarm_stars.wav',
-    previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
+    id: 'night-bells',
+    label: 'Night Bells',
+    subtitle: 'Dreamy bell loop',
+    icon: CloudMoon,
+    soundFile: 'night-bells.mp3',
+    remoteUrl: '',
     color: '#7B61FF',
   },
   {
-    id: 'zen-gong',
-    label: 'Zen Gong',
-    subtitle: 'Deep resonance',
-    icon: CloudMoon,
-    soundFile: 'alarm_zen.wav',
-    previewUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+    id: 'soft-ringtone',
+    label: 'Soft Ringtone',
+    subtitle: 'Smooth, mellow tone',
+    icon: Waves,
+    soundFile: 'soft-ringtone.mp3',
+    remoteUrl: '',
+    color: '#26C6DA',
+  },
+  {
+    id: 'classic-ring',
+    label: 'Classic Ring',
+    subtitle: 'Traditional phone ring',
+    icon: Phone,
+    soundFile: 'classic-ring.mp3',
+    remoteUrl: '',
     color: '#80CBC4',
+  },
+  {
+    id: 'marimba-melody',
+    label: 'Marimba Melody',
+    subtitle: 'Warm percussive tune',
+    icon: Music2,
+    soundFile: 'marimba-melody.mp3',
+    remoteUrl: '',
+    color: '#CE93D8',
+  },
+  {
+    id: 'marimba-pulse',
+    label: 'Marimba Pulse',
+    subtitle: 'Short rhythmic loop',
+    icon: Music,
+    soundFile: 'marimba-pulse.mp3',
+    remoteUrl: '',
+    color: '#BA68C8',
+  },
+  {
+    id: 'digital-pulse',
+    label: 'Digital Pulse',
+    subtitle: 'Electronic beep loop',
+    icon: Radio,
+    soundFile: 'digital-pulse.mp3',
+    remoteUrl: '',
+    color: '#42A5F5',
+  },
+  {
+    id: 'energy-pulse',
+    label: 'Energy Pulse',
+    subtitle: 'Bright sci-fi burst',
+    icon: Zap,
+    soundFile: 'energy-pulse.mp3',
+    remoteUrl: '',
+    color: '#FFD54F',
+  },
+  {
+    id: 'sharp-alert',
+    label: 'Sharp Alert',
+    subtitle: 'Short, attention-grabbing',
+    icon: AlertCircle,
+    soundFile: 'sharp-alert.mp3',
+    remoteUrl: '',
+    color: '#FF7043',
+  },
+  {
+    id: 'urgent-alarm',
+    label: 'Urgent Alarm',
+    subtitle: 'Loud emergency tone',
+    icon: BellRing,
+    soundFile: 'urgent-alarm.mp3',
+    remoteUrl: '',
+    color: '#EF5350',
+  },
+  {
+    id: 'classic-siren',
+    label: 'Classic Siren',
+    subtitle: 'Heavy-duty wake call',
+    icon: Siren,
+    soundFile: 'classic-siren.mp3',
+    remoteUrl: '',
+    color: '#FF5252',
   },
 ];
 
@@ -151,7 +244,7 @@ export const SMART_ALARM_WINDOWS = [
 ] as const;
 
 export const DEFAULT_ALARM_SETTINGS = {
-  ringtoneId: 'gentle-awake',
+  ringtoneId: 'morning-alarm',
   vibrationPatternId: 'standard',
   snoozeDuration: 10,
   smartAlarmWindow: 30,

@@ -1,0 +1,116 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:1:1-47:12
+INJECTED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:1:1-47:12
+	package
+		INJECTED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:1:11-69
+uses-permission#android.permission.SCHEDULE_EXACT_ALARM
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:3:3-77
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:3:20-74
+uses-permission#android.permission.USE_EXACT_ALARM
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:4:3-72
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:4:20-69
+uses-permission#android.permission.POST_NOTIFICATIONS
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:5:3-75
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:5:20-72
+uses-permission#android.permission.USE_FULL_SCREEN_INTENT
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:6:3-79
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:6:20-76
+uses-permission#android.permission.WAKE_LOCK
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:7:3-66
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:7:20-63
+uses-permission#android.permission.VIBRATE
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:8:3-64
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:8:20-61
+uses-permission#android.permission.FOREGROUND_SERVICE
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:9:3-75
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:9:20-72
+uses-permission#android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:10:3-90
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:10:20-87
+uses-permission#android.permission.RECEIVE_BOOT_COMPLETED
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:11:3-79
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:11:20-76
+uses-permission#android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:12:3-93
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:12:20-90
+application
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:14:3-46:17
+receiver#expo.modules.mindpulsealarm.AlarmReceiver
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:15:5-18:34
+	android:enabled
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:17:7-29
+	android:exported
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:18:7-31
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:16:7-36
+receiver#expo.modules.mindpulsealarm.BootReceiver
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:20:5-29:16
+	android:enabled
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:22:7-29
+	android:exported
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:23:7-30
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:21:7-35
+intent-filter#action:name:android.intent.action.BOOT_COMPLETED+action:name:android.intent.action.LOCKED_BOOT_COMPLETED+action:name:android.intent.action.MY_PACKAGE_REPLACED
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:24:7-28:23
+action#android.intent.action.BOOT_COMPLETED
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:25:9-71
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:25:17-68
+action#android.intent.action.LOCKED_BOOT_COMPLETED
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:26:9-78
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:26:17-75
+action#android.intent.action.MY_PACKAGE_REPLACED
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:27:9-76
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:27:17-73
+service#expo.modules.mindpulsealarm.AlarmService
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:31:5-35:55
+	android:enabled
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:33:7-29
+	android:exported
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:34:7-31
+	android:foregroundServiceType
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:35:7-52
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:32:7-35
+activity#expo.modules.mindpulsealarm.AlarmActivity
+ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:37:5-45:72
+	android:turnScreenOn
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:44:7-34
+	android:excludeFromRecents
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:40:7-40
+	android:launchMode
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:41:7-38
+	android:exported
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:39:7-31
+	android:showOnLockScreen
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:42:7-38
+	android:theme
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:45:7-69
+	android:taskAffinity
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:43:7-30
+	android:name
+		ADDED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml:38:7-36
+uses-sdk
+INJECTED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml
+INJECTED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /home/zubzen/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/AndroidManifest.xml

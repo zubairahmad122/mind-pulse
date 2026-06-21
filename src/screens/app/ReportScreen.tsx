@@ -1,9 +1,16 @@
-import { Activity, BarChart3, Eye, Flame, Moon, Share2, type LucideIcon } from 'lucide-react-native';
+import { Activity, BarChart3, Eye, Flame, Moon, Share2, Sparkles, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { ScoreTrendChart } from '@/components/report/ScoreTrendChart';
 import { ScreenShell } from '@/components/layout/ScreenShell';
-import { COLORS } from '@/constants';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
@@ -12,7 +19,10 @@ import { useSleep } from '@/context/SleepContext';
 import { useEyeScore } from '@/hooks/useEyeScore';
 import { useMindScore } from '@/hooks/useMindScore';
 import { useSleepScore } from '@/hooks/useSleepScore';
+import { useWeeklyReflection } from '@/hooks/useWeeklyReflection';
 import { ScoreBreakdownCard } from '@/components/ui/ScoreBreakdownCard';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
+import { PaywallGate } from '@/components/paywall/PaywallGate';
 import { getLastNDayScores } from '@/services/dailyScorePersistence';
 import { calculateStreak } from '@/utils/sleepUtils';
 import {
@@ -55,6 +65,67 @@ function BreakdownItem({
   );
 }
 
+/** Animated score display with pulsing glow + breathing scale, like the home page gauge. */
+function AnimatedBigScore({ score, statusColor, label, status, isLoading }: {
+  score: number;
+  statusColor: string;
+  label: string;
+  status: string;
+  isLoading: boolean;
+}) {
+  const glowPulse = useSharedValue(0.25);
+  const scalePulse = useSharedValue(1);
+
+  useEffect(() => {
+    if (isLoading) return;
+    glowPulse.value = withRepeat(
+      withTiming(0.55, { duration: 2800, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+    scalePulse.value = withRepeat(
+      withTiming(1.02, { duration: 2800, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+    return () => {
+      cancelAnimation(glowPulse);
+      cancelAnimation(scalePulse);
+    };
+  }, [isLoading]);
+
+  const glowAnim = useAnimatedStyle(() => ({ opacity: glowPulse.value }));
+  const scaleAnim = useAnimatedStyle(() => ({ transform: [{ scale: scalePulse.value }] }));
+
+  return (
+    <View style={styles.bigScore}>
+      <Text style={styles.bigScoreLabel}>{label}</Text>
+      {/* Relative container so the glow always centers on the score number */}
+      <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Pulsing glow behind score */}
+        {!isLoading && (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.bigScoreGlow,
+              { backgroundColor: statusColor },
+              glowAnim,
+            ]}
+          />
+        )}
+        <Animated.View style={!isLoading ? scaleAnim : undefined}>
+          <Text style={[styles.bigScoreNum, { color: isLoading ? colors.text.tertiary : statusColor }]}>
+            {isLoading ? '–' : score}
+          </Text>
+        </Animated.View>
+      </View>
+      <Text style={[styles.bigScoreStatus, { color: isLoading ? colors.text.tertiary : statusColor }]}>
+        {isLoading ? 'Calculating…' : status}
+      </Text>
+    </View>
+  );
+}
+
 export default function ReportScreen() {
   const { user } = useAuth();
   type DayEntry = { date: string; mindPulseScore: number } | null;
@@ -78,6 +149,11 @@ export default function ReportScreen() {
   const mindPulseScore = anyLoading ? 0 : calculateMindPulseScore({ eyeScore: eyes, sleepScore, mindScore: mind });
   const theme = pulseScoreTheme(mindPulseScore);
   const focusArea = getFocusArea(eyes, sleepScore, mind);
+  const { reflection: weeklyReflection, loading: reflectionLoading } = useWeeklyReflection({
+    eyeScore: eyes,
+    sleepScore,
+    mindScore: mind,
+  });
 
   const today = new Date().toLocaleDateString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric',
@@ -96,6 +172,7 @@ export default function ReportScreen() {
 
   return (
     <ScreenShell>
+      <ScreenTransition>
       <Text style={styles.header}>Today's Reality Report</Text>
       <Text style={styles.date}>{today}</Text>
 
@@ -108,24 +185,42 @@ export default function ReportScreen() {
       </View>
 
       {/* 7-day trend */}
-      {weekData.length > 0 && <ScoreTrendChart days={weekData} />}
+      {weekData.length > 0 && (
+        <PaywallGate featureId="report_extended_trends">
+          <ScoreTrendChart days={weekData} />
+        </PaywallGate>
+      )}
 
-      {/* Big score display */}
-      <View style={styles.bigScore}>
-        <Text style={styles.bigScoreLabel}>YOUR MINDPULSE SCORE</Text>
-        <Text style={[styles.bigScoreNum, { color: anyLoading ? colors.text.tertiary : theme.color }]}>
-          {anyLoading ? '–' : mindPulseScore}
-        </Text>
-        <Text style={[styles.bigScoreStatus, { color: anyLoading ? colors.text.tertiary : theme.color }]}>
-          {anyLoading ? 'Calculating…' : `${theme.emoji}  ${theme.label}`}
-        </Text>
-      </View>
+      {/* Weekly Reflection — Gemini-powered narrative summary */}
+      <PaywallGate featureId="report_weekly_summary">
+        <View style={styles.reflectionCard}>
+          <View style={styles.reflectionHeader}>
+            <Sparkles size={14} color={colors.accent.purple} />
+            <Text style={styles.reflectionTitle}>Weekly Reflection</Text>
+            {reflectionLoading && (
+              <ActivityIndicator size={10} color={colors.accent.purple} style={{ marginLeft: 'auto' }} />
+            )}
+          </View>
+          <Text style={styles.reflectionBody}>
+            {reflectionLoading ? 'Reflecting on your week…' : weeklyReflection}
+          </Text>
+        </View>
+      </PaywallGate>
+
+      {/* Big score display with animated glow */}
+      <AnimatedBigScore
+        score={mindPulseScore}
+        statusColor={theme.color}
+        label="YOUR MINDPULSE SCORE"
+        status={`${theme.emoji}  ${theme.label}`}
+        isLoading={anyLoading}
+      />
 
       {/* Screenshot-ready share card */}
       <View style={styles.shareCard}>
         <View style={styles.shareCardHeader}>
           <View style={styles.shareCardBrand}>
-            <Activity size={16} color={COLORS.purpleLight} />
+            <Activity size={16} color={'#9d8aff'} />
             <Text style={styles.shareCardTitle}>MindPulse</Text>
           </View>
           <Text style={styles.shareCardDate}>{today}</Text>
@@ -165,18 +260,19 @@ export default function ReportScreen() {
 
       {/* Why this score? — full transparency breakdowns */}
       {!anyLoading && (
-        <>
+        <PaywallGate featureId="report_extended_trends">
           <ScoreBreakdownCard title="WHY THIS EYE SCORE?" score={eyeResult.score} theme={eyeResult.theme} breakdown={eyeResult.breakdown} />
           <ScoreBreakdownCard title="WHY THIS SLEEP SCORE?" score={sleepResult.score} theme={sleepResult.theme} breakdown={sleepResult.breakdown} />
           <ScoreBreakdownCard title="WHY THIS MIND SCORE?" score={mindResult.score} theme={mindResult.theme} breakdown={mindResult.breakdown} />
-        </>
+        </PaywallGate>
       )}
 
       {/* Share button */}
       <TouchableOpacity style={styles.shareBtn} onPress={handleShare} activeOpacity={0.85}>
-        <Share2 size={18} color={COLORS.bg} />
+        <Share2 size={18} color={colors.background.primary} />
         <Text style={styles.shareBtnText}>Share My Score</Text>
       </TouchableOpacity>
+      </ScreenTransition>
     </ScreenShell>
   );
 }
@@ -194,13 +290,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   statsList: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.background.secondary,
     borderRadius: 16,
     padding: spacing.md,
     gap: spacing.sm,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.accent.purpleBorder,
   },
   statRow: {
     flexDirection: 'row',
@@ -222,6 +318,21 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
     marginBottom: spacing.md,
   },
+  bigScoreGlow: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    left: '50%',
+    marginLeft: -100,
+    top: '50%',
+    marginTop: -100,
+    opacity: 0.25,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 40,
+    shadowOpacity: 1,
+    elevation: 0,
+  },
   bigScoreLabel: {
     fontSize: 10,
     fontWeight: '800',
@@ -240,12 +351,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   shareCard: {
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.background.primary,
     borderRadius: 20,
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.accent.purpleBorder,
     gap: spacing.md,
   },
   shareCardHeader: {
@@ -261,7 +372,7 @@ const styles = StyleSheet.create({
   shareCardTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: COLORS.purpleLight,
+    color: '#9d8aff',
   },
   shareCardDate: {
     fontSize: 11,
@@ -283,7 +394,7 @@ const styles = StyleSheet.create({
   },
   shareCardDivider: {
     height: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.accent.purpleBorder,
   },
   shareCardBreakdown: {
     flexDirection: 'row',
@@ -314,11 +425,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.background.secondary,
     borderRadius: 12,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.accent.purpleBorder,
     marginBottom: spacing.md,
   },
   worstIconWrap: {
@@ -336,12 +447,36 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   worstSub: { ...typography.body, color: colors.text.secondary },
+  reflectionCard: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 16,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.accent.purpleBorder,
+    gap: spacing.sm,
+  },
+  reflectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  reflectionTitle: {
+    ...typography.label,
+    color: colors.accent.purple,
+    fontWeight: '700',
+  },
+  reflectionBody: {
+    ...typography.body,
+    color: colors.text.secondary,
+    lineHeight: 22,
+  },
   shareBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: COLORS.purpleLight,
+    backgroundColor: '#9d8aff',
     borderRadius: 14,
     paddingVertical: spacing.md,
     marginBottom: spacing.lg,
@@ -349,6 +484,6 @@ const styles = StyleSheet.create({
   shareBtnText: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.bg,
+    color: colors.background.primary,
   },
 });

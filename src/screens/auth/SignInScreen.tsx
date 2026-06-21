@@ -3,8 +3,8 @@ import { getAuth } from '@/lib/firebase';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { AuthScreenLayout, GoogleSignInButton } from '@/components/auth';
-import { AuthBackButton, Button, Input } from '@/components/ui';
+import { AuthHeroLayout, GoogleSignInButton } from '@/components/auth';
+import { Button, Input } from '@/components/ui';
 import { COLORS, ROUTES } from '@/constants';
 import { GoogleSignInCancelledError, useAuth } from '@/context/AuthContext';
 
@@ -49,17 +49,9 @@ export default function SignInScreen() {
   const formBusy = loading || googleLoading;
 
   return (
-    <AuthScreenLayout>
-      <AuthBackButton marginBottom={8} />
-
-      <View style={styles.logoWrap}>
-        <View style={styles.logoOrb}>
-          <Text style={styles.logoEmoji}>🌙</Text>
-        </View>
-      </View>
-
+    <AuthHeroLayout>
       <Text style={styles.title}>Welcome Back</Text>
-      <Text style={styles.subtitle}>Sign in to continue your sleep journey</Text>
+      <Text style={styles.subtitle}>Sign in to continue your wellness journey</Text>
 
       <View style={styles.form}>
         <GoogleSignInButton onPress={handleGoogle} loading={googleLoading} disabled={loading} />
@@ -120,25 +112,13 @@ export default function SignInScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-    </AuthScreenLayout>
+    </AuthHeroLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  logoWrap: { alignItems: 'center', marginBottom: 24 },
-  logoOrb: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: COLORS.card,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderHi,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoEmoji: { fontSize: 36 },
-  title: { fontSize: 30, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
-  subtitle: { fontSize: 15, color: COLORS.textMuted, lineHeight: 22, marginBottom: 24 },
+  title: { fontSize: 26, fontWeight: '800', color: COLORS.text, textAlign: 'center', marginBottom: 4 },
+  subtitle: { fontSize: 14, color: COLORS.textMuted, lineHeight: 21, textAlign: 'center', marginBottom: 24 },
   form: { gap: 16 },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   divider: { flex: 1, height: 1, backgroundColor: COLORS.border },

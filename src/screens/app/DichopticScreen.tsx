@@ -13,12 +13,14 @@ import {
   blendIntoBackground,
 } from '@/utils/dichoptic';
 import { useAuth } from '@/context/AuthContext';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { useGameRecord } from '@/hooks/useGameRecord';
 import { markGamePlayedToday } from '@/services/dailyEyeGoalsPersistence';
 import type { GameEndStats } from '@/components/eye/games/GameOverScreen';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+import { PaywallGate } from '@/components/paywall/PaywallGate';
 
 // ─── Color presets ────────────────────────────────────────────────────────────
 const LEFT_PRESETS = ['#FF3366', '#FF0044', '#FF5555', '#CC0044', '#FF2266'];
@@ -77,6 +79,7 @@ function CalibPreview({ leftColor, rightColor }: { leftColor: string; rightColor
 export default function DichopticScreen() {
   const { user } = useAuth();
   const { record, submit } = useGameRecord(user?.uid, 'dichoptic-reaction');
+  const { isPremium: hasAccess } = useSubscription();
 
   const [dColors, setDColors] = useState<DichopticColors>(DEFAULT_DICHOPTIC_COLORS);
   const [loaded, setLoaded] = useState(false);
@@ -110,6 +113,15 @@ export default function DichopticScreen() {
       <ScreenShell scroll={false} safeBottom>
         <ScreenHeader title="3D Game" showBack />
         <View style={cs.loading} />
+      </ScreenShell>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <ScreenShell safeBottom>
+        <ScreenHeader title="3D Reaction" subtitle="Pick your colors" showBack />
+        <PaywallGate featureId="eye_dichoptic">{null}</PaywallGate>
       </ScreenShell>
     );
   }

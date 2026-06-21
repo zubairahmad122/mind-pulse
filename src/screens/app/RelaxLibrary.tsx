@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Ionicons } from '@expo/vector-icons';
+import { ChevronLeft, Clock, ChevronRight } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -12,6 +12,7 @@ import {
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+import { PaywallGate } from '@/components/paywall/PaywallGate';
 
 export default function RelaxLibrary() {
   const router = useRouter();
@@ -38,12 +39,11 @@ export default function RelaxLibrary() {
   return (
     <SafeAreaView style={styles.root}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
+      <View style={styles.header}>                <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backBtn}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text.secondary} />
+          <ChevronLeft size={22} color={colors.text.secondary} strokeWidth={2.5} />
         </TouchableOpacity>
         <Text style={styles.title}>{title}</Text>
         <View style={styles.headerSpacer} />
@@ -52,35 +52,49 @@ export default function RelaxLibrary() {
       {/* Sessions List */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.sessionsList}>
-          {sessions.map((session, index) => (
-            <TouchableOpacity
-              key={session.id}
-              onPress={() => handleStartSession(session.id)}
-              style={[styles.sessionCard, index === sessions.length - 1 && styles.lastCard]}
-              activeOpacity={0.85}
-            >
-              <View style={styles.sessionCardContent}>
-                <Text style={styles.sessionEmoji}>{session.emoji}</Text>
+          {sessions.map((session, index) => {
+            const card = (
+              <TouchableOpacity
+                onPress={() => handleStartSession(session.id)}
+                style={[styles.sessionCard, index === sessions.length - 1 && styles.lastCard]}
+                activeOpacity={0.85}
+              >
+                <View style={styles.sessionCardContent}>                    {session.icon ? (
+                      <View style={[styles.sessionIcon, { backgroundColor: session.color + '18' }]}>
+                        {(() => { const SessionIcon = session.icon!; return <SessionIcon size={24} color={session.color} strokeWidth={1.8} />; })()}
+                      </View>
+                    ) : (
+                      <Text style={styles.sessionEmoji}>{session.emoji}</Text>
+                    )}
 
-                <View style={styles.sessionInfo}>
-                  <Text style={styles.sessionTitle}>{session.title}</Text>
-                  <Text style={styles.sessionDescription} numberOfLines={2}>
-                    {session.description}
-                  </Text>
-                  <View style={styles.sessionMeta}>
-                    <Ionicons name="time-outline" size={12} color={colors.text.tertiary} />
-                    <Text style={styles.sessionDuration}>
-                      {Math.ceil(session.durationSeconds / 60)} min
+                  <View style={styles.sessionInfo}>
+                    <Text style={styles.sessionTitle}>{session.title}</Text>
+                    <Text style={styles.sessionDescription} numberOfLines={2}>
+                      {session.description}
                     </Text>
-                    <Text style={styles.sessionDot}>·</Text>
-                    <Text style={styles.sessionDifficulty}>{session.difficulty}</Text>
+                    <View style={styles.sessionMeta}>
+                      <Clock size={12} color={colors.text.tertiary} strokeWidth={2} />
+                      <Text style={styles.sessionDuration}>
+                        {Math.ceil(session.durationSeconds / 60)} min
+                      </Text>
+                      <Text style={styles.sessionDot}>·</Text>
+                      <Text style={styles.sessionDifficulty}>{session.difficulty}</Text>
+                    </View>
                   </View>
-                </View>
 
-                <Ionicons name="chevron-forward" size={16} color={session.color} />
-              </View>
-            </TouchableOpacity>
-          ))}
+                  <ChevronRight size={16} color={session.color} strokeWidth={2.5} />
+                </View>
+              </TouchableOpacity>
+            );
+
+            return session.featureId ? (
+              <PaywallGate key={session.id} featureId={session.featureId}>
+                {card}
+              </PaywallGate>
+            ) : (
+              <View key={session.id}>{card}</View>
+            );
+          })}
         </View>
 
         <View style={styles.spacer} />
@@ -148,6 +162,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+  },
+
+  sessionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.xs,
   },
 
   sessionEmoji: {

@@ -26,6 +26,13 @@ export async function requestAllAlarmPermissions(): Promise<AlarmPermissionStatu
   return getAlarmPermissionStatus();
 }
 
+/** Open the OEM autostart settings (MIUI/HyperOS, ColorOS, etc.). */
+export async function openAutostartSettings(): Promise<boolean> {
+  const native = getNativeAlarmModule();
+  if (!native?.openAutostartSettings) return false;
+  return native.openAutostartSettings().catch(() => false);
+}
+
 export async function shouldShowPermissionSetup(): Promise<boolean> {
   const status = await getAlarmPermissionStatus();
   if (status.ready) return false;

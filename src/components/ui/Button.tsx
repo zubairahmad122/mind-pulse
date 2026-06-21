@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { COLORS } from '../../constants/colors';
 
@@ -22,34 +23,48 @@ export default function Button({
 }: Props) {
   const isDisabled = disabled || loading;
 
+  if (variant === 'primary') {
+    return (
+      <TouchableOpacity
+        style={[styles.glow, isDisabled && styles.disabled, style]}
+        onPress={onPress}
+        disabled={isDisabled}
+        activeOpacity={0.85}
+      >
+        <LinearGradient
+          colors={['#7EB8FF', '#1A8FFF', '#0F6FD6']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={styles.primaryFill}
+        >
+          {loading ? (
+            <ActivityIndicator color="#ffffff" size="small" />
+          ) : (
+            <Text style={styles.primaryLabel}>{label}</Text>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  }
+
   const variantClass =
-    variant === 'primary'
-      ? 'bg-app-purple'
-      : variant === 'outline'
-      ? 'bg-transparent border border-app-border-hi'
+    variant === 'outline'
+      ? 'bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.1)]'
       : 'bg-transparent';
 
   return (
     <TouchableOpacity
-      className={`w-full rounded-2xl items-center justify-center min-h-[56px] ${variantClass} ${isDisabled ? 'opacity-40' : ''}`}
-      style={[variant === 'primary' ? styles.glow : {}, style]}
+      className={`w-full rounded-full items-center justify-center min-h-[56px] ${variantClass} ${isDisabled ? 'opacity-40' : ''}`}
+      style={style}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.78}
     >
       {loading ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? '#ffffff' : COLORS.purple}
-          size="small"
-        />
+        <ActivityIndicator color={COLORS.purple} size="small" />
       ) : (
         <Text
           className={`font-bold ${
-            variant === 'primary'
-              ? 'text-[15px] text-white tracking-[0.5px]'
-              : variant === 'outline'
-              ? 'text-[15px] text-white'
-              : 'text-sm text-app-muted'
+            variant === 'outline' ? 'text-[15px] text-[#7EB8FF]' : 'text-sm text-app-muted'
           }`}
         >
           {label}
@@ -61,10 +76,27 @@ export default function Button({
 
 const styles = StyleSheet.create({
   glow: {
+    borderRadius: 28,
     shadowColor: COLORS.purple,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.45,
-    shadowRadius: 14,
+    shadowRadius: 16,
     elevation: 10,
+  },
+  disabled: {
+    opacity: 0.4,
+  },
+  primaryFill: {
+    width: '100%',
+    minHeight: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryLabel: {
+    fontSize: 15,
+    fontFamily: 'SpaceGrotesk_600SemiBold',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
 });

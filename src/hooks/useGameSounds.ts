@@ -5,14 +5,14 @@ type SoundType = 'hit' | 'wrong' | 'levelup';
 
 /**
  * Hook that pre-loads game sound effects and exposes play functions.
- * Sounds are generated WAV files in assets/sounds/.
+ * Sounds are bundled MP3 files in assets/sounds/effects/.
  * Uses expo-audio's useAudioPlayer for each sound.
  */
 export function useGameSounds() {
   // Pre-load all 3 sounds (players are stable references)
-  const hitPlayer = useAudioPlayer(require('@/assets/sounds/hit.wav'));
-  const wrongPlayer = useAudioPlayer(require('@/assets/sounds/wrong.wav'));
-  const levelupPlayer = useAudioPlayer(require('@/assets/sounds/levelup.wav'));
+  const hitPlayer = useAudioPlayer(require('@/assets/sounds/effects/hit.mp3'));
+  const wrongPlayer = useAudioPlayer(require('@/assets/sounds/effects/wrong.mp3'));
+  const levelupPlayer = useAudioPlayer(require('@/assets/sounds/effects/levelup.mp3'));
 
   const play = useCallback((type: SoundType) => {
     const player = type === 'hit' ? hitPlayer

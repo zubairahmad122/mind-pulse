@@ -44,8 +44,8 @@ export async function getYesterdayScore(uid: string): Promise<DailyScoreData | n
 export async function getLastNDayScores(
   uid: string,
   n = 7,
-): Promise<Array<{ date: string; mindPulseScore: number } | null>> {
-  const results: Array<{ date: string; mindPulseScore: number } | null> = [];
+): Promise<({ date: string; mindPulseScore: number } | null)[]> {
+  const results: ({ date: string; mindPulseScore: number } | null)[] = [];
   for (let i = n - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);

@@ -2,6 +2,7 @@ export type AlarmPermissionStatus = {
   notifications: boolean;
   exactAlarm: boolean;
   fullScreenIntent: boolean;
+  batteryUnrestricted?: boolean;
   nativeAvailable: boolean;
   ready: boolean;
 };
@@ -14,10 +15,13 @@ export type NativeAlarmModule = {
   stopRinging: () => Promise<void>;
   getPermissionStatus: () => Promise<AlarmPermissionStatus>;
   requestAlarmPermissions: () => Promise<AlarmPermissionStatus>;
+  openAutostartSettings: () => Promise<boolean>;
   isAlarmRinging: () => Promise<boolean>;
   getRingingLabel: () => Promise<string>;
-  addListener: (eventName: string) => void;
-  removeListeners: (count: number) => void;
+  addListener: (
+    eventName: string,
+    listener: (payload: { label?: string }) => void,
+  ) => { remove: () => void };
 };
 
 export const ALARM_NATIVE_EVENTS = {

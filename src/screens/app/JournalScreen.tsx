@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { PaywallGate } from '@/components/paywall/PaywallGate';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { colors } from '@/constants/colors';
@@ -47,7 +48,12 @@ export default function JournalScreen() {
   const [text, setText] = useState('');
   const [triggers, setTriggers] = useState<StressTrigger[]>([]);
   const [saving, setSaving] = useState(false);
-  const [lastInsight, setLastInsight] = useState<string | null>(null);
+
+  const archiveCutoff = new Date();
+  archiveCutoff.setDate(archiveCutoff.getDate() - 7);
+  const sortedEntries = entries.slice(0, 10);
+  const recentEntries = sortedEntries.filter(e => e.date >= archiveCutoff);
+  const archivedEntries = sortedEntries.filter(e => e.date < archiveCutoff);
 
   const toggleTrigger = (id: StressTrigger) => {
     setTriggers(prev => (prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]));
@@ -60,8 +66,7 @@ export default function JournalScreen() {
     }
     setSaving(true);
     try {
-      const entry = await saveEntry({ mood, text, triggers });
-      setLastInsight(entry.aiInsight ?? null);
+      await saveEntry({ mood, text, triggers });
       setText('');
       setTriggers([]);
       Alert.alert('Saved', 'Your journal entry was saved.');
@@ -128,11 +133,11 @@ export default function JournalScreen() {
           })}
         </View>
 
-        {(lastInsight || entries[0]?.aiInsight) && (
+        {entries[0]?.aiInsight && (
           <GlassCard style={styles.insight}>
             <Text style={styles.insightTitle}>✨ Wellness insight</Text>
             <Text style={styles.insightBody}>
-              {lastInsight ?? entries[0]?.aiInsight}
+              {entries[0].aiInsight}
             </Text>
           </GlassCard>
         )}
@@ -145,20 +150,41 @@ export default function JournalScreen() {
         ) : entries.length === 0 ? (
           <Text style={styles.empty}>No entries yet — your reflections will appear here.</Text>
         ) : (
-          entries.slice(0, 10).map(entry => (
-            <GlassCard key={entry.id} style={styles.entryCard}>
-              <Text style={styles.entryDate}>
-                {entry.date.toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                })}{' '}
-                · {entry.mood}
-              </Text>
-              <Text style={styles.entryText} numberOfLines={3}>
-                {entry.text}
-              </Text>
-            </GlassCard>
-          ))
+          <>
+            {recentEntries.map(entry => (
+              <GlassCard key={entry.id} style={styles.entryCard}>
+                <Text style={styles.entryDate}>
+                  {entry.date.toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                  })}{' '}
+                  · {entry.mood}
+                </Text>
+                <Text style={styles.entryText} numberOfLines={3}>
+                  {entry.text}
+                </Text>
+              </GlassCard>
+            ))}
+
+            {archivedEntries.length > 0 && (
+              <PaywallGate featureId="journal_archive">
+                {archivedEntries.map(entry => (
+                  <GlassCard key={entry.id} style={styles.entryCard}>
+                    <Text style={styles.entryDate}>
+                      {entry.date.toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                      })}{' '}
+                      · {entry.mood}
+                    </Text>
+                    <Text style={styles.entryText} numberOfLines={3}>
+                      {entry.text}
+                    </Text>
+                  </GlassCard>
+                ))}
+              </PaywallGate>
+            )}
+          </>
         )}
       </ScreenShell>
     </KeyboardAvoidingView>

@@ -1,3 +1,5 @@
+import type { FeatureId } from './entitlements';
+
 export type EyeActivityKind = 'exercise' | 'game';
 
 export type EyeActivity = {
@@ -9,6 +11,8 @@ export type EyeActivity = {
   kind: EyeActivityKind;
   emoji: string;
   isPremium: boolean;
+  /** Entitlement gating this activity. Omit for free, ungated activities. */
+  featureId?: FeatureId;
 };
 
 export const EYE_GAMES: EyeActivity[] = [
@@ -31,6 +35,7 @@ export const EYE_GAMES: EyeActivity[] = [
     kind: 'game',
     emoji: '🔭',
     isPremium: false,
+    featureId: 'eye_focus_sprint',
   },
   {
     id: 'dichoptic-reaction',
@@ -41,6 +46,7 @@ export const EYE_GAMES: EyeActivity[] = [
     kind: 'game',
     emoji: '🥽',
     isPremium: false,
+    featureId: 'eye_dichoptic',
   },
 ];
 

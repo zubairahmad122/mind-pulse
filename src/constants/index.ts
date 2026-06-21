@@ -23,9 +23,15 @@ export {
 export { STRESS_ACTIVITIES, STRESS_TIPS, stressSuggestion, stressStateLabel, type StressActivity } from './stressRelief';
 export { glassCard } from './glassCard';
 export {
-  AI_SLEEP_RECOMMENDATION,
-  DAILY_TIP,
+  ENTITLEMENTS,
+  FEATURE_NAMES,
+  PRO_ENTITLEMENT_ID,
+  type EntitlementTier,
+  type FeatureId,
+} from './entitlements';
+export {
   QUICK_ACTIONS,
+
   getDynamicPlan,
   type PlanItem,
   type QuickAction,

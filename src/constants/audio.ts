@@ -25,7 +25,6 @@ export const AUDIO_TRACKS: AudioTrack[] = [
     category: 'sleep',
     duration: 600,
     url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    isPremium: false,
     moodTags: ['sleepy', 'calm'],
   },
   {
@@ -35,7 +34,6 @@ export const AUDIO_TRACKS: AudioTrack[] = [
     category: 'breathing',
     duration: 480,
     url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-    isPremium: false,
     moodTags: ['stressed', 'calm'],
   },
   {
@@ -45,7 +43,7 @@ export const AUDIO_TRACKS: AudioTrack[] = [
     category: 'meditation',
     duration: 720,
     url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-    isPremium: true,
+    featureId: 'audio_mindful_reset',
     moodTags: ['stressed', 'sad'],
   },
   {
@@ -55,7 +53,7 @@ export const AUDIO_TRACKS: AudioTrack[] = [
     category: 'depression_help',
     duration: 540,
     url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-    isPremium: true,
+    featureId: 'audio_gentle_hope',
     moodTags: ['sad'],
   },
   {
@@ -65,7 +63,6 @@ export const AUDIO_TRACKS: AudioTrack[] = [
     category: 'stress_relief',
     duration: 660,
     url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-    isPremium: false,
     moodTags: ['stressed'],
   },
 ];

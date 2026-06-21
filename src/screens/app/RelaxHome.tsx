@@ -6,6 +6,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-na
 import { Leaf, AlertCircle, Cloud, ZapOff, Moon, Flame, Hand, Compass, Clock, PlayCircle, ChevronRight, CheckCircle, type LucideIcon } from 'lucide-react-native';
 
 import { ScreenShell } from '@/components/layout/ScreenShell';
+import { SubscriptionBadge } from '@/components/ui/SubscriptionBadge';
 import {
   EMOTIONAL_STATES,
   getEmotionOption,
@@ -18,8 +19,11 @@ import {
   RELAX_SESSIONS,
 } from '@/constants/relaxSessions';
 import { useRelaxContext } from '@/context/RelaxContext';
-import { useAuth } from '@/context/AuthContext';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
 import { colors } from '@/constants/colors';
+import { spacing } from '@/constants/spacing';
+import { radius } from '@/constants/radius';
+import { typography } from '@/constants/typography';
 
 const CATEGORIES: { id: SessionCategory; label: string; icon: LucideIcon; color: string }[] = [
   { id: 'breathe', label: 'Breathing', icon: Flame, color: '#FF9800' },
@@ -38,7 +42,6 @@ const EMOTION_ICONS: Record<EmotionalState, LucideIcon> = {
 
 export default function RelaxHome() {
   const router = useRouter();
-  const { user } = useAuth();
   const [selectedEmotion, setSelectedEmotion] = useState<EmotionalState | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<SessionCategory>('breathe');
   const [completedThisWeek, setCompletedThisWeek] = useState(0);
@@ -73,6 +76,7 @@ export default function RelaxHome() {
 
   return (
     <ScreenShell>
+      <ScreenTransition>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Header */}
         <View style={styles.headerSection}>
@@ -85,6 +89,7 @@ export default function RelaxHome() {
                   : 'How are you feeling today?'}
               </Text>
             </View>
+            <SubscriptionBadge />
           </View>
         </View>
 
@@ -136,7 +141,11 @@ export default function RelaxHome() {
                   { backgroundColor: recommendedSession.color + '22' },
                 ]}
               >
-                <Text style={styles.recommendedEmoji}>{recommendedSession.emoji}</Text>
+                {recommendedSession.icon ? (
+                  (() => { const RecIcon = recommendedSession.icon!; return <RecIcon size={30} color={recommendedSession.color} strokeWidth={1.8} />; })()
+                ) : (
+                  <Text style={styles.recommendedEmoji}>{recommendedSession.emoji}</Text>
+                )}
               </View>
               <View style={styles.recommendedInfo}>
                 <Text style={styles.recommendedTag}>Recommended for you</Text>
@@ -211,7 +220,11 @@ export default function RelaxHome() {
               activeOpacity={0.85}
             >
               <View style={[styles.sessionIconBox, { backgroundColor: session.color + '18' }]}>
-                <Text style={styles.sessionEmoji}>{session.emoji}</Text>
+                {session.icon ? (
+                  (() => { const SessIcon = session.icon!; return <SessIcon size={26} color={session.color} strokeWidth={1.8} />; })()
+                ) : (
+                  <Text style={styles.sessionEmoji}>{session.emoji}</Text>
+                )}
               </View>
               <View style={styles.sessionItemContent}>
                 <Text style={styles.sessionItemTitle}>{session.title}</Text>
@@ -257,6 +270,7 @@ export default function RelaxHome() {
 
         <View style={styles.spacer} />
       </ScrollView>
+      </ScreenTransition>
     </ScreenShell>
   );
 }
@@ -274,15 +288,15 @@ const styles = StyleSheet.create({
   },
 
   headerSection: {
-    marginBottom: 32,
-    gap: 8,
+    marginBottom: spacing.xl,
+    gap: spacing.sm,
   },
 
   headerTop: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: spacing.md,
   },
 
   greeting: {
@@ -298,23 +312,22 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-
   sectionLabel: {
     fontSize: 12,
     fontWeight: '700',
     color: colors.text.tertiary,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 12,
+    marginBottom: spacing.sm + 4,
   },
 
   emotionSection: {
-    marginBottom: 32,
+    marginBottom: spacing.xl,
   },
 
   emotionGrid: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing.sm,
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
   },
@@ -324,9 +337,9 @@ const styles = StyleSheet.create({
     minWidth: 56,
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 12,
+    paddingVertical: spacing.sm + 4,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
@@ -342,11 +355,11 @@ const styles = StyleSheet.create({
 
   recommendedCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 16,
-    marginBottom: 32,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
     minHeight: 100,
     justifyContent: 'center',
   },
@@ -354,13 +367,13 @@ const styles = StyleSheet.create({
   recommendedContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: spacing.md - 2,
   },
 
   recommendedIcon: {
     width: 64,
     height: 64,
-    borderRadius: 14,
+    borderRadius: radius.md + 2,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -397,13 +410,13 @@ const styles = StyleSheet.create({
   },
 
   recommendedDuration: {
-    fontSize: 12,
+    ...typography.label,
     color: colors.text.tertiary,
     fontWeight: '500',
   },
 
   categorySection: {
-    marginBottom: 32,
+    marginBottom: spacing.xl,
   },
 
   categoryTabs: {
@@ -417,9 +430,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 12,
+    paddingVertical: spacing.sm + 4,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
@@ -432,7 +445,7 @@ const styles = StyleSheet.create({
   },
 
   categoryTabLabel: {
-    fontSize: 11,
+    ...typography.caption,
     fontWeight: '600',
     color: colors.text.tertiary,
     textAlign: 'center',
@@ -445,18 +458,18 @@ const styles = StyleSheet.create({
   },
 
   sessionsSection: {
-    marginBottom: 32,
-    gap: 12,
+    marginBottom: spacing.xl,
+    gap: spacing.sm + 4,
   },
 
   sessionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    paddingLeft: 14,
-    borderRadius: 12,
+    gap: spacing.sm + 4,
+    paddingVertical: spacing.sm + 6,
+    paddingHorizontal: spacing.sm + 4,
+    paddingLeft: spacing.sm + 6,
+    borderRadius: radius.md,
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -467,7 +480,7 @@ const styles = StyleSheet.create({
   sessionIconBox: {
     width: 52,
     height: 52,
-    borderRadius: 12,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -485,13 +498,13 @@ const styles = StyleSheet.create({
   },
 
   sessionItemTitle: {
-    fontSize: 14,
-    fontWeight: '700',
+    ...typography.bodyLarge,
     color: colors.text.primary,
+    fontWeight: '700',
   },
 
   sessionItemDesc: {
-    fontSize: 12,
+    ...typography.body,
     color: colors.text.tertiary,
     lineHeight: 16,
   },
@@ -504,7 +517,7 @@ const styles = StyleSheet.create({
   },
 
   sessionItemDuration: {
-    fontSize: 11,
+    ...typography.caption,
     color: colors.text.tertiary,
     fontWeight: '500',
   },
@@ -517,28 +530,28 @@ const styles = StyleSheet.create({
   },
 
   sessionItemDifficulty: {
-    fontSize: 11,
+    ...typography.caption,
     color: colors.text.tertiary,
     textTransform: 'capitalize',
     fontWeight: '500',
   },
 
   statsSection: {
-    marginBottom: 32,
+    marginBottom: spacing.xl,
   },
 
   statsCards: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.sm + 4,
   },
 
   statCard: {
     flex: 1,
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 18,
-    paddingHorizontal: 12,
-    borderRadius: 14,
+    paddingVertical: spacing.md + 2,
+    paddingHorizontal: spacing.sm + 4,
+    borderRadius: radius.md + 2,
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -554,13 +567,13 @@ const styles = StyleSheet.create({
   },
 
   statValue: {
-    fontSize: 24,
+    ...typography.headingMedium,
     fontWeight: '700',
     color: colors.accent.purple,
   },
 
   statLabel: {
-    fontSize: 11,
+    ...typography.caption,
     fontWeight: '600',
     color: colors.text.tertiary,
     textAlign: 'center',

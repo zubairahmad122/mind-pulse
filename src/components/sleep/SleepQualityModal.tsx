@@ -16,6 +16,7 @@ type Props = {
   selectedQuality: number;
   onSelectQuality: (value: number) => void;
   onSave: () => void;
+  onSkip?: () => void;
 };
 
 function QualityButton({
@@ -69,7 +70,7 @@ function QualityButton({
   );
 }
 
-export function SleepQualityModal({ visible, selectedQuality, onSelectQuality, onSave }: Props) {
+export function SleepQualityModal({ visible, selectedQuality, onSelectQuality, onSave, onSkip }: Props) {
   const [closing, setClosing] = useState(false);
 
   const handleSave = () => {
@@ -80,11 +81,15 @@ export function SleepQualityModal({ visible, selectedQuality, onSelectQuality, o
     }, 200);
   };
 
+  const handleSkip = onSkip ?? handleSave;
+
   const selectedOpt = SLEEP_QUALITY_OPTIONS.find(o => o.value === selectedQuality);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleSave}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleSkip}>
       <View style={styles.overlay}>
+        {/* Tap outside the sheet to skip */}
+        <TouchableOpacity activeOpacity={1} style={StyleSheet.absoluteFill} onPress={handleSkip} />
         <Animated.View
           entering={FadeInUp.springify().damping(20).stiffness(150)}
           exiting={FadeOutDown.duration(200)}
@@ -126,6 +131,11 @@ export function SleepQualityModal({ visible, selectedQuality, onSelectQuality, o
             activeOpacity={0.85}
           >
             <Text style={styles.saveText}>Save session</Text>
+          </TouchableOpacity>
+
+          {/* Skip — rating is optional */}
+          <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} activeOpacity={0.7}>
+            <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -254,5 +264,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
     letterSpacing: 0.5,
+  },
+  skipBtn: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  skipText: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

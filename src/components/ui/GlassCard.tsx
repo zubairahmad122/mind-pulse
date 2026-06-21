@@ -1,16 +1,19 @@
 import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
-import { glassCard } from '@/constants/glassCard';
+import { StyleProp, View, ViewStyle } from 'react-native';
 
 interface GlassCardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
+  className?: string;
 }
 
-export function GlassCard({ children, style }: GlassCardProps) {
-  return <View style={[styles.card, style]}>{children}</View>;
+export function GlassCard({ children, style, className = '' }: GlassCardProps) {
+  return (
+    <View
+      className={`bg-app-card border border-app-border rounded-2xl p-4 ${className}`.trim()}
+      style={style}
+    >
+      {children}
+    </View>
+  );
 }
-
-const styles = StyleSheet.create({
-  card: { ...glassCard },
-});

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Check, ChevronRight, Timer, Eye, CheckCircle, AlertCircle, Flame } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -27,6 +27,7 @@ import { useEyeScore } from '@/hooks/useEyeScore';
 import { useGameRecord } from '@/hooks/useGameRecord';
 import { useDailyEyeGoals } from '@/hooks/useDailyEyeGoals';
 import { useLastBreakTime } from '@/hooks/useLastBreakTime';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
 
 const WEEK_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -56,7 +57,7 @@ function GoalRow({ label, done }: { label: string; done: boolean }) {
   return (
     <Animated.View style={[styles.goalRow, animStyle]}>
       <View style={[styles.goalCircle, done && styles.goalCircleDone]}>
-        {done && <Ionicons name="checkmark" size={12} color="#0a0720" />}
+        {done && <Check size={12} color="#0a0720" strokeWidth={3} />}
       </View>
       <Text style={[styles.goalLabel, done && styles.goalLabelDone]}>{label}</Text>
     </Animated.View>
@@ -105,7 +106,7 @@ function SectionHeader({ title, action }: { title: string; action?: { label: str
           ) : meta ? (
             meta
           ) : (
-            <Ionicons name="chevron-forward" size={16} color={colors.text.tertiary} />
+            <ChevronRight size={16} color={colors.text.tertiary} strokeWidth={2.5} />
           )}
         </View>
       </GlassCard>
@@ -149,6 +150,7 @@ export default function EyeRelaxScreen() {
 
   return (
     <ScreenShell>
+      <ScreenTransition>
       <ScreenHeader title="Eye Training" subtitle="Recover · train · protect" />
 
       {/* 1. Eye Score */}
@@ -183,7 +185,7 @@ export default function EyeRelaxScreen() {
         <View style={styles.streakRow}>
           <View style={styles.streakLeft}>
             <Text style={styles.streakValue}>{progressLoading ? '–' : streak}</Text>
-            <Ionicons name="flame" size={14} color="#f97316" />
+            <Flame size={14} color="#f97316" strokeWidth={2.5} />
             <Text style={styles.streakLabel}>day streak</Text>
           </View>
           <View style={styles.weekRow}>
@@ -204,7 +206,7 @@ export default function EyeRelaxScreen() {
       <View style={styles.quickActionRow}>
         <GlassCard style={styles.enforcerCard}>
           <View style={styles.enforcerInfo}>
-            <Ionicons name="timer-outline" size={18} color={colors.text.secondary} />
+            <Timer size={18} color={colors.text.secondary} strokeWidth={2} />
             <Text style={styles.enforcerTitle}>20-20-20 breaks</Text>
           </View>
           <Switch
@@ -221,7 +223,7 @@ export default function EyeRelaxScreen() {
           onPress={() => router.push(ROUTES.appEyeBreak as never)}
           activeOpacity={0.85}
         >
-          <Ionicons name="eye-outline" size={20} color={colors.accent.purple} />
+          <Eye size={20} color={colors.accent.purple} strokeWidth={2} />
           <Text style={styles.quickBreakLabel}>Eye Break</Text>
         </TouchableOpacity>
       </View>
@@ -229,11 +231,11 @@ export default function EyeRelaxScreen() {
       {/* Break reminder chip */}
       {minutesAgo !== null && (
         <View style={[styles.breakChip, { borderColor: minutesAgo < 20 ? '#6ee7b766' : '#f59e0b66' }]}>
-          <Ionicons
-            name={minutesAgo < 20 ? 'checkmark-circle' : 'alert-circle'}
-            size={12}
-            color={minutesAgo < 20 ? '#6ee7b7' : '#f59e0b'}
-          />
+          {minutesAgo < 20 ? (
+            <CheckCircle size={12} color="#6ee7b7" strokeWidth={2.5} />
+          ) : (
+            <AlertCircle size={12} color="#f59e0b" strokeWidth={2.5} />
+          )}
           <Text style={[styles.breakChipText, { color: minutesAgo < 20 ? '#6ee7b7' : '#f59e0b' }]}>
             {minutesAgo < 20
               ? `Last eye break ${minutesAgo}m ago — eyes resting ✓`
@@ -278,7 +280,7 @@ export default function EyeRelaxScreen() {
           </View>
         );
       })}
-
+      </ScreenTransition>
     </ScreenShell>
   );
 }

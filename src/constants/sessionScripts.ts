@@ -190,7 +190,7 @@ export const BODY_SCAN_SCRIPTS: Record<SessionLang, {
 // ─── Grounding (5-4-3-2-1) ────────────────────────────────────────────────────
 export const GROUNDING_SCRIPTS: Record<SessionLang, {
   intro:    string;
-  steps:    Array<{ sense: string; prompt: string }>;
+  steps:    { sense: string; prompt: string }[];
   complete: string;
 }> = {
   en: {
@@ -245,7 +245,7 @@ export const TENSION_SCRIPTS: Record<SessionLang, {
   release:    string;
   releaseCue: string;
   complete:   string;
-  zones: Array<{ label: string; cue: string }>;
+  zones: { label: string; cue: string }[];
 }> = {
   en: {
     squeeze: 'SQUEEZE',

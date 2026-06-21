@@ -35,8 +35,4 @@ export function getDynamicPlan(worstArea: string): PlanItem[] {
   ];
 }
 
-export const DAILY_TIP =
-  'Dim screens 60 minutes before bed — your brain needs darkness to release melatonin naturally.';
 
-export const AI_SLEEP_RECOMMENDATION =
-  'Based on your pattern, try sleeping at 11:00 PM and waking at 6:30 AM for ~7.5 hours of rest.';

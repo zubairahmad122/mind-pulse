@@ -4,12 +4,13 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { ScreenShell } from '@/components/layout/ScreenShell';
-import { COLORS } from '@/constants';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
+import { radius } from '@/constants/radius';
 import { typography } from '@/constants/typography';
 import { useAuth } from '@/context/AuthContext';
 import { saveRecoverySession } from '@/services/recoveryPersistence';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
 
 interface RecoveryOption {
   id: string;
@@ -52,7 +53,7 @@ const OPTIONS: RecoveryOption[] = [
   {
     id: 'sleep-prep',
     icon: Moon,
-    iconColor: COLORS.purpleLight,
+    iconColor: '#9d8aff',
     title: 'Sleep prep mode',
     subtitle: 'Wind down for tonight',
     durationLabel: '30 min',
@@ -152,6 +153,7 @@ export default function RecoveryScreen() {
 
   return (
     <ScreenShell>
+      <ScreenTransition>
       <Text style={styles.header}>Recovery Mode</Text>
       <Text style={styles.subtitle}>Small actions. Real impact.</Text>
 
@@ -178,6 +180,7 @@ export default function RecoveryScreen() {
           </TouchableOpacity>
         );
       })}
+      </ScreenTransition>
     </ScreenShell>
   );
 }
@@ -198,12 +201,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
+    backgroundColor: colors.background.secondary,
+    borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.accent.purpleBorder,
   },
   optionIconWrap: {
     width: 52,
@@ -226,12 +229,12 @@ const styles = StyleSheet.create({
   optionDurationText: {
     fontSize: 11,
     fontWeight: '700',
-    color: COLORS.purpleLight,
+    color: '#9d8aff',
   },
   // Timer full-screen
   timerScreen: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.background.primary,
   },
   timerContent: {
     flex: 1,
@@ -286,7 +289,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.accent.purpleBorder,
   },
   cancelText: {
     fontSize: 15,

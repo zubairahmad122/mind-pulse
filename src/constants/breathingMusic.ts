@@ -3,13 +3,13 @@ import { VolumeX, Droplets, Leaf, CloudRain, Flame, Disc } from 'lucide-react-na
 
 export type BreathingMusicId = 'none' | 'ocean' | 'forest' | 'rain' | 'fire' | 'brown-noise';
 
-export const BREATHING_MUSIC: Array<{
+export const BREATHING_MUSIC: {
   id: BreathingMusicId;
   label: string;
   icon: LucideIcon;
   color: string;
   url: string;
-}> = [
+}[] = [
   {
     id:    'none',
     label: 'Silent',

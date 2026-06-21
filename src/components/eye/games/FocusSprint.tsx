@@ -17,9 +17,9 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
+import { type GameEndStats } from './GameOverScreen';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-import { type GameEndStats } from './GameOverScreen';
 
 interface Props {
   running: boolean;

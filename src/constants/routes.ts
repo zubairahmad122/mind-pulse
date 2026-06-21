@@ -9,7 +9,7 @@ export const ROUTES = {
   appReport: '/(app)/(tabs)/report',
   appRecovery: '/(app)/(tabs)/recovery',
   appEyeRelax: '/(app)/(tabs)/eye-relax',
-  appProfile: '/(app)/profile',
+  appProfile: '/(app)/(tabs)/profile',
   appHistory: '/(app)/history',
   appAchievements: '/(app)/achievements',
   appEditProfile: '/(app)/edit-profile',

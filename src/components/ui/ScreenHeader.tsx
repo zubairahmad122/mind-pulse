@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SubscriptionBadge } from '@/components/ui/SubscriptionBadge';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
@@ -21,12 +22,12 @@ export function ScreenHeader({ title, subtitle, showBack, rightAction }: Props) 
       <View style={styles.topRow}>
         {showBack ? (
           <TouchableOpacity onPress={() => router.back()} style={styles.back} activeOpacity={0.7}>
-            <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
+            <ChevronLeft size={22} color={colors.text.primary} strokeWidth={2.5} />
           </TouchableOpacity>
         ) : (
           <View style={styles.backPlaceholder} />
         )}
-        {rightAction ?? <View style={styles.backPlaceholder} />}
+        {rightAction ?? <SubscriptionBadge />}
       </View>
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}

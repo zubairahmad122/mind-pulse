@@ -75,7 +75,16 @@ export async function recordEyeCompletion(
   await saveSessions(uid, [record, ...sessions]);
 }
 
+/** Merge cloud sessions with any local-only sessions that haven't synced yet, deduped and sorted. */
+function mergeSessions(cloud: EyeSessionRecord[], local: EyeSessionRecord[]): EyeSessionRecord[] {
+  const seen = new Set(cloud.map(r => `${r.completedAt}:${r.type}`));
+  const localOnly = local.filter(r => !seen.has(`${r.completedAt}:${r.type}`));
+  return [...cloud, ...localOnly].sort((a, b) => b.completedAt - a.completedAt);
+}
+
 export async function loadEyeSessions(uid?: string): Promise<EyeSessionRecord[]> {
+  const local = await loadSessions(uid);
+
   // For logged-in users: try Firestore first for cross-device sync
   if (uid) {
     try {
@@ -85,15 +94,17 @@ export async function loadEyeSessions(uid?: string): Promise<EyeSessionRecord[]>
         .get();
       const cloud = snap.docs.map(d => d.data() as EyeSessionRecord);
       if (cloud.length > 0) {
-        // Update local cache in background
-        void saveSessions(uid, cloud);
-        return cloud;
+        // Merge in any local sessions that haven't synced to Firestore yet,
+        // so a recent offline session isn't dropped when cloud data arrives.
+        const merged = mergeSessions(cloud, local);
+        void saveSessions(uid, merged);
+        return merged;
       }
     } catch {
       // offline — fall through to local cache
     }
   }
-  return loadSessions(uid);
+  return local;
 }
 
 export async function getEyeBreakEnforcerEnabled(uid?: string): Promise<boolean> {

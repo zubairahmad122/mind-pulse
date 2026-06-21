@@ -6,17 +6,18 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { AppState, Modal, NativeEventEmitter, Platform } from 'react-native';
+import { AppState, Modal, Platform } from 'react-native';
 import { AlarmPermissionModal } from '@/components/alarm/AlarmPermissionModal';
 import { GlobalAlarmOverlay } from '@/components/alarm/GlobalAlarmOverlay';
 import {
   getAlarmPermissionStatus,
   markPermissionSetupDone,
+  openAutostartSettings,
   requestAllAlarmPermissions,
   shouldShowPermissionSetup,
 } from '@/services/alarmPermissions';
 import { getNativeAlarmModule, hasNativeAlarmModule } from '@/services/nativeAlarm';
-import { stopAlarmRinging } from '@/services/sleepAlarm';
+import { scheduleWakeAlarm, stopAlarmRinging } from '@/services/sleepAlarm';
 import { ALARM_NATIVE_EVENTS } from '@/types/alarm.types';
 
 type AlarmOverlayContextValue = {
@@ -92,10 +93,11 @@ export function AlarmOverlayProvider({ children }: { children: React.ReactNode }
     const sub = AppState.addEventListener('change', state => {
       if (state === 'active') {
         void syncOverlay();
+        void recheckPermissions();
       }
     });
     return () => sub.remove();
-  }, [syncOverlay]);
+  }, [syncOverlay, recheckPermissions]);
 
   useEffect(() => {
     if (Platform.OS !== 'android' || !hasNativeAlarmModule()) return;
@@ -105,16 +107,15 @@ export function AlarmOverlayProvider({ children }: { children: React.ReactNode }
 
     try {
       const native = getNativeAlarmModule()!;
-      const emitter = new NativeEventEmitter(native);
-      firedSub = emitter.addListener(ALARM_NATIVE_EVENTS.fired, (payload: { label?: string }) => {
+      firedSub = native.addListener(ALARM_NATIVE_EVENTS.fired, payload => {
         setAlarmLabel(payload?.label ?? 'Time to wake up');
         setAlarmVisible(true);
       });
-      stoppedSub = emitter.addListener(ALARM_NATIVE_EVENTS.stopped, () => {
+      stoppedSub = native.addListener(ALARM_NATIVE_EVENTS.stopped, () => {
         setAlarmVisible(false);
       });
     } catch {
-      // NativeEventEmitter can fail before the bridge is ready
+      // addListener can fail before the native module is ready
     }
 
     return () => {
@@ -147,6 +148,13 @@ export function AlarmOverlayProvider({ children }: { children: React.ReactNode }
     setAlarmVisible(false);
   };
 
+  const handleSnoozeAlarm = async () => {
+    await stopAlarmRinging();
+    setAlarmVisible(false);
+    // Re-arm the alarm 9 minutes from now.
+    await scheduleWakeAlarm(new Date(Date.now() + 9 * 60 * 1000), alarmLabel);
+  };
+
   const value = useMemo(
     () => ({ permissionReady, recheckPermissions }),
     [permissionReady, recheckPermissions],
@@ -160,9 +168,15 @@ export function AlarmOverlayProvider({ children }: { children: React.ReactNode }
           loading={requestingPermissions}
           onAllow={handleAllowPermissions}
           onLater={handleDismissPermission}
+          onAutostart={() => void openAutostartSettings()}
         />
       </Modal>
-      <GlobalAlarmOverlay visible={alarmVisible} label={alarmLabel} onStop={handleStopAlarm} />
+      <GlobalAlarmOverlay
+        visible={alarmVisible}
+        label={alarmLabel}
+        onStop={handleStopAlarm}
+        onSnooze={handleSnoozeAlarm}
+      />
     </AlarmOverlayContext.Provider>
   );
 }

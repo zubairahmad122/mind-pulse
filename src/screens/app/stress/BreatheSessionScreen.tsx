@@ -29,6 +29,8 @@ import { BREATHING_MUSIC, type BreathingMusicId } from '@/constants/breathingMus
 import { useBreathingMusic } from '@/hooks/useBreathingMusic';
 import { useVoiceGuide } from '@/hooks/useVoiceGuide';
 import { useLanguage } from '@/context/LanguageContext';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { PaywallGate } from '@/components/paywall/PaywallGate';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -407,6 +409,7 @@ export default function BreatheSessionScreen() {
   const router = useRouter();
   const { modeId } = useLocalSearchParams<{ modeId: BreathModeId }>();
   const mode = getBreathMode(modeId ?? 'calm-flow');
+  const { isPremium: hasSleepDropAccess } = useSubscription();
 
   const { langCode } = useLanguage();
   const { guide, stop, scripts } = useVoiceGuide();
@@ -505,6 +508,26 @@ export default function BreatheSessionScreen() {
   }
 
   const isWave = mode.id === 'reset-wave';
+
+  if (mode.id === 'sleep-drop' && !hasSleepDropAccess) {
+    return (
+      <View style={[s.root, s.gateRoot, { backgroundColor: mode.bgTo }]}>
+        <StatusBar hidden />
+        <SafeAreaView style={s.safe}>
+          <View style={s.topBar}>
+            <TouchableOpacity onPress={() => router.back()} style={s.exitBtn} hitSlop={{ top: 16, right: 16, bottom: 16, left: 16 }}>
+              <Ionicons name="close" size={18} color="rgba(255,255,255,0.35)" />
+            </TouchableOpacity>
+            <Text style={[s.modeTitle, { color: mode.color + 'AA' }]}>{mode.title}</Text>
+            <View style={{ width: 34 }} />
+          </View>
+          <View style={s.gateContent}>
+            <PaywallGate featureId="relax_sleep_drop">{null}</PaywallGate>
+          </View>
+        </SafeAreaView>
+      </View>
+    );
+  }
 
   return (
     <View style={[s.root, { backgroundColor: mode.bgTo }]}>
@@ -606,6 +629,8 @@ const s = StyleSheet.create({
     height: '50%', opacity: 0.85,
   },
   safe:     { flex: 1 },
+  gateRoot: { flex: 1 },
+  gateContent: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
 
   // Top bar
   topBar: {

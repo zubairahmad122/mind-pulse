@@ -5,11 +5,11 @@ import { TimePickerRow } from '@/components/sleep/TimePickerRow';
 import { AIRecommendation } from '@/components/home/AIRecommendation';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
-import { AI_SLEEP_RECOMMENDATION } from '@/constants';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { useAuth } from '@/context/AuthContext';
+import { useSleepRecommendation } from '@/hooks/useSleepRecommendation';
 import { useSleepSchedule } from '@/hooks/useSleepSchedule';
 import { SleepSchedule } from '@/types/sleep.types';
 import { calculateSleepDurationHours } from '@/utils/formatTime';
@@ -17,6 +17,7 @@ import { calculateSleepDurationHours } from '@/utils/formatTime';
 export function SleepRoutinePanel() {
   const { user, isGuestMode } = useAuth();
   const { schedule, loading, saveSchedule } = useSleepSchedule(user?.uid, isGuestMode);
+  const { message: sleepRecommendation, loading: recommendationLoading } = useSleepRecommendation();
   const [saving, setSaving] = useState(false);
 
   if (!schedule || loading) {
@@ -49,7 +50,7 @@ export function SleepRoutinePanel() {
         Set your usual bedtime and wake time. “My Schedule” on the Tonight tab uses this goal.
       </Text>
 
-      <AIRecommendation message={AI_SLEEP_RECOMMENDATION} />
+      <AIRecommendation message={sleepRecommendation} loading={recommendationLoading} />
 
       <TimePickerRow
         label="Bedtime"

@@ -1,16 +1,20 @@
 import { useRouter } from 'expo-router';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Globe, Edit3, Clock, Trophy, ChevronRight, LogOut } from 'lucide-react-native';
+import { Globe, Edit3, Clock, Trophy, ChevronRight, LogOut, Crown } from 'lucide-react-native';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { PremiumBadge } from '@/components/ui/PremiumBadge';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { COLORS, ROUTES } from '@/constants';
 import { LANGUAGES } from '@/constants/languages';
 import { colors } from '@/constants/colors';
+import { radius } from '@/constants/radius';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
 import { useSleep } from '@/context/SleepContext';
 import { useEyeScore } from '@/hooks/useEyeScore';
 import { useMindScore } from '@/hooks/useMindScore';
@@ -34,6 +38,7 @@ const MENU: MenuItem[] = [
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
+  const { isPremium } = useSubscription();
   const { sessions } = useSleep();
   const { langCode, setLang } = useLanguage();
   const router = useRouter();
@@ -78,15 +83,44 @@ export default function ProfileScreen() {
 
   return (
     <ScreenShell safeBottom>
-      <ScreenHeader title="Profile" showBack />
+      <ScreenTransition>
+      <ScreenHeader title="Profile" />
 
       <View style={styles.avatarWrap}>
         <View style={styles.avatar}>
           <Text style={styles.avatarLetter}>{displayName.charAt(0).toUpperCase()}</Text>
         </View>
-        <Text style={styles.name}>{displayName}</Text>
+        <View style={styles.nameRow}>
+          <Text style={styles.name}>{displayName}</Text>
+          {isPremium && <PremiumBadge />}
+        </View>
         <Text style={styles.email}>{isGuest ? 'Guest mode' : (user?.email ?? '')}</Text>
       </View>
+
+      {isPremium ? (
+        <GlassCard style={styles.membershipCard}>
+          <View style={styles.membershipIconWrap}>
+            <Crown size={20} color={COLORS.gold} />
+          </View>
+          <View style={styles.membershipText}>
+            <Text style={styles.membershipTitle}>MindPulse Pro</Text>
+            <Text style={styles.membershipSub}>You have full access to every feature</Text>
+          </View>
+        </GlassCard>
+      ) : (
+        <TouchableOpacity onPress={() => router.push(ROUTES.appPremium as never)} activeOpacity={0.85}>
+          <GlassCard style={{ ...styles.membershipCard, borderColor: colors.accent.purpleBorder }}>
+            <View style={styles.membershipIconWrap}>
+              <Crown size={20} color={colors.accent.purple} />
+            </View>
+            <View style={styles.membershipText}>
+              <Text style={styles.membershipTitle}>Upgrade to Pro</Text>
+              <Text style={styles.membershipSub}>Unlock every feature across MindPulse</Text>
+            </View>
+            <ChevronRight size={18} color={colors.text.tertiary} />
+          </GlassCard>
+        </TouchableOpacity>
+      )}
 
       <View style={styles.statsRow}>
         <GlassCard style={styles.stat}>
@@ -146,6 +180,7 @@ export default function ProfileScreen() {
         <LogOut size={18} color={COLORS.textMuted} />
         <Text style={styles.signOutText}>{isGuest ? 'Exit Guest Mode' : 'Log Out'}</Text>
       </TouchableOpacity>
+      </ScreenTransition>
     </ScreenShell>
   );
 }
@@ -163,8 +198,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarLetter: { fontSize: 36, fontWeight: '800', color: colors.text.primary },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   name: { ...typography.headingMedium, color: colors.text.primary },
   email: { ...typography.body, color: colors.text.secondary },
+  membershipCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  membershipIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accent.purpleLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  membershipText: { flex: 1, gap: 2 },
+  membershipTitle: { ...typography.bodyLarge, color: colors.text.primary, fontWeight: '700' },
+  membershipSub: { ...typography.caption, color: colors.text.secondary },
   statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   stat: { flex: 1, alignItems: 'center', gap: spacing.xs },
   statValue: { ...typography.headingSmall, color: colors.accent.purple },

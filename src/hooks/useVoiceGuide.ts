@@ -14,7 +14,7 @@ export function useVoiceGuide() {
   const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
 
   // Queue for voice segments to prevent cutting
-  const queueRef = useRef<Array<{ text: string; volume: number }>>([]);
+  const queueRef = useRef<{ text: string; volume: number }[]>([]);
   const isPlayingRef = useRef(false);
   const stoppedRef = useRef(false);
 

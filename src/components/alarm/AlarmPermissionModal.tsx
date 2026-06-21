@@ -10,6 +10,7 @@ type Props = {
   loading?: boolean;
   onAllow: () => void;
   onLater: () => void;
+  onAutostart?: () => void;
 };
 
 const ITEMS = [
@@ -17,9 +18,10 @@ const ITEMS = [
   { icon: Smartphone, text: 'Exact alarms — ring at the right time' },
   { icon: Maximize2, text: 'Full screen — show Wake Up dialog over lock screen' },
   { icon: BatteryCharging, text: 'Battery — set to Unrestricted' },
+  { icon: Smartphone, text: 'Autostart — let alarms start when the app is closed' },
 ];
 
-export function AlarmPermissionModal({ loading, onAllow, onLater }: Props) {
+export function AlarmPermissionModal({ loading, onAllow, onLater, onAutostart }: Props) {
   return (
     <View style={styles.overlay}>
       <View style={styles.card}>
@@ -52,6 +54,9 @@ export function AlarmPermissionModal({ loading, onAllow, onLater }: Props) {
           loading={loading}
           style={styles.primary}
         />
+        {onAutostart ? (
+          <OutlineButton label="Enable Autostart" onPress={onAutostart} style={styles.primary} />
+        ) : null}
         <OutlineButton label="Not now" onPress={onLater} />
       </View>
     </View>

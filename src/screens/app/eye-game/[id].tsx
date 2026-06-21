@@ -18,6 +18,7 @@ import { SaccadeSniper } from '@/components/eye/games/SaccadeSniper';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { PaywallGate } from '@/components/paywall/PaywallGate';
 import { getEyeActivity } from '@/constants/eyeRelax';
 import { useAuth } from '@/context/AuthContext';
 import { useGameRecord } from '@/hooks/useGameRecord';
@@ -174,34 +175,44 @@ export default function EyeGameScreen() {
 
       {!isExercise && <RecordBadge visible={isNewRecord} label="New Personal Best!" />}
 
-      <View style={isSelfManaged ? styles.gameAreaScroll : styles.gameArea}>
-        <GameView
-          id={activity.id}
-          running={running && !isDone}
-          onGameEnd={stats => {
-            setRunning(false);
-            void markGamePlayedToday(user?.uid ?? undefined);
-            if (isExercise) {
-              // Comet Trace exits straight into the 20-second look-away —
-              // no score / no game-over screen.
-              setEyeResetActive(true);
-              return;
-            }
-            if (isSelfManaged) {
-              // Self-managed games have their own completion UI — go directly to results
-              setGameEndStats(stats);
-            } else {
-              setShowComplete(true);
-              setTimeout(() => {
-                setShowComplete(false);
-                setGameEndStats(stats);
-              }, 1800);
-            }
-          }}
-          onSaccadeScore={(_, bMs) => { bestMsRef.current = bMs; }}
-          onFocusSession={score => submit(score)}
-        />
-      </View>
+      {(() => {
+        const gameView = (
+          <View style={isSelfManaged ? styles.gameAreaScroll : styles.gameArea}>
+            <GameView
+              id={activity.id}
+              running={running && !isDone}
+              onGameEnd={stats => {
+                setRunning(false);
+                void markGamePlayedToday(user?.uid ?? undefined);
+                if (isExercise) {
+                  // Comet Trace exits straight into the 20-second look-away —
+                  // no score / no game-over screen.
+                  setEyeResetActive(true);
+                  return;
+                }
+                if (isSelfManaged) {
+                  // Self-managed games have their own completion UI — go directly to results
+                  setGameEndStats(stats);
+                } else {
+                  setShowComplete(true);
+                  setTimeout(() => {
+                    setShowComplete(false);
+                    setGameEndStats(stats);
+                  }, 1800);
+                }
+              }}
+              onSaccadeScore={(_, bMs) => { bestMsRef.current = bMs; }}
+              onFocusSession={score => submit(score)}
+            />
+          </View>
+        );
+
+        return activity.featureId ? (
+          <PaywallGate featureId={activity.featureId}>{gameView}</PaywallGate>
+        ) : (
+          gameView
+        );
+      })()}
 
       {/* Pause/Resume only for timer-managed games */}
       {!isSelfManaged && !gameEndStats && (

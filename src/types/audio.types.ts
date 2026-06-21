@@ -1,3 +1,5 @@
+import type { FeatureId } from '@/constants/entitlements';
+
 export type AudioCategory =
   | 'sleep'
   | 'meditation'
@@ -14,6 +16,7 @@ export interface AudioTrack {
   category: AudioCategory;
   duration: number;
   url: string;
-  isPremium: boolean;
+  /** Entitlement gating this track. Omit for free, ungated tracks. */
+  featureId?: FeatureId;
   moodTags: string[];
 }

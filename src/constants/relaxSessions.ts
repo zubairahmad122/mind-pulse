@@ -1,3 +1,5 @@
+import { Wind, Box, Waves, Moon, Heart, Zap, Globe, type LucideIcon } from 'lucide-react-native';
+import type { FeatureId } from './entitlements';
 import type { BreathingMusicId } from './breathingMusic';
 import type { BreathingPattern } from './breathingPatterns';
 import type { EmotionalState } from './emotionalStates';
@@ -11,7 +13,11 @@ export interface RelaxSession {
   durationSeconds: number;
   description: string;
   emoji: string;
+  icon?: LucideIcon;
   color: string;
+
+  /** Entitlement gating this session. Omit for free, ungated sessions. */
+  featureId?: FeatureId;
 
   // For breathing sessions
   breathingPattern?: BreathingPattern;
@@ -36,6 +42,7 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     durationSeconds: 533,
     description: 'No rhythm to follow. Let your breathing find its pace.',
     emoji: '🫁',
+    icon: Wind,
     color: '#7B61FF',
     breathingPattern: 'calm',
     defaultSound: 'forest',
@@ -53,6 +60,7 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     durationSeconds: 320,
     description: 'Calm your nervous system. Structure you can follow.',
     emoji: '📦',
+    icon: Box,
     color: '#4FC3F7',
     breathingPattern: 'box',
     defaultSound: 'ocean',
@@ -70,9 +78,11 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     durationSeconds: 375,
     description: 'Wake up your senses. Restore your energy.',
     emoji: '🌊',
+    icon: Waves,
     color: '#FF9800',
     breathingPattern: 'wave',
     defaultSound: 'forest',
+    featureId: 'relax_reset_wave',
     emotionTriggers: ['drained'],
     timeOfDay: 'afternoon',
     useCase: 'Afternoon slump, energy dip, low motivation',
@@ -87,9 +97,11 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     durationSeconds: 648,
     description: 'Slow everything down. Drift into rest.',
     emoji: '😴',
+    icon: Moon,
     color: '#7B61FF',
     breathingPattern: 'drop',
     defaultSound: 'rain',
+    featureId: 'relax_sleep_drop',
     emotionTriggers: ['sleepy'],
     timeOfDay: 'evening',
     useCase: 'Bedtime, sleep preparation, insomnia',
@@ -105,8 +117,10 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     durationSeconds: 510,
     description: 'Travel through your body and release what you have been holding.',
     emoji: '🫀',
+    icon: Heart,
     color: '#4FC3F7',
     defaultSound: 'ocean',
+    featureId: 'relax_body_scan',
     emotionTriggers: ['tense', 'overwhelmed', 'drained'],
     timeOfDay: 'anytime',
     useCase: 'Tension release, grounding, presence',
@@ -121,8 +135,10 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     durationSeconds: 345,
     description: 'Squeeze everything tight. Then let it all collapse.',
     emoji: '💪',
+    icon: Zap,
     color: '#FF9800',
     defaultSound: 'fire',
+    featureId: 'relax_tension_release',
     emotionTriggers: ['tense', 'overwhelmed'],
     timeOfDay: 'afternoon',
     useCase: 'Physical tension, stress relief, full body release',
@@ -138,6 +154,7 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     durationSeconds: 255,
     description: 'Your senses are your anchor when thoughts run away.',
     emoji: '🌍',
+    icon: Globe,
     color: '#4CAF50',
     emotionTriggers: ['overwhelmed', 'tense'],
     timeOfDay: 'anytime',
