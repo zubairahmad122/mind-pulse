@@ -56,8 +56,8 @@ const PHASES: Record<Phase, PhaseConfig> = {
     labelKey:    'breatheOut',
     sub:         'Let everything go',
     seconds:     4,
-    color:       '#7B61FF',
-    glowColor:   'rgba(123,97,255,0.28)',
+    color:       '#a78bfa',
+    glowColor:   'rgba(167,139,250,0.28)',
     targetScale: 0.78,
   },
   'hold-out': {

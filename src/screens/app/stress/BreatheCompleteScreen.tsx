@@ -1,5 +1,7 @@
 import { Leaf, Clock } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { AmbientBackground } from '@/components/ui';
+import { PillarProvider } from '@/context/PillarContext';
 import { useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
@@ -122,6 +124,7 @@ export default function BreatheCompleteScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
+      <PillarProvider pillar="mind"><AmbientBackground subtle /></PillarProvider>
       <View style={styles.content}>
         {/* ── Icon ── */}
         <IconSpark color={mode.color} />

@@ -10,6 +10,7 @@ import {
   Switch,
   Text,
 } from 'react-native';
+import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import Input from '@/components/ui/Input';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
@@ -52,7 +53,7 @@ export default function EditProfileScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
     >
-      <ScreenShell safeBottom>
+      <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="Edit Profile" showBack />
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <GlassCard style={styles.form}>

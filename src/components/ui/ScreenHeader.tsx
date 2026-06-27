@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SubscriptionBadge } from '@/components/ui/SubscriptionBadge';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
@@ -19,29 +18,30 @@ export function ScreenHeader({ title, subtitle, showBack, rightAction }: Props) 
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.topRow}>
-        {showBack ? (
+      <View style={styles.row}>
+        {showBack && (
           <TouchableOpacity onPress={() => router.back()} style={styles.back} activeOpacity={0.7}>
             <ChevronLeft size={22} color={colors.text.primary} strokeWidth={2.5} />
           </TouchableOpacity>
-        ) : (
-          <View style={styles.backPlaceholder} />
         )}
-        {rightAction ?? <SubscriptionBadge />}
+        <View style={styles.titleBlock}>
+          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
+        </View>
+        <View style={styles.rightSlot}>
+          {rightAction}
+        </View>
       </View>
-      <Text style={styles.title}>{title}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { marginBottom: spacing.lg, paddingTop: spacing.sm },
-  topRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    gap: spacing.sm,
   },
   back: {
     width: 40,
@@ -51,7 +51,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backPlaceholder: { width: 40, height: 40 },
+  titleBlock: { flex: 1 },
+  rightSlot: { flexShrink: 0 },
   title: { ...typography.headingLarge, color: colors.text.primary },
-  subtitle: { ...typography.body, color: colors.text.secondary, marginTop: spacing.xs },
+  subtitle: { ...typography.body, color: colors.text.secondary, marginTop: 2 },
 });

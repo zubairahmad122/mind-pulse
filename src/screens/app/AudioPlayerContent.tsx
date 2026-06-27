@@ -1,6 +1,7 @@
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { OutlineButton } from '@/components/ui/OutlineButton';
@@ -103,7 +104,7 @@ export default function AudioPlayerContent({ track }: Props) {
   );
 
   return (
-    <ScreenShell scroll={false} safeBottom>
+    <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
       <ScreenHeader title={track.title} showBack />
       {track.featureId ? (
         <PaywallGate featureId={track.featureId}>{playerContent}</PaywallGate>

@@ -100,7 +100,7 @@ export function StarfieldGuide({ active }: Props) {
       <Svg width="260" height="260" style={StyleSheet.absoluteFill}>
         <Defs>
           <RadialGradient id="zenGlow" cx="130" cy="130" r="75" fx="130" fy="130" gradientUnits="userSpaceOnUse">
-            <Stop offset="0%" stopColor="#7B61FF" stopOpacity="0.22" />
+            <Stop offset="0%" stopColor="#22d3ee" stopOpacity="0.22" />
             <Stop offset="50%" stopColor="#4FC3F7" stopOpacity="0.08" />
             <Stop offset="100%" stopColor="#040408" stopOpacity="0" />
           </RadialGradient>

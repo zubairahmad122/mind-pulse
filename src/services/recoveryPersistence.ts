@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import firestore from '@react-native-firebase/firestore';
+import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
+
+const db = getFirestore();
 
 export interface RecoverySessionData {
   type: string;
@@ -32,10 +34,12 @@ export async function saveRecoverySession(
     // AsyncStorage write failed — non-critical, Firestore will be the source of truth
   }
 
-  // Cloud backup (fire-and-forget — errors caught by caller)
-  await firestore()
-    .collection('users')
-    .doc(uid)
-    .collection('recoverySessions')
-    .add(data);
+  // Cloud backup (fire-and-forget) — local cache above is already the source
+  // of truth for Mind Score & Achievements, so a transient Firestore error
+  // here shouldn't surface to the user.
+  try {
+    await addDoc(collection(db, 'users', uid, 'recoverySessions'), data);
+  } catch {
+    // ignore — local copy already saved
+  }
 }

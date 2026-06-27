@@ -1,22 +1,25 @@
 import { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { AmbientBackground } from '@/components/ui';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { GradientCTA } from '@/components/ui/GradientCTA';
+import { ScreenShell } from '@/components/layout/ScreenShell';
 import * as Haptics from 'expo-haptics';
-import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ArrowRight, CheckCircle2, CheckCheck, Flame, Home, Star } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSpring,
   Easing,
-  interpolate,
-  Extrapolate,
 } from 'react-native-reanimated';
 
 import { EMOTIONAL_STATES, type EmotionalState } from '@/constants/emotionalStates';
 import { getSessionById, getRecommendedSession } from '@/constants/relaxSessions';
 import { colors } from '@/constants/colors';
+import { spacing } from '@/constants/spacing';
 import { useRelaxContext } from '@/context/RelaxContext';
 
 export default function RelaxCompletion() {
@@ -59,9 +62,11 @@ export default function RelaxCompletion() {
 
   if (!session) {
     return (
-      <SafeAreaView style={styles.root}>
-        <Text style={{ color: colors.text.primary }}>Session not found</Text>
-      </SafeAreaView>
+      <ScreenShell ambient={<AmbientBackground subtle />}>
+        <View style={styles.notFound}>
+          <Text style={{ color: colors.text.primary }}>Session not found</Text>
+        </View>
+      </ScreenShell>
     );
   }
 
@@ -101,17 +106,21 @@ export default function RelaxCompletion() {
   }));
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
-      >
+    <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
+      <View style={styles.page}>
         {/* ─── Celebration Hero Section ─────────────────────── */}
         <Animated.View style={[styles.heroSection, heroAnimStyle]}>
-          <View style={[styles.celebrationGlow, { backgroundColor: session.color + '15' }]} />
+          <View style={[styles.celebrationGlow, { backgroundColor: session.color + '20' }]} />
 
-          <Ionicons name="checkmark-circle" size={80} color={session.color} />
+          <View style={[styles.heroIcon, { borderColor: session.color + '40', shadowColor: session.color }]}>
+            <LinearGradient
+              colors={[session.color + '30', session.color + '10']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <CheckCircle2 size={52} color={session.color} strokeWidth={1.8} />
+          </View>
 
           <Text style={styles.celebrationText}>Well Done!</Text>
           <Text style={[styles.sessionTitle, { color: session.color }]}>{session.title}</Text>
@@ -122,21 +131,33 @@ export default function RelaxCompletion() {
 
         {/* ─── Progress Stats ──────────────────────────────── */}
         <Animated.View style={[styles.statsSection, statsAnimStyle]}>
-          <View style={[styles.statBox, { borderLeftColor: session.color }]}>
-            <View style={styles.statContent}>
-              <Text style={styles.statNumber}>{thisWeekSessions}</Text>
-              <Text style={styles.statLabel}>This Week</Text>
+          <GlassCard style={styles.statCell}>
+            <View style={[styles.statIcon, { borderColor: session.color + '38' }]}>
+              <LinearGradient
+                colors={[session.color + '28', session.color + '10']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <CheckCheck size={18} color={session.color} />
             </View>
-            <Ionicons name="checkmark-done" size={24} color={session.color} opacity={0.6} />
-          </View>
+            <Text style={styles.statNumber}>{thisWeekSessions}</Text>
+            <Text style={styles.statLabel}>This week</Text>
+          </GlassCard>
 
-          <View style={[styles.statBox, { borderLeftColor: '#4FC3F7' }]}>
-            <View style={styles.statContent}>
-              <Text style={styles.statNumber}>{completedSessions.length}</Text>
-              <Text style={styles.statLabel}>Total Sessions</Text>
+          <GlassCard style={styles.statCell}>
+            <View style={[styles.statIcon, { borderColor: '#4FC3F738' }]}>
+              <LinearGradient
+                colors={['#4FC3F728', '#4FC3F710']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <Flame size={18} color="#4FC3F7" />
             </View>
-            <Ionicons name="flame" size={24} color="#4FC3F7" opacity={0.6} />
-          </View>
+            <Text style={styles.statNumber}>{completedSessions.length}</Text>
+            <Text style={styles.statLabel}>Total sessions</Text>
+          </GlassCard>
         </Animated.View>
 
         {/* ─── Emotion Feedback ──────────────────────────── */}
@@ -153,18 +174,19 @@ export default function RelaxCompletion() {
                   style={[
                     styles.emotionCard,
                     isSelected && {
-                      backgroundColor: emotion.color + '20',
+                      backgroundColor: emotion.color + '1f',
                       borderColor: emotion.color,
-                      borderWidth: 2,
+                      shadowColor: emotion.color,
+                      shadowOpacity: 0.35,
                     },
                   ]}
-                  activeOpacity={0.7}
+                  activeOpacity={0.8}
                 >
                   <Text style={styles.emotionEmoji}>{emotion.emoji}</Text>
                   <Text
                     style={[
                       styles.emotionName,
-                      isSelected && { color: emotion.color, fontWeight: '700' },
+                      isSelected && { color: emotion.color, fontWeight: '800' },
                     ]}
                   >
                     {emotion.label}
@@ -188,10 +210,10 @@ export default function RelaxCompletion() {
                   <TouchableOpacity
                     key={rating}
                     onPress={() => handleRate(rating)}
-                    style={[styles.starButton, { borderColor: color + '40', backgroundColor: color + '12' }]}
-                    activeOpacity={0.7}
+                    style={[styles.starButton, { borderColor: color + '40', backgroundColor: color + '14' }]}
+                    activeOpacity={0.8}
                   >
-                    <Ionicons name="star" size={32} color={color} />
+                    <Star size={30} color={color} fill={color} />
                   </TouchableOpacity>
                 );
               })}
@@ -211,60 +233,80 @@ export default function RelaxCompletion() {
                   params: { sessionId: nextSession.id },
                 } as never);
               }}
-              style={[styles.nextCard, { borderColor: nextSession.color + '40' }]}
               activeOpacity={0.85}
             >
-              <View style={[styles.nextCardGlow, { backgroundColor: nextSession.color + '10' }]} />
-
-              <Text style={styles.nextEmoji}>{nextSession.emoji}</Text>
-
-              <View style={styles.nextInfo}>
-                <Text style={[styles.nextTitle, { color: nextSession.color }]}>
-                  {nextSession.title}
-                </Text>
-                <Text style={styles.nextDesc}>{nextSession.useCase}</Text>
-              </View>
-
-              <Ionicons name="arrow-forward" size={20} color={nextSession.color} />
+              <GlassCard simple noPadding style={[styles.nextCard, { borderColor: nextSession.color + '40' }]}>
+                <LinearGradient
+                  colors={[nextSession.color + '14', 'transparent']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.nextRow}>
+                  <View style={[styles.nextIcon, { borderColor: nextSession.color + '40' }]}>
+                    <LinearGradient
+                      colors={[nextSession.color + '30', nextSession.color + '12']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    {nextSession.icon ? (
+                      (() => {
+                        const NextIcon = nextSession.icon!;
+                        return <NextIcon size={24} color={nextSession.color} strokeWidth={1.9} />;
+                      })()
+                    ) : (
+                      <Text style={styles.nextEmoji}>{nextSession.emoji}</Text>
+                    )}
+                  </View>
+                  <View style={styles.nextInfo}>
+                    <Text style={[styles.nextTitle, { color: nextSession.color }]}>
+                      {nextSession.title}
+                    </Text>
+                    <Text style={styles.nextDesc} numberOfLines={2}>
+                      {nextSession.useCase}
+                    </Text>
+                  </View>
+                  <View style={[styles.nextArrow, { backgroundColor: nextSession.color + '18', borderColor: nextSession.color + '30' }]}>
+                    <ArrowRight size={17} color={nextSession.color} strokeWidth={2.3} />
+                  </View>
+                </View>
+              </GlassCard>
             </TouchableOpacity>
           </View>
         )}
 
         {/* ─── Actions ──────────────────────────────────── */}
         <View style={styles.actionSection}>
-          <TouchableOpacity
+          <GradientCTA
+            label="BACK TO HOME"
+            icon={<Home size={18} color="#fff" />}
             onPress={handleHome}
-            style={[styles.primaryBtn, { backgroundColor: session.color + '20', borderColor: session.color }]}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="home" size={18} color={session.color} />
-            <Text style={[styles.primaryBtnText, { color: session.color }]}>Back to Home</Text>
-          </TouchableOpacity>
+            colors={['#3b82f6', '#7c3aed', '#c026d3']}
+            glowColor="rgba(124,58,237,0.5)"
+            letterSpacing={1.5}
+          />
         </View>
-
-        <View style={styles.spacer} />
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
+  page: {
+    paddingTop: spacing.sm,
   },
-
-  scroll: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    paddingBottom: 40,
+  notFound: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Hero section
   heroSection: {
     alignItems: 'center',
-    marginBottom: 40,
-    paddingVertical: 30,
+    marginBottom: spacing.xl,
+    paddingVertical: spacing.lg,
     position: 'relative',
   },
 
@@ -275,74 +317,91 @@ const styles = StyleSheet.create({
     borderRadius: 90,
     top: 0,
     zIndex: -1,
-    opacity: 0.3,
+    opacity: 0.4,
+  },
+
+  heroIcon: {
+    width: 92,
+    height: 92,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 8,
   },
 
   celebrationText: {
-    fontSize: 48,
+    fontSize: 40,
     fontWeight: '800',
     color: colors.text.primary,
     letterSpacing: -1,
-    marginTop: 12,
+    marginTop: 18,
   },
 
   sessionTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginTop: 8,
+    fontSize: 22,
+    fontWeight: '800',
+    marginTop: 6,
   },
 
   sessionDuration: {
     fontSize: 14,
-    color: colors.text.tertiary,
+    color: 'rgba(255,255,255,0.45)',
     marginTop: 4,
     fontWeight: '500',
   },
 
   // Stats
   statsSection: {
-    gap: 12,
-    marginBottom: 32,
-  },
-
-  statBox: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 16,
-    borderLeftWidth: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    gap: 12,
+    marginBottom: spacing.xl,
   },
 
-  statContent: {
+  statCell: {
     flex: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  statIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
   },
 
   statNumber: {
     fontSize: 24,
     fontWeight: '800',
     color: colors.text.primary,
+    letterSpacing: -0.5,
   },
 
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.text.tertiary,
-    marginTop: 2,
     fontWeight: '600',
   },
 
   // Emotion feedback
   feedbackSection: {
-    marginBottom: 32,
+    marginBottom: spacing.xl,
   },
 
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.text.primary,
-    marginBottom: 16,
+    letterSpacing: -0.2,
+    marginBottom: spacing.md,
   },
 
   emotionGrid: {
@@ -353,45 +412,49 @@ const styles = StyleSheet.create({
   },
 
   emotionCard: {
-    width: '32%',
+    width: '31.5%',
     aspectRatio: 1,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.035)',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0,
+    shadowRadius: 10,
   },
 
   emotionEmoji: {
-    fontSize: 32,
+    fontSize: 30,
   },
 
   emotionName: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.text.secondary,
+    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
+    paddingHorizontal: 4,
   },
 
   // Rating
   ratingSection: {
-    marginBottom: 32,
+    marginBottom: spacing.xl,
   },
 
   starsRow: {
     flexDirection: 'row',
-    gap: 14,
+    gap: 12,
     justifyContent: 'center',
     paddingHorizontal: 4,
-    marginTop: 20,
+    marginTop: spacing.xs,
   },
 
   starButton: {
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -399,72 +462,59 @@ const styles = StyleSheet.create({
 
   // Next session
   nextSection: {
-    marginBottom: 32,
+    marginBottom: spacing.xl,
   },
 
   nextCard: {
+    borderWidth: 1,
+  },
+  nextRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 20,
-    borderWidth: 1.5,
-    padding: 16,
-    gap: 12,
-    marginTop: 16,
-    position: 'relative',
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    minHeight: 76,
+  },
+  nextIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
     overflow: 'hidden',
+    borderWidth: 1,
+    flexShrink: 0,
   },
-
-  nextCardGlow: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    top: 0,
-    left: 0,
-    zIndex: -1,
-  },
-
   nextEmoji: {
-    fontSize: 40,
+    fontSize: 26,
   },
-
   nextInfo: {
     flex: 1,
+    gap: 2,
   },
-
   nextTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
   },
-
   nextDesc: {
-    fontSize: 12,
-    color: colors.text.tertiary,
-    marginTop: 2,
+    fontSize: 12.5,
+    color: 'rgba(245,247,251,0.5)',
+    lineHeight: 17,
+    marginTop: 1,
+  },
+  nextArrow: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    flexShrink: 0,
   },
 
   // Actions
   actionSection: {
     gap: 12,
-  },
-
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
-    borderWidth: 1.5,
-    paddingVertical: 14,
-    gap: 8,
-  },
-
-  primaryBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-
-  spacer: {
-    height: 20,
   },
 });

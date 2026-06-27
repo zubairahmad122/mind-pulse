@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(123,97,255,0.35)',
     padding: spacing.xl,
     gap: spacing.lg,
-    shadowColor: '#7B61FF',
+    shadowColor: '#22d3ee',
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 40,
     shadowOpacity: 0.4,

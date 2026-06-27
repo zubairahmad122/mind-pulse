@@ -54,7 +54,7 @@ export default function AgeInputScreen() {
         </View>
       </View>
 
-      <Button label="Continue" onPress={() => router.push(ROUTES.authSignUp)} />
+      <Button label="Continue" onPress={() => router.push(ROUTES.authCreateAccount)} />
     </View>
   );
 }

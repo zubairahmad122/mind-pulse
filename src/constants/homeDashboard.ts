@@ -4,15 +4,17 @@ import { Moon, Music, Eye, Heart } from 'lucide-react-native';
 export type QuickAction = {
   id: string;
   label: string;
+  description: string;
+  accent: string;
   icon: LucideIcon;
   route: string;
 };
 
 export const QUICK_ACTIONS: QuickAction[] = [
-  { id: 'sleep', label: 'Start Sleep', icon: Moon, route: '/(app)/(tabs)/sleep?tab=tonight' },
-  { id: 'audio', label: 'Guided Audio', icon: Music, route: '/(app)/(tabs)/relax' },
-  { id: 'eye', label: 'Eye Relax', icon: Eye, route: '/(app)/(tabs)/eye-relax' },
-  { id: 'stress', label: 'Stress Relief', icon: Heart, route: '/(app)/(tabs)/relax' },
+  { id: 'audio', label: 'Start Relax Session', description: 'Guided audio to unwind', accent: '#4FC3F7', icon: Music, route: '/(app)/(tabs)/relax' },
+  { id: 'sleep', label: 'Sleep Analysis', description: 'Plan tonight & review rest', accent: '#a78bfa', icon: Moon, route: '/(app)/(tabs)/sleep?tab=tonight' },
+  { id: 'eye', label: 'Eye Exercise', description: 'Reduce strain & refocus', accent: '#6ee7b7', icon: Eye, route: '/(app)/(tabs)/eye-relax' },
+  { id: 'stress', label: 'Breathing Exercise', description: 'Calm your nervous system', accent: '#FF6B9D', icon: Heart, route: '/(app)/stress/box-breathing' },
 ];
 
 export type PlanItem = { id: string; title: string; subtitle: string; emoji: string; route: string };

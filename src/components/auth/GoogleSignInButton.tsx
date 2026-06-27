@@ -1,5 +1,4 @@
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { COLORS } from '@/constants/colors';
 
 type Props = {
   onPress: () => void;
@@ -18,7 +17,7 @@ export function GoogleSignInButton({ onPress, loading, disabled }: Props) {
       activeOpacity={0.85}
     >
       {loading ? (
-        <ActivityIndicator color={COLORS.bg} size="small" />
+        <ActivityIndicator color="rgba(245,247,251,0.8)" size="small" />
       ) : (
         <>
           <View style={styles.icon}>
@@ -36,22 +35,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.045)',
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
     paddingVertical: 14,
     paddingHorizontal: 20,
-    minHeight: 56,
+    minHeight: 50,
     gap: 12,
   },
   disabled: { opacity: 0.5 },
   icon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#4285F4',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconLetter: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
-  label: { color: '#111111', fontWeight: '700', fontSize: 15 },
+  iconLetter: { color: '#4285F4', fontWeight: '700', fontSize: 13 },
+  label: { color: 'rgba(245,247,251,0.85)', fontWeight: '600', fontSize: 14 },
 });

@@ -13,6 +13,25 @@ function getApiKey(): string | null {
   return key && key.length > 0 ? key : null;
 }
 
+/**
+ * Pulls the text out of a Gemini response, rejecting responses cut off by the
+ * token limit. Gemini 2.5 Flash's "thinking" tokens can eat into
+ * `maxOutputTokens` even with `thinkingBudget: 0`, which can truncate the
+ * visible answer mid-word (e.g. "That'" instead of a full sentence) — showing
+ * that fragment to the user is worse than falling back to the computed
+ * default, so a `MAX_TOKENS` finish is treated as a failure.
+ */
+function extractText(data: {
+  candidates?: { content?: { parts?: { text: string }[] }; finishReason?: string }[];
+}): string | null {
+  const candidate = data?.candidates?.[0];
+  if (candidate?.finishReason === 'MAX_TOKENS') return null;
+  const raw = candidate?.content?.parts?.[0]?.text;
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 function buildPrompt(mood: string, triggers: string[], text: string): string {
   return [
     'You are a gentle, empathetic wellness coach. Read the user\'s journal entry and provide a brief,',
@@ -132,9 +151,10 @@ export async function generateHomeInsight(params: {
             },
           ],
           generationConfig: {
-            maxOutputTokens: 80,
+            maxOutputTokens: 500,
             temperature: 0.8,
             topP: 0.9,
+            thinkingConfig: { thinkingBudget: 0 },
           },
         }),
       },
@@ -144,10 +164,9 @@ export async function generateHomeInsight(params: {
     if (!res.ok) return null;
 
     const data = await res.json() as {
-      candidates?: { content?: { parts?: { text: string }[] } }[];
+      candidates?: { content?: { parts?: { text: string }[] }; finishReason?: string }[];
     };
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return raw?.trim() ?? null;
+    return extractText(data);
   } catch {
     clearTimeout(timeoutId);
     return null;
@@ -186,9 +205,10 @@ export async function generateTagline(params: {
             },
           ],
           generationConfig: {
-            maxOutputTokens: 40,
+            maxOutputTokens: 400,
             temperature: 0.8,
             topP: 0.9,
+            thinkingConfig: { thinkingBudget: 0 },
           },
         }),
       },
@@ -198,10 +218,9 @@ export async function generateTagline(params: {
     if (!res.ok) return null;
 
     const data = await res.json() as {
-      candidates?: { content?: { parts?: { text: string }[] } }[];
+      candidates?: { content?: { parts?: { text: string }[] }; finishReason?: string }[];
     };
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return raw?.trim() ?? null;
+    return extractText(data);
   } catch {
     clearTimeout(timeoutId);
     return null;
@@ -287,9 +306,10 @@ export async function generateSleepTip(params: {
             },
           ],
           generationConfig: {
-            maxOutputTokens: 120,
+            maxOutputTokens: 500,
             temperature: 0.8,
             topP: 0.9,
+            thinkingConfig: { thinkingBudget: 0 },
           },
         }),
       },
@@ -299,10 +319,9 @@ export async function generateSleepTip(params: {
     if (!res.ok) return null;
 
     const data = await res.json() as {
-      candidates?: { content?: { parts?: { text: string }[] } }[];
+      candidates?: { content?: { parts?: { text: string }[] }; finishReason?: string }[];
     };
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return raw?.trim() ?? null;
+    return extractText(data);
   } catch {
     clearTimeout(timeoutId);
     return null;
@@ -374,9 +393,10 @@ export async function generateDailyTip(params: {
             },
           ],
           generationConfig: {
-            maxOutputTokens: 80,
+            maxOutputTokens: 500,
             temperature: 0.8,
             topP: 0.9,
+            thinkingConfig: { thinkingBudget: 0 },
           },
         }),
       },
@@ -386,10 +406,9 @@ export async function generateDailyTip(params: {
     if (!res.ok) return null;
 
     const data = await res.json() as {
-      candidates?: { content?: { parts?: { text: string }[] } }[];
+      candidates?: { content?: { parts?: { text: string }[] }; finishReason?: string }[];
     };
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return raw?.trim() ?? null;
+    return extractText(data);
   } catch {
     clearTimeout(timeoutId);
     return null;
@@ -479,9 +498,10 @@ export async function generateWeeklyReflection(params: {
             },
           ],
           generationConfig: {
-            maxOutputTokens: 200,
+            maxOutputTokens: 600,
             temperature: 0.8,
             topP: 0.9,
+            thinkingConfig: { thinkingBudget: 0 },
           },
         }),
       },
@@ -491,10 +511,103 @@ export async function generateWeeklyReflection(params: {
     if (!res.ok) return null;
 
     const data = await res.json() as {
-      candidates?: { content?: { parts?: { text: string }[] } }[];
+      candidates?: { content?: { parts?: { text: string }[] }; finishReason?: string }[];
     };
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return raw?.trim() ?? null;
+    return extractText(data);
+  } catch {
+    clearTimeout(timeoutId);
+    return null;
+  }
+}
+
+/**
+ * Constructs the prompt for a "tonight's plan" sleep insight based on the
+ * currently-selected bedtime/wake time, goal, and recent sleep history.
+ */
+function buildSleepPlanPrompt(params: {
+  bedtime: string;
+  wakeTime: string;
+  durationLabel: string;
+  goalLabel: string;
+  readinessScore: number;
+  avgDurationHours: number | null;
+  consistencyScore: number | null;
+  sessionCount: number;
+}): string {
+  const historyLine = params.sessionCount > 0
+    ? `Recent history: averages ${params.avgDurationHours}h over ${params.sessionCount} nights, consistency ${params.consistencyScore}/100.`
+    : 'No recent sleep history yet.';
+  return [
+    'You are a warm, science-informed sleep coach. The user is planning tonight\'s sleep.',
+    'Write ONE short, encouraging insight (1-2 sentences, max 32 words) about the plan they just set.',
+    'Reference the specific bedtime, wake time, and resulting duration naturally.',
+    'Do not use markdown or emoji. Do not mention that you are an AI. Be specific and human.',
+    '',
+    `Planned bedtime: ${params.bedtime}`,
+    `Planned wake time: ${params.wakeTime}`,
+    `Resulting sleep: ${params.durationLabel}`,
+    `Sleep goal: ${params.goalLabel}`,
+    `Current readiness: ${params.readinessScore}/100`,
+    historyLine,
+    '',
+    'Your sleep insight:',
+  ].join('\n');
+}
+
+/**
+ * Calls Gemini Flash 2.5 to generate a short insight about the user's
+ * planned bedtime/wake time for tonight. Returns `null` on missing key or failure.
+ */
+export async function generateSleepPlanInsight(params: {
+  bedtime: string;
+  wakeTime: string;
+  durationLabel: string;
+  goalLabel: string;
+  readinessScore: number;
+  avgDurationHours: number | null;
+  consistencyScore: number | null;
+  sessionCount: number;
+}): Promise<string | null> {
+  const key = getApiKey();
+  if (!key) return null;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/${MODEL}:generateContent`,
+      {
+        signal: controller.signal,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': key,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: buildSleepPlanPrompt(params) }],
+            },
+          ],
+          generationConfig: {
+            maxOutputTokens: 500,
+            temperature: 0.8,
+            topP: 0.9,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+      },
+    );
+
+    clearTimeout(timeoutId);
+    if (!res.ok) return null;
+
+    const data = await res.json() as {
+      candidates?: { content?: { parts?: { text: string }[] }; finishReason?: string }[];
+    };
+    return extractText(data);
   } catch {
     clearTimeout(timeoutId);
     return null;
@@ -533,9 +646,10 @@ export async function getJournalInsight(
             },
           ],
           generationConfig: {
-            maxOutputTokens: 150,
+            maxOutputTokens: 500,
             temperature: 0.7,
             topP: 0.9,
+            thinkingConfig: { thinkingBudget: 0 },
           },
         }),
       },
@@ -555,11 +669,11 @@ export async function getJournalInsight(
       }[];
     };
 
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!raw || raw.trim().length === 0) return null;
+    const raw = extractText(data);
+    if (!raw) return null;
 
     return {
-      insight: raw.trim(),
+      insight: raw,
       latencyMs: Date.now() - start,
     };
   } catch (err) {

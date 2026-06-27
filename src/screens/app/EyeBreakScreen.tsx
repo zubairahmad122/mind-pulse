@@ -2,12 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
+import { PillarProvider } from '@/context/PillarContext';
+import { ExpandingCircleGuide } from '@/components/eye/animations/ExpandingCircleGuide';
 import { useAuth } from '@/context/AuthContext';
 import { incrementBreaksTaken } from '@/services/dailyEyeGoalsPersistence';
 import { recordBreakTaken } from '@/services/lastBreakPersistence';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ExpandingCircleGuide } from '@/components/eye/animations/ExpandingCircleGuide';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
@@ -36,6 +39,13 @@ export default function EyeBreakScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
+      <LinearGradient
+        colors={['#0B1920', '#071216', '#03080B']}
+        style={StyleSheet.absoluteFill}
+      />
+      <PillarProvider pillar="eyes">
+        <AmbientBackground subtle />
+      </PillarProvider>
       <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
         <Ionicons name="close" size={18} color={colors.text.secondary} />
       </TouchableOpacity>
@@ -61,8 +71,8 @@ export default function EyeBreakScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#02020D', alignItems: 'center', justifyContent: 'center', gap: spacing.xl, paddingHorizontal: spacing.lg },
-  closeBtn: { position: 'absolute', top: spacing.xl, right: spacing.lg, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+  root: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.xl, paddingHorizontal: spacing.lg },
+  closeBtn: { position: 'absolute', top: spacing.xl, right: spacing.lg, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
   topLabel: { fontSize: 14, color: colors.text.secondary, fontWeight: '600', letterSpacing: 1 },
   timer: { fontSize: 48, fontWeight: '900', color: colors.text.primary },
   guideWrap: {},

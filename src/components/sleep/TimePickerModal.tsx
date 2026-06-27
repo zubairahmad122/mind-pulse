@@ -1,111 +1,71 @@
-import { useEffect, useState } from 'react';
-import { Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useEffect, useRef, useState } from 'react';
+import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Bell, Moon } from 'lucide-react-native';
 
-// ─── Time string <-> parts ───────────────────────────────────────────────────────
+// ─── Time string <-> Date ────────────────────────────────────────────────────────
 
-function parseTime(time: string): { hour12: number; minute: number; isPm: boolean } {
+function timeToDate(time: string): Date {
   const [h, m] = time.split(':').map(Number);
-  const hh = ((h % 24) + 24) % 24;
-  return {
-    hour12: hh % 12 === 0 ? 12 : hh % 12,
-    minute: ((m % 60) + 60) % 60,
-    isPm: hh >= 12,
-  };
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
 }
 
-function buildTime(hour12: number, minute: number, isPm: boolean): string {
-  const base = hour12 % 12; // 12 -> 0
-  const hour24 = isPm ? base + 12 : base;
-  return `${String(hour24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+function dateToTime(date: Date): string {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
-function wrap(value: number, min: number, max: number): number {
-  const span = max - min + 1;
-  return ((((value - min) % span) + span) % span) + min;
+function formatTimeAmPm(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, '0')}`;
 }
 
-// ─── Editable stepper column ─────────────────────────────────────────────────────
+function formatAmPm(time: string): string {
+  const [h] = time.split(':').map(Number);
+  return h >= 12 ? 'PM' : 'AM';
+}
 
-function Stepper({
-  value,
-  min,
-  max,
-  pad,
-  accent,
-  onChange,
-}: {
-  value: number;
-  min: number;
-  max: number;
-  pad: boolean;
-  accent: string;
-  onChange: (next: number) => void;
-}) {
-  const [text, setText] = useState(String(value));
+/** "in 3h 12m" — relative to now, rolling to tomorrow if the time already passed today. */
+function timeUntilLabel(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(h, m, 0, 0);
+  if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+  const totalMinutes = Math.round((target.getTime() - now.getTime()) / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0 && minutes === 0) return 'now';
+  if (hours === 0) return `in ${minutes}m`;
+  if (minutes === 0) return `in ${hours}h`;
+  return `in ${hours}h ${minutes}m`;
+}
 
-  // Keep the text field in sync when steppers change the value.
-  useEffect(() => {
-    setText(pad ? String(value).padStart(2, '0') : String(value));
-  }, [value, pad]);
+// ─── Glass Card wrapper — matches HomeDashboard ─────────────────────────────────
 
-  const step = (delta: number) => {
-    void Haptics.selectionAsync();
-    onChange(wrap(value + delta, min, max));
-  };
-
-  const commitText = () => {
-    const n = parseInt(text.replace(/[^0-9]/g, ''), 10);
-    if (Number.isNaN(n)) {
-      setText(pad ? String(value).padStart(2, '0') : String(value));
-      return;
-    }
-    onChange(Math.min(max, Math.max(min, n)));
-  };
-
+function GlassCard({ children }: { children: React.ReactNode }) {
   return (
-    <View className="items-center">
-      <TouchableOpacity
-        onPress={() => step(1)}
-        hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
-        className="w-12 h-9 items-center justify-center rounded-xl"
-        style={{ backgroundColor: accent + '22' }}
-      >
-        <ChevronUp size={22} color={accent} />
-      </TouchableOpacity>
-
-      <TextInput
-        value={text}
-        onChangeText={t => setText(t.replace(/[^0-9]/g, '').slice(0, 2))}
-        onEndEditing={commitText}
-        onBlur={commitText}
-        keyboardType="number-pad"
-        selectTextOnFocus
-        maxLength={2}
-        style={{
-          width: 84,
-          height: 76,
-          marginVertical: 8,
-          textAlign: 'center',
-          fontSize: 40,
-          fontWeight: '800',
-          color: '#FFFFFF',
-          backgroundColor: 'rgba(255,255,255,0.05)',
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: 'rgba(255,255,255,0.12)',
-        }}
+    <View style={{
+      borderRadius: 24, overflow: 'hidden',
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+      width: '100%', maxWidth: 384,
+    }}>
+      <BlurView intensity={36} tint="dark" style={StyleSheet.absoluteFill} />
+      <LinearGradient
+        colors={['rgba(59,130,246,0.08)', 'rgba(10,14,28,0.5)']}
+        style={StyleSheet.absoluteFill}
       />
-
-      <TouchableOpacity
-        onPress={() => step(-1)}
-        hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
-        className="w-12 h-9 items-center justify-center rounded-xl"
-        style={{ backgroundColor: accent + '22' }}
-      >
-        <ChevronDown size={22} color={accent} />
-      </TouchableOpacity>
+      <LinearGradient
+        colors={['rgba(255,255,255,0.06)', 'transparent']}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 40 }}
+        pointerEvents="none"
+      />
+      {children}
     </View>
   );
 }
@@ -117,107 +77,308 @@ interface Props {
   title: string;
   initialTime: string; // "HH:MM"
   accent?: string;
+  icon?: 'bed' | 'wake';
+  /** Common times for this field, shown as one-tap chips (e.g. ["22:00","22:30","23:00"]). iOS only. */
+  quickPicks?: string[];
   onConfirm: (time: string) => void;
   onCancel: () => void;
 }
 
+/**
+ * On Android, @react-native-community/datetimepicker always shows its own
+ * native Dialog window for the spinner — there's no inline-embedded mode like
+ * iOS has. Wrapping it in our own Modal+Cancel/Set Time chrome produced two
+ * nested dialogs at once. So on Android we skip our own UI entirely and let
+ * the native dialog (the exact OS picker users already know) be the whole UI.
+ * On iOS the inline spinner embeds correctly, so we keep our custom shell there.
+ */
 export function TimePickerModal({
   visible,
   title,
   initialTime,
-  accent = '#7B61FF',
+  accent = '#60a5fa',
+  icon = 'bed',
+  quickPicks = [],
   onConfirm,
   onCancel,
 }: Props) {
-  const [hour12, setHour12] = useState(12);
-  const [minute, setMinute] = useState(0);
-  const [isPm, setIsPm] = useState(false);
+  const [date, setDate] = useState(() => timeToDate(initialTime));
+  const openedRef = useRef(false);
 
-  // Re-seed whenever the modal opens with a (possibly new) time.
   useEffect(() => {
-    if (!visible) return;
-    const p = parseTime(initialTime);
-    setHour12(p.hour12);
-    setMinute(p.minute);
-    setIsPm(p.isPm);
-  }, [visible, initialTime]);
+    if (!visible) {
+      openedRef.current = false;
+      return;
+    }
+    setDate(timeToDate(initialTime));
+
+    if (Platform.OS === 'android' && !openedRef.current) {
+      openedRef.current = true;
+      DateTimePickerAndroid.open({
+        value: timeToDate(initialTime),
+        mode: 'time',
+        is24Hour: false,
+        display: 'spinner',
+        onChange: (event: DateTimePickerEvent, selectedDate?: Date) => {
+          if (event.type === 'set' && selectedDate) {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onConfirm(dateToTime(selectedDate));
+          } else {
+            onCancel();
+          }
+        },
+      });
+    }
+  }, [visible, initialTime, onConfirm, onCancel]);
+
+  const applyQuickPick = (time: string) => {
+    void Haptics.selectionAsync();
+    setDate(timeToDate(time));
+  };
+
+  const handlePickerChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (selectedDate) setDate(selectedDate);
+  };
 
   const handleConfirm = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onConfirm(buildTime(hour12, minute, isPm));
+    onConfirm(dateToTime(date));
   };
 
+  if (Platform.OS === 'android') {
+    return null;
+  }
+
+  const currentTime = dateToTime(date);
+  const IconComponent = icon === 'wake' ? Bell : Moon;
+  const iconColor = icon === 'wake' ? '#a78bfa' : '#60a5fa';
+
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onCancel}>
-      <View className="flex-1 items-center justify-center bg-black/70 px-6">
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onCancel}
+    >
+      <View style={styles.backdrop}>
+        {/* Accent glow behind the card */}
         <View
-          className="w-full max-w-sm rounded-3xl p-5"
-          style={{ backgroundColor: '#141029', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}
-        >
-          <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 1.5, color: accent, textTransform: 'uppercase', textAlign: 'center' }}>
-            {title}
-          </Text>
-          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 4 }}>
-            Tap a number to type, or use the arrows
-          </Text>
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            width: 280,
+            height: 280,
+            borderRadius: 140,
+            backgroundColor: accent + '18',
+            top: '18%',
+            opacity: 0.6,
+          }}
+        />
 
-          {/* HH : MM   AM/PM */}
-          <View className="flex-row items-center justify-center gap-2 mt-6">
-            <Stepper value={hour12} min={1} max={12} pad={false} accent={accent} onChange={setHour12} />
-            <Text style={{ fontSize: 40, fontWeight: '800', color: 'rgba(255,255,255,0.4)', marginHorizontal: 2 }}>:</Text>
-            <Stepper value={minute} min={0} max={59} pad accent={accent} onChange={setMinute} />
+        <GlassCard>
+          {/* Accent icon + title */}
+          <View style={{ alignItems: 'center', paddingTop: 20 }}>
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: icon === 'wake'
+                  ? 'rgba(167,139,250,0.12)'
+                  : 'rgba(96,165,250,0.12)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 8,
+              }}
+            >
+              <IconComponent size={22} color={iconColor} fill={iconColor} />
+            </View>
+            <Text style={[styles.title, { color: accent }]}>{title}</Text>
+          </View>
 
-            {/* AM / PM toggle */}
-            <View className="ml-2 gap-2">
-              {[
-                { label: 'AM', value: false },
-                { label: 'PM', value: true },
-              ].map(opt => {
-                const active = isPm === opt.value;
+          {/* Large time display */}
+          <View style={{ alignItems: 'center', marginTop: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+              <Text style={styles.timeLarge}>{formatTimeAmPm(currentTime)}</Text>
+              <Text style={[styles.ampmLabel, { color: accent }]}>{formatAmPm(currentTime)}</Text>
+            </View>
+            <Text style={styles.countdown}>{timeUntilLabel(currentTime)}</Text>
+          </View>
+
+          {/* Divider */}
+          <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: 4, marginTop: 14 }} />
+
+          {/* Quick picks — most common times, one tap */}
+          {quickPicks.length > 0 && (
+            <View style={styles.quickPicksRow}>
+              {quickPicks.map(time => {
+                const active = time === currentTime;
                 return (
                   <TouchableOpacity
-                    key={opt.label}
-                    onPress={() => {
-                      void Haptics.selectionAsync();
-                      setIsPm(opt.value);
-                    }}
+                    key={time}
+                    onPress={() => applyQuickPick(time)}
                     activeOpacity={0.8}
-                    className="w-14 py-2.5 rounded-xl items-center"
-                    style={{
-                      backgroundColor: active ? accent : 'rgba(255,255,255,0.05)',
-                      borderWidth: 1,
-                      borderColor: active ? accent : 'rgba(255,255,255,0.12)',
-                    }}
+                    style={[
+                      styles.quickPickChip,
+                      active
+                        ? { backgroundColor: accent + '25', borderColor: accent + '60' }
+                        : { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)' },
+                    ]}
                   >
-                    <Text style={{ fontSize: 15, fontWeight: '800', color: active ? '#FFFFFF' : 'rgba(255,255,255,0.4)' }}>
-                      {opt.label}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      {active && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: accent }} />}
+                      <Text style={[
+                        styles.quickPickText,
+                        { color: active ? '#FFFFFF' : 'rgba(255,255,255,0.5)' },
+                      ]}>
+                        {formatTimeAmPm(time)}
+                        <Text style={{ fontSize: 8, fontWeight: '600', opacity: 0.6 }}> {formatAmPm(time)}</Text>
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
             </View>
+          )}
+
+          {/* Native OS time picker — inline spinner */}
+          <View style={styles.pickerWrap}>
+            <DateTimePicker
+              value={date}
+              mode="time"
+              display="spinner"
+              is24Hour={false}
+              onChange={handlePickerChange}
+              themeVariant="dark"
+              accentColor={accent}
+              textColor="#FFFFFF"
+            />
           </View>
 
           {/* Actions */}
-          <View className="flex-row gap-3 mt-7">
-            <TouchableOpacity
-              onPress={onCancel}
-              activeOpacity={0.8}
-              className="flex-1 items-center py-3.5 rounded-2xl border border-white/10 bg-white/[0.04]"
-            >
-              <Text style={{ fontSize: 15, fontWeight: '700', color: 'rgba(255,255,255,0.6)' }}>Cancel</Text>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity onPress={onCancel} activeOpacity={0.8} style={styles.cancelBtn}>
+              <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleConfirm}
-              activeOpacity={0.85}
-              className="flex-1 items-center py-3.5 rounded-2xl"
-              style={{ backgroundColor: accent }}
+
+            <LinearGradient
+              colors={icon === 'wake' ? ['#a78bfa', '#7c3aed'] : ['#3b82f6', '#2563eb']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={styles.confirmBtn}
             >
-              <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFFFFF', letterSpacing: 1 }}>Set Time</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleConfirm}
+                activeOpacity={0.85}
+                style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={styles.confirmText}>Set Time</Text>
+              </TouchableOpacity>
+            </LinearGradient>
           </View>
-        </View>
+
+          {/* Bottom spacer for safe area */}
+          <View style={{ height: 8 }} />
+        </GlassCard>
       </View>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 20,
+  },
+  title: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+  timeLarge: {
+    fontSize: 52,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -1.5,
+    fontVariant: ['tabular-nums'],
+  },
+  ampmLabel: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 8,
+    marginLeft: 6,
+    letterSpacing: 1,
+  },
+  countdown: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.35)',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  quickPicksRow: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingHorizontal: 4,
+  },
+  quickPickChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  quickPickText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  pickerWrap: {
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: -8,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  cancelText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.55)',
+  },
+  confirmBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 12,
+    shadowOpacity: 0.4,
+    elevation: 6,
+  },
+  confirmText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+});

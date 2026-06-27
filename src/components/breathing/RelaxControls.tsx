@@ -116,7 +116,7 @@ function RadialSoundMenu({
     <View style={styles.radialMenuContainer}>
       {/* Center play indicator */}
       <View style={[styles.radialCenter, { left: CENTER_X - 28, top: CENTER_Y - 28 }]}>
-        <Ionicons name="musical-note" size={28} color="#7B61FF" />
+        <Ionicons name="musical-note" size={28} color="#4FC3F7" />
       </View>
 
       {/* Sound buttons in circle */}
@@ -144,6 +144,8 @@ function RadialSoundMenu({
             ]}
             activeOpacity={0.7}
           >
+            {/* Ionicons name prop expects a specific icon name type, but our
+                music config uses string constants that are known-safe at runtime. */}
             <Ionicons
               name={music.icon as any}
               size={isSelected ? 20 : 16}

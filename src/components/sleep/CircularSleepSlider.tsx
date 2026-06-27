@@ -372,12 +372,12 @@ export function CircularSleepSlider({ bedtime, wakeTime, onChange, size = 280 }:
             <Svg width={14} height={14} viewBox="0 0 24 24">
               <Path
                 d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.4 5.4 0 0 1-4.4 2.26 5.4 5.4 0 0 1-3.14-9.8A9 9 0 0 0 12 3z"
-                fill="#9d8aff"
+                fill="#a78bfa"
               />
             </Svg>
           </View>
           <Text className="text-[9px] font-bold tracking-[1.5] uppercase mt-1" style={{ color: 'rgba(255, 255, 255, 0.4)' }}>Bedtime</Text>
-          <Text className="text-[16px] font-bold mt-0.5" style={{ color: '#9d8aff' }}>{formatTimeAmPm(bedH)}</Text>
+          <Text className="text-[16px] font-bold mt-0.5" style={{ color: '#a78bfa' }}>{formatTimeAmPm(bedH)}</Text>
         </TouchableOpacity>
 
         <View className="items-center">

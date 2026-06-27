@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import firestore from '@react-native-firebase/firestore';
-import React, { createContext, ReactNode, useCallback, useEffect, useState } from 'react';
+import { collection, getDocs, addDoc, query, orderBy, limit, getFirestore } from '@react-native-firebase/firestore';
+import React, { createContext, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import type { EmotionalState } from '@/constants/emotionalStates';
 import type { BreathingMusicId } from '@/constants/breathingMusic';
 import { useAuth } from './AuthContext';
+import { reportError } from '@/utils/errorLogger';
 
 export interface SessionCompletionRecord {
   sessionId: string;
@@ -52,8 +53,8 @@ interface RelaxProviderProps {
 const RELAX_STORAGE_KEY = '@mindpulse/relax-sessions';
 
 /** Firestore ref for a user's relax sessions subcollection. */
-function relaxSessionsRef(uid: string) {
-  return firestore().collection('users').doc(uid).collection('relaxSessions');
+function relaxSessionsRef(uid: string, firestoreDb: ReturnType<typeof getFirestore>) {
+  return collection(firestoreDb, 'users', uid, 'relaxSessions');
 }
 
 export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
@@ -67,6 +68,9 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
   const [lastEmotion, setLastEmotion] = useState<EmotionalState | null>(null);
   const [completedSessions, setCompletedSessions] = useState<SessionCompletionRecord[]>([]);
 
+  // Evaluated at render time, not import time — improves unit-testability.
+  const db = useMemo(() => getFirestore(), []);
+
   // Restore persisted sessions on mount — try Firestore first for logged-in users
   useEffect(() => {
     async function load() {
@@ -74,10 +78,7 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
 
       if (uid) {
         try {
-          const snap = await relaxSessionsRef(uid)
-            .orderBy('completedAt', 'desc')
-            .limit(100)
-            .get();
+          const snap = await getDocs(query(relaxSessionsRef(uid, db), orderBy('completedAt', 'desc'), limit(100)));
           if (!snap.empty) {
             const cloud = snap.docs.map(d => d.data() as SessionCompletionRecord);
             setCompletedSessions(cloud);
@@ -85,7 +86,8 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
             void AsyncStorage.setItem(RELAX_STORAGE_KEY, JSON.stringify(cloud));
             return;
           }
-        } catch {
+        } catch (error) {
+          reportError(error, { tag: 'RelaxContext', action: 'load-cloud' });
           // offline — fall through to AsyncStorage
         }
       }
@@ -98,7 +100,8 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
           if (Array.isArray(parsed)) {
             setCompletedSessions(parsed);
           }
-        } catch {
+        } catch (error) {
+          reportError(error, { tag: 'RelaxContext', action: 'load-local-cache' });
           // Corrupted data — ignore
         }
       }
@@ -112,7 +115,8 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
   }
 
   function persistSessionsToFirestore(uid: string, record: SessionCompletionRecord): void {
-    void relaxSessionsRef(uid).add(record).catch(() => {
+    void addDoc(relaxSessionsRef(uid, db), record).catch((error) => {
+      reportError(error, { tag: 'RelaxContext', action: 'persist-firestore' });
       // offline — local cache is sufficient
     });
   }

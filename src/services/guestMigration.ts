@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import firestore from '@react-native-firebase/firestore';
+import { getFirestore, collection, doc, writeBatch, serverTimestamp } from '@react-native-firebase/firestore';
+
+const db = getFirestore();
 
 /**
  * Migrate all guest data from AsyncStorage to Firestore under the given uid.
@@ -10,7 +12,7 @@ import firestore from '@react-native-firebase/firestore';
  * duplicate already-synced records (e.g. relax sessions).
  */
 export async function migrateGuestData(uid: string): Promise<void> {
-  const batch = firestore().batch();
+  const batch = writeBatch(db);
   const keysToClear: string[] = [];
   let hasWrites = false;
 
@@ -21,7 +23,7 @@ export async function migrateGuestData(uid: string): Promise<void> {
       const sessions = JSON.parse(sessionsRaw) as Record<string, unknown>[];
       for (const session of sessions) {
         const { id: _id, ...data } = session;
-        const ref = firestore().collection('users').doc(uid).collection('sleepSessions').doc();
+        const ref = doc(collection(db, 'users', uid, 'sleepSessions'));
         batch.set(ref, data);
         hasWrites = true;
       }
@@ -37,7 +39,7 @@ export async function migrateGuestData(uid: string): Promise<void> {
     if (eyeRaw) {
       const sessions = JSON.parse(eyeRaw) as Record<string, unknown>[];
       for (const session of sessions) {
-        const ref = firestore().collection('users').doc(uid).collection('eyeSessions').doc();
+        const ref = doc(collection(db, 'users', uid, 'eyeSessions'));
         batch.set(ref, session);
         hasWrites = true;
       }
@@ -54,11 +56,11 @@ export async function migrateGuestData(uid: string): Promise<void> {
       const entries = JSON.parse(journalRaw) as Record<string, unknown>[];
       for (const entry of entries) {
         const { id: _id, uid: _uid, date, ...data } = entry;
-        const ref = firestore().collection('users').doc(uid).collection('journal').doc();
+        const ref = doc(collection(db, 'users', uid, 'journal'));
         batch.set(ref, {
           ...data,
           uid,
-          date: date ? new Date(date as string) : firestore.FieldValue.serverTimestamp(),
+          date: date ? new Date(date as string) : serverTimestamp(),
         });
         hasWrites = true;
       }
@@ -74,7 +76,7 @@ export async function migrateGuestData(uid: string): Promise<void> {
     if (recoveryRaw) {
       const sessions = JSON.parse(recoveryRaw) as Record<string, unknown>[];
       for (const session of sessions) {
-        const ref = firestore().collection('users').doc(uid).collection('recoverySessions').doc();
+        const ref = doc(collection(db, 'users', uid, 'recoverySessions'));
         batch.set(ref, session);
         hasWrites = true;
       }
@@ -93,9 +95,7 @@ export async function migrateGuestData(uid: string): Promise<void> {
       if (raw) {
         const gameId = key.replace('@mindpulse/game-record:guest:', '');
         const data = JSON.parse(raw) as Record<string, unknown>;
-        const ref = firestore()
-          .collection('users').doc(uid)
-          .collection('gameRecords').doc(gameId);
+        const ref = doc(db, 'users', uid, 'gameRecords', gameId);
         batch.set(ref, data);
         hasWrites = true;
       }
@@ -111,9 +111,7 @@ export async function migrateGuestData(uid: string): Promise<void> {
     if (scheduleRaw) {
       const schedule = JSON.parse(scheduleRaw) as Record<string, unknown>;
       const { uid: _uid, ...data } = schedule;
-      const ref = firestore()
-        .collection('users').doc(uid)
-        .collection('settings').doc('sleepSchedule');
+      const ref = doc(db, 'users', uid, 'settings', 'sleepSchedule');
       batch.set(ref, data, { merge: true });
       hasWrites = true;
       keysToClear.push('@mindpulse/sleep-schedule:guest');
@@ -128,7 +126,7 @@ export async function migrateGuestData(uid: string): Promise<void> {
     if (relaxRaw) {
       const sessions = JSON.parse(relaxRaw) as Record<string, unknown>[];
       for (const session of sessions) {
-        const ref = firestore().collection('users').doc(uid).collection('relaxSessions').doc();
+        const ref = doc(collection(db, 'users', uid, 'relaxSessions'));
         batch.set(ref, session);
         hasWrites = true;
       }

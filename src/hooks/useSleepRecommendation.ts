@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSleep } from '@/context/SleepContext';
 import { useSleepSchedule } from '@/hooks/useSleepSchedule';
 import { useAuth } from '@/context/AuthContext';
@@ -195,6 +195,35 @@ export function useSleepRecommendation(): SleepRecommendation {
     loadCached();
   }, [loadCached]);
 
+  // Memoize Gemini / fallback parameters so the effect only re-fires when
+  // the *source data* changes, not when every derived string is recomputed.
+  const geminiParams = useMemo(
+    () => ({
+      avgBedtime: avgBedtimeFormatted,
+      avgWakeTime: avgWakeTimeFormatted,
+      avgDurationHours: avgDur,
+      consistencyScore,
+      avgQuality: avgQual,
+      sessionCount: recent.length,
+      scheduleBedtime: scheduleBedtimeFormatted,
+      scheduleWakeTime: scheduleWakeFormatted,
+      scheduleDuration: defaultDuration,
+      recentJournalEntries,
+    }),
+    [
+      avgBedtimeFormatted,
+      avgWakeTimeFormatted,
+      avgDur,
+      consistencyScore,
+      avgQual,
+      recent.length,
+      scheduleBedtimeFormatted,
+      scheduleWakeFormatted,
+      defaultDuration,
+      recentJournalEntries,
+    ],
+  );
+
   // ── Fire Gemini when data is ready and fingerprint has changed ──
   useEffect(() => {
     if (!cachedFingerprintChecked || scheduleLoading) return;
@@ -204,15 +233,15 @@ export function useSleepRecommendation(): SleepRecommendation {
     setGeminiLoading(true);
 
     generateSleepTip({
-      avgBedtime: avgBedtimeFormatted,
-      avgWakeTime: avgWakeTimeFormatted,
-      avgDurationHours: avgDur,
-      consistencyScore,
-      avgQuality: avgQual,
-      sessionCount: recent.length,
-      scheduleBedtime: scheduleBedtimeFormatted,
-      scheduleWakeTime: scheduleWakeFormatted,
-      recentJournalEntries,
+      avgBedtime: geminiParams.avgBedtime,
+      avgWakeTime: geminiParams.avgWakeTime,
+      avgDurationHours: geminiParams.avgDurationHours,
+      consistencyScore: geminiParams.consistencyScore,
+      avgQuality: geminiParams.avgQuality,
+      sessionCount: geminiParams.sessionCount,
+      scheduleBedtime: geminiParams.scheduleBedtime,
+      scheduleWakeTime: geminiParams.scheduleWakeTime,
+      recentJournalEntries: geminiParams.recentJournalEntries,
     }).then(async (geminiTip) => {
       if (geminiTip) {
         setMessage(geminiTip);
@@ -220,31 +249,11 @@ export function useSleepRecommendation(): SleepRecommendation {
         await setCachedFingerprint(currentFingerprint);
       } else {
         // Gemini unavailable — use rule-based fallback
-        const fb = fallbackMessage({
-          avgBedtime: avgBedtimeFormatted,
-          avgWakeTime: avgWakeTimeFormatted,
-          avgDurationHours: avgDur,
-          consistencyScore,
-          avgQuality: avgQual,
-          sessionCount: recent.length,
-          scheduleBedtime: scheduleBedtimeFormatted,
-          scheduleWakeTime: scheduleWakeFormatted,
-          scheduleDuration: defaultDuration,
-        });
+        const fb = fallbackMessage(geminiParams);
         setMessage(fb);
       }
     }).catch(() => {
-      const fb = fallbackMessage({
-        avgBedtime: avgBedtimeFormatted,
-        avgWakeTime: avgWakeTimeFormatted,
-        avgDurationHours: avgDur,
-        consistencyScore,
-        avgQuality: avgQual,
-        sessionCount: recent.length,
-        scheduleBedtime: scheduleBedtimeFormatted,
-        scheduleWakeTime: scheduleWakeFormatted,
-        scheduleDuration: defaultDuration,
-      });
+      const fb = fallbackMessage(geminiParams);
       setMessage(fb);
     }).finally(() => {
       setGeminiLoading(false);
@@ -253,16 +262,7 @@ export function useSleepRecommendation(): SleepRecommendation {
     cachedFingerprintChecked,
     scheduleLoading,
     currentFingerprint,
-    avgBedtimeFormatted,
-    avgWakeTimeFormatted,
-    avgDur,
-    consistencyScore,
-    avgQual,
-    recent.length,
-    scheduleBedtimeFormatted,
-    scheduleWakeFormatted,
-    defaultDuration,
-    recentJournalEntries,
+    geminiParams,
   ]);
 
   // ── If not yet checked cache, show a minimal placeholder ──

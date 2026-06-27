@@ -50,3 +50,12 @@ export {
   type SleepQualityOption,
 } from './sleepQuality';
 export { SLEEP_TRACK_RING, SLEEP_TRACK_RING_OFFSET } from './sleepTrackerLayout';
+export {
+  PILLAR_THEME,
+  DEFAULT_PILLAR_THEME,
+  GLASS_CARD,
+  FONTS,
+  getPillarTheme,
+  type PillarKey,
+  type PillarTheme,
+} from './theme';

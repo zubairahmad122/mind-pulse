@@ -118,7 +118,7 @@ export const GAME_ICON_COLORS: Record<string, string> = {
   'focus-sprint': '#6ee7b7',
   'comet-trace': '#60a5fa',
   spiral: '#a78bfa',
-  'dichoptic-reaction': '#7B61FF',
+  'dichoptic-reaction': '#22d3ee',
 };
 
 type EyeGameIconProps = {

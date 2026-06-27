@@ -108,7 +108,7 @@ export function ConvergenceGuide({ active }: Props) {
         <Defs>
           <RadialGradient id="convBg" cx="130" cy="120" r="130">
             <Stop offset="0%" stopColor="#fb7185" stopOpacity="0.08" />
-            <Stop offset="50%" stopColor="#7B61FF" stopOpacity="0.04" />
+            <Stop offset="50%" stopColor="#22d3ee" stopOpacity="0.04" />
             <Stop offset="100%" stopColor="#0A0E1A" stopOpacity="0" />
           </RadialGradient>
         </Defs>

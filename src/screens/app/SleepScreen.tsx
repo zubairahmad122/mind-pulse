@@ -1,8 +1,49 @@
-import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Modal, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ScreenShell } from "@/components/layout/ScreenShell";
+import { BreatheToDismiss } from "@/components/sleep/BreatheToDismiss";
+import { HoldButton } from "@/components/sleep/HoldButton";
+import { MoonWave } from "@/components/sleep/MoonWave";
+import { SleepAnalysisPanel } from "@/components/sleep/SleepAnalysisPanel";
+import { SleepDial } from "@/components/sleep/SleepDial";
+import { SleepQualityModal } from "@/components/sleep/SleepQualityModal";
+import { SleepRoutinePanel } from "@/components/sleep/SleepRoutinePanel";
+import { SleepTimePickerSheet } from "@/components/sleep/SleepTimePickerSheet";
+import { AmbientBackground } from "@/components/ui";
+import { ActionCard } from "@/components/ui/ActionCard";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { GradientCTA } from "@/components/ui/GradientCTA";
+import { SubscriptionBadge } from "@/components/ui/SubscriptionBadge";
+import { getPresetById, NIGHT_PRESETS, ROUTES } from "@/constants";
+import { PILLAR_THEME } from "@/constants/theme";
+import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
+import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  BarChart3,
+  Bed,
+  Bell,
+  Check,
+  ChevronRight,
+  Clock,
+  Moon,
+  MoonStar,
+  Music,
+  Play,
+  Settings,
+  Sparkles,
+  Star,
+  Volume2,
+} from "lucide-react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  AppState,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -10,82 +51,161 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withTiming,
-} from 'react-native-reanimated';
-import { Bed, Bell, ChevronRight, Clock, Moon, MoonStar, Music, Play, Settings, Sparkles, Star, Sun, Volume2 } from 'lucide-react-native';
-import { ScreenShell } from '@/components/layout/ScreenShell';
-import { MoonWave } from '@/components/sleep/MoonWave';
-import { HoldButton } from '@/components/sleep/HoldButton';
-import { TimePickerModal } from '@/components/sleep/TimePickerModal';
-import { BreatheToDismiss } from '@/components/sleep/BreatheToDismiss';
-import { SleepQualityModal } from '@/components/sleep/SleepQualityModal';
-import { SleepRoutinePanel } from '@/components/sleep/SleepRoutinePanel';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { SubscriptionBadge } from '@/components/ui/SubscriptionBadge';
+} from "react-native-reanimated";
+import Svg, {
+  Circle,
+  Defs,
+  Stop,
+  RadialGradient as SvgRadialGradient,
+} from "react-native-svg";
+
+import { ScreenTransition } from "@/components/ui/ScreenTransition";
+import { ALARM_RINGTONES, getRingtoneRequire } from "@/constants/alarmSounds";
+import { useAuth } from "@/context/AuthContext";
+import { useSleep } from "@/context/SleepContext";
+import { useAlarmSettings } from "@/hooks/useAlarmSettings";
+import { useGreeting } from "@/hooks/useGreeting";
+import { usePersistedSleepTracker } from "@/hooks/usePersistedSleepTracker";
+import { useSleepPlanInsight } from "@/hooks/useSleepPlanInsight";
+import { useSleepReadiness } from "@/hooks/useSleepReadiness";
+import { useSleepSchedule } from "@/hooks/useSleepSchedule";
+import type { SleepStage } from "@/services/accelerometerSleepTracker";
+import { formatWakeTime } from "@/services/sleepAlarm";
+import { formatAlarmCountdown } from "@/utils/sleepDisplay";
 import {
-  NIGHT_PRESETS,
-  ROUTES,
-  getPresetById,
-  resolvePresetMinutes,
-} from '@/constants';
-import { ALARM_RINGTONES, getRingtoneRequire } from '@/constants/alarmSounds';
-import { useAlarmSettings } from '@/hooks/useAlarmSettings';
-import { useAuth } from '@/context/AuthContext';
-import { useGreeting } from '@/hooks/useGreeting';
-import { usePersistedSleepTracker } from '@/hooks/usePersistedSleepTracker';
-import { useSleep } from '@/context/SleepContext';
-import { ScreenTransition } from '@/components/ui/ScreenTransition';
-import { useSleepSchedule } from '@/hooks/useSleepSchedule';
-import { formatWakeTime } from '@/services/sleepAlarm';
-import { avgDuration, calculateStreak, formatDuration, formatElapsed } from '@/utils/sleepUtils';
-import { formatAlarmCountdown, formatPresetDuration } from '@/utils/sleepDisplay';
-import type { SleepPreset } from '@/constants/sleepSessions';
-import type { SleepStage } from '@/services/accelerometerSleepTracker';
+  avgDuration,
+  calculateStreak,
+  formatDuration,
+  formatElapsed,
+} from "@/utils/sleepUtils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Add minutes to a "HH:MM" time string, wrapping around 24h. */
 function addMinutesToTime(time: string, minutes: number): string {
-  const [h, m] = time.split(':').map(Number);
-  const total = ((h * 60 + m + minutes) % 1440 + 1440) % 1440;
-  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+  const [h, m] = time.split(":").map(Number);
+  const total = (((h * 60 + m + minutes) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
 /** Format a "HH:MM" string to a short 12h display like "6:30 AM". */
 function formatTimeAmPm(wakeTime: string): string {
-  const [h, m] = wakeTime.split(':').map(Number);
+  const [h, m] = wakeTime.split(":").map(Number);
   const hh24 = h % 24;
   const hour12 = hh24 === 0 ? 12 : hh24 > 12 ? hh24 - 12 : hh24;
-  const ampm = hh24 < 12 ? 'AM' : 'PM';
-  return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+  const ampm = hh24 < 12 ? "AM" : "PM";
+  return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
 /** Calculate minutes between two "HH:MM" times, wrapping overnight if needed. */
 function timeDiffMinutes(from: string, to: string): number {
-  const [fh, fm] = from.split(':').map(Number);
-  const [th, tm] = to.split(':').map(Number);
+  const [fh, fm] = from.split(":").map(Number);
+  const [th, tm] = to.split(":").map(Number);
   let diff = th * 60 + tm - (fh * 60 + fm);
   if (diff <= 0) diff += 1440;
   return diff;
 }
 
+// ── Sleep pillar theme tokens ──────────────────────────────────────────────────
+const SLEEP = PILLAR_THEME.sleep;
+
+// ── Sleep goal cards ──────────────────────────────────────────────────────────
+const SLEEP_GOALS = [
+  { hours: 7, label: "Minimum", icon: Moon, color: "#60a5fa" },
+  { hours: 7.5, label: "Recommended", icon: Star, color: "#a78bfa" },
+  { hours: 8, label: "Optimal", icon: Sparkles, color: "#34d399" },
+  { hours: 9, label: "Recovery", icon: Bed, color: "#f59e0b" },
+] as const;
+
+// ── ReadinessRing — compact circular gauge for the header indicator ───────────
+function ReadinessRing({
+  score,
+  color,
+  size = 38,
+}: {
+  score: number;
+  color: string;
+  size?: number;
+}) {
+  const stroke = 3.5;
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = circ * (score / 100);
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Svg
+        width={size}
+        height={size}
+        style={{ position: "absolute", transform: [{ rotate: "-90deg" }] }}
+      >
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth={stroke}
+          fill="none"
+        />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke={color}
+          strokeWidth={stroke}
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circ}`}
+        />
+      </Svg>
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: "800",
+          color: "#FFFFFF",
+          fontVariant: ["tabular-nums"],
+        }}
+      >
+        {score}
+      </Text>
+    </View>
+  );
+}
+
 function stageBadgeClass(stage: SleepStage): string {
-  if (stage === 'light') return 'bg-emerald-500/20 border-emerald-500/40';
-  if (stage === 'rem') return 'bg-sky-400/20 border-sky-400/40';
-  return 'bg-purple-500/20 border-purple-500/40';
+  if (stage === "light") return "bg-emerald-500/20 border-emerald-500/40";
+  if (stage === "rem") return "bg-sky-400/20 border-sky-400/40";
+  return "bg-purple-500/20 border-purple-500/40";
 }
 
 // ─── Toggle Switch ────────────────────────────────────────────────────────────
 
-function ToggleSwitch({ value, onToggle }: { value: boolean; onToggle: () => void }) {
+function ToggleSwitch({
+  value,
+  onToggle,
+}: {
+  value: boolean;
+  onToggle: () => void;
+}) {
   return (
     <TouchableOpacity
       onPress={onToggle}
       activeOpacity={0.8}
       className={`w-12 h-7 rounded-full p-0.5 justify-center border ${
-        value ? 'bg-app-purple border-app-purple' : 'bg-white/[0.06] border-white/10'
+        value
+          ? "bg-app-purple border-app-purple"
+          : "bg-white/[0.06] border-white/10"
       }`}
     >
-      <View className={`w-[22px] h-[22px] rounded-full bg-white shadow-sm ${value ? 'self-end' : 'self-start'}`} />
+      <View
+        className={`w-[22px] h-[22px] rounded-full bg-white shadow-sm ${value ? "self-end" : "self-start"}`}
+      />
     </TouchableOpacity>
   );
 }
@@ -103,7 +223,7 @@ function TestAlarmModal({
   alarmVolume: number;
   onDismiss: () => void;
 }) {
-  const ringtone = ALARM_RINGTONES.find(r => r.id === selectedRingtone);
+  const ringtone = ALARM_RINGTONES.find((r) => r.id === selectedRingtone);
   const RingIcon = ringtone?.icon ?? Bell;
   const pulseScale = useSharedValue(1);
   const pulseOpacity = useSharedValue(0.3);
@@ -119,7 +239,10 @@ function TestAlarmModal({
       cancelAnimation(pulseOpacity);
       if (autoDismissRef.current) clearTimeout(autoDismissRef.current);
       if (playerRef.current) {
-        try { playerRef.current.pause(); playerRef.current.remove(); } catch {}
+        try {
+          playerRef.current.pause();
+          playerRef.current.remove();
+        } catch {}
         playerRef.current = null;
       }
       return;
@@ -149,7 +272,10 @@ function TestAlarmModal({
     // Auto-dismiss after 5 seconds
     autoDismissRef.current = setTimeout(() => {
       if (playerRef.current) {
-        try { playerRef.current.pause(); playerRef.current.remove(); } catch {}
+        try {
+          playerRef.current.pause();
+          playerRef.current.remove();
+        } catch {}
         playerRef.current = null;
       }
       onDismissRef.current();
@@ -160,7 +286,10 @@ function TestAlarmModal({
       cancelAnimation(pulseOpacity);
       if (autoDismissRef.current) clearTimeout(autoDismissRef.current);
       if (playerRef.current) {
-        try { playerRef.current.pause(); playerRef.current.remove(); } catch {}
+        try {
+          playerRef.current.pause();
+          playerRef.current.remove();
+        } catch {}
         playerRef.current = null;
       }
     };
@@ -173,53 +302,85 @@ function TestAlarmModal({
 
   const handleDismiss = () => {
     if (playerRef.current) {
-      try { playerRef.current.pause(); playerRef.current.remove(); } catch {}
+      try {
+        playerRef.current.pause();
+        playerRef.current.remove();
+      } catch {}
       playerRef.current = null;
     }
     onDismiss();
   };
 
   return (
-    <Modal visible={visible} animationType="fade" presentationStyle="overFullScreen" transparent={false} statusBarTranslucent>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      presentationStyle="overFullScreen"
+      transparent={false}
+      statusBarTranslucent
+    >
       <View className="flex-1 bg-[#0a0720] items-center justify-center px-6 pb-12 overflow-hidden">
         {/* Glow halo */}
         <Animated.View
           pointerEvents="none"
-          style={[{
-            position: 'absolute',
-            width: 260,
-            height: 260,
-            borderRadius: 130,
-            backgroundColor: ringtone?.color ?? '#7B61FF',
-            top: '22%',
-          }, pulseAnim]}
+          style={[
+            {
+              position: "absolute",
+              width: 260,
+              height: 260,
+              borderRadius: 130,
+              backgroundColor: ringtone?.color ?? "#a78bfa",
+              top: "22%",
+            },
+            pulseAnim,
+          ]}
         />
 
         {/* Top accent arc */}
-        <View style={{
-          position: 'absolute',
-          top: '14%',
-          width: '150%',
-          height: 100,
-          borderRadius: 200,
-          borderTopLeftRadius: 0,
-          borderTopRightRadius: 0,
-          backgroundColor: (ringtone?.color ?? '#7B61FF') + '08',
-        }} />
+        <View
+          style={{
+            position: "absolute",
+            top: "14%",
+            width: "150%",
+            height: 100,
+            borderRadius: 200,
+            borderTopLeftRadius: 0,
+            borderTopRightRadius: 0,
+            backgroundColor: (ringtone?.color ?? "#a78bfa") + "08",
+          }}
+        />
 
         {/* Icon container */}
-        <View className="w-24 h-24 rounded-full items-center justify-center mb-5"
+        <View
+          className="w-24 h-24 rounded-full items-center justify-center mb-5"
           style={{
-            backgroundColor: (ringtone?.color ?? '#7B61FF') + '15',
+            backgroundColor: (ringtone?.color ?? "#a78bfa") + "15",
             borderWidth: 1,
-            borderColor: (ringtone?.color ?? '#7B61FF') + '30',
+            borderColor: (ringtone?.color ?? "#a78bfa") + "30",
           }}
         >
-          <RingIcon size={44} color={ringtone?.color ?? '#7B61FF'} strokeWidth={1.5} />
+          <RingIcon
+            size={44}
+            color={ringtone?.color ?? "#a78bfa"}
+            strokeWidth={1.5}
+          />
         </View>
 
-        <Text style={{ fontSize: 38, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.5 }}>Test Alarm</Text>
-        <Text style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>{ringtone?.label ?? 'Alarm'}</Text>
+        <Text
+          style={{
+            fontSize: 38,
+            fontWeight: "800",
+            color: "#FFFFFF",
+            letterSpacing: -0.5,
+          }}
+        >
+          Test Alarm
+        </Text>
+        <Text
+          style={{ fontSize: 15, color: "rgba(255,255,255,0.4)", marginTop: 4 }}
+        >
+          {ringtone?.label ?? "Alarm"}
+        </Text>
 
         {/* Volume indicator */}
         <View className="flex-row items-center gap-2 mt-6 bg-white/[0.03] px-4 py-2 rounded-full border border-white/10">
@@ -231,9 +392,10 @@ function TestAlarmModal({
                 className="w-[4px] rounded-full"
                 style={{
                   height: 4 + (i % 3) * 3,
-                  backgroundColor: i < Math.round(alarmVolume * 10)
-                    ? (ringtone?.color ?? '#7B61FF')
-                    : 'rgba(255,255,255,0.08)',
+                  backgroundColor:
+                    i < Math.round(alarmVolume * 10)
+                      ? (ringtone?.color ?? "#a78bfa")
+                      : "rgba(255,255,255,0.08)",
                 }}
               />
             ))}
@@ -246,7 +408,7 @@ function TestAlarmModal({
           activeOpacity={0.85}
           className="mt-12 w-full max-w-xs flex-row items-center justify-center gap-2.5 py-4 rounded-2xl bg-app-purple"
           style={{
-            shadowColor: '#7B61FF',
+            shadowColor: "#a78bfa",
             shadowOffset: { width: 0, height: 0 },
             shadowRadius: 20,
             shadowOpacity: 0.5,
@@ -254,10 +416,27 @@ function TestAlarmModal({
           }}
         >
           <Bell size={18} color="#fff" />
-          <Text style={{ fontSize: 17, fontWeight: '800', color: '#FFFFFF', letterSpacing: 1.5 }}>DISMISS</Text>
+          <Text
+            style={{
+              fontSize: 17,
+              fontWeight: "800",
+              color: "#FFFFFF",
+              letterSpacing: 1.5,
+            }}
+          >
+            DISMISS
+          </Text>
         </TouchableOpacity>
 
-        <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 12 }}>Auto-dismisses in a moment</Text>
+        <Text
+          style={{
+            fontSize: 11,
+            color: "rgba(255,255,255,0.25)",
+            marginTop: 12,
+          }}
+        >
+          Auto-dismisses in a moment
+        </Text>
       </View>
     </Modal>
   );
@@ -281,15 +460,29 @@ function SleepSkeleton() {
     opacity: pulseSV.value,
   }));
 
-  function Block({ w, h, r = 12, style }: { w: number | string; h: number; r?: number; style?: any }) {
+  function Block({
+    w,
+    h,
+    r = 12,
+    style,
+  }: {
+    w: number | string;
+    h: number;
+    r?: number;
+    style?: any;
+  }) {
     return (
       <Animated.View
-        style={[{
-          width: w as any,
-          height: h,
-          borderRadius: r,
-          backgroundColor: 'rgba(255,255,255,0.07)',
-        }, pulseAnim, style]}
+        style={[
+          {
+            width: w as any,
+            height: h,
+            borderRadius: r,
+            backgroundColor: "rgba(255,255,255,0.07)",
+          },
+          pulseAnim,
+          style,
+        ]}
       />
     );
   }
@@ -297,32 +490,46 @@ function SleepSkeleton() {
   function Circle({ size }: { size: number }) {
     return (
       <Animated.View
-        style={[{
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: 'rgba(255,255,255,0.07)',
-        }, pulseAnim]}
+        style={[
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: "rgba(255,255,255,0.07)",
+          },
+          pulseAnim,
+        ]}
       />
     );
   }
 
-  function GlassSkeleton({ children, style }: { children: React.ReactNode; style?: any }) {
+  function GlassSkeleton({
+    children,
+    style,
+  }: {
+    children: React.ReactNode;
+    style?: any;
+  }) {
     return (
-      <View style={[{
-        backgroundColor: 'rgba(255,255,255,0.03)',
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.06)',
-        padding: 16,
-      }, style]}>
+      <View
+        style={[
+          {
+            backgroundColor: "rgba(255,255,255,0.03)",
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.1)",
+            padding: 16,
+          },
+          style,
+        ]}
+      >
         {children}
       </View>
     );
   }
 
   return (
-    <ScreenShell>
+    <ScreenShell ambient={<AmbientBackground subtle />}>
       <View className="px-1 pt-1 pb-4">
         {/* Header */}
         <View className="mb-5">
@@ -345,10 +552,15 @@ function SleepSkeleton() {
         </View>
 
         {/* Info text */}
-        <Block w={240} h={14} r={4} style={{ alignSelf: 'center', marginTop: 4, marginBottom: 16 }} />
+        <Block
+          w={240}
+          h={14}
+          r={4}
+          style={{ alignSelf: "center", marginTop: 4, marginBottom: 16 }}
+        />
 
         {/* Circular slider card */}
-        <GlassSkeleton style={{ alignItems: 'center', paddingVertical: 16 }}>
+        <GlassSkeleton style={{ alignItems: "center", paddingVertical: 16 }}>
           <Circle size={200} />
           {/* Time labels row */}
           <View className="flex-row justify-between w-full mt-4 px-2">
@@ -379,8 +591,11 @@ function SleepSkeleton() {
 
         {/* Preset cards */}
         <View className="flex-row gap-2.5 justify-center mt-3">
-          {[1, 2, 3, 4].map(i => (
-            <View key={i} className="flex-1 items-center py-3 rounded-2xl bg-white/[0.03] gap-1.5">
+          {[1, 2, 3, 4].map((i) => (
+            <View
+              key={i}
+              className="flex-1 items-center py-3 rounded-2xl bg-white/[0.03] gap-1.5"
+            >
               <Block w={20} h={20} r={10} />
               <Block w={32} h={14} r={4} />
               <Block w={36} h={10} r={3} />
@@ -412,9 +627,14 @@ function SleepSkeleton() {
 
         {/* Stats row */}
         <View className="flex-row gap-2.5 mt-4">
-          {[1, 2, 3].map(i => (
-            <View key={i} className="flex-1 rounded-2xl bg-white/[0.03] overflow-hidden">
-              <View style={{ height: 3, backgroundColor: 'rgba(255,255,255,0.05)' }} />
+          {[1, 2, 3].map((i) => (
+            <View
+              key={i}
+              className="flex-1 rounded-2xl bg-white/[0.03] overflow-hidden"
+            >
+              <View
+                style={{ height: 3, backgroundColor: "rgba(255,255,255,0.05)" }}
+              />
               <View className="px-3 py-3 items-center gap-2">
                 <Block w={14} h={14} r={7} />
                 <Block w={36} h={10} r={3} />
@@ -430,7 +650,7 @@ function SleepSkeleton() {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
-type SleepSegment = 'tonight' | 'routine';
+type SleepSegment = "tonight" | "routine" | "analysis";
 
 type Params = { tab?: string; preset?: string };
 
@@ -438,14 +658,17 @@ export default function SleepScreen() {
   const params = useLocalSearchParams<Params>();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { user } = useAuth();
-  const displayName = user?.displayName ?? user?.email?.split('@')[0] ?? 'Sleeper';
+  const { user, isGuestMode } = useAuth();
+  const displayName =
+    user?.displayName ?? user?.email?.split("@")[0] ?? "Sleeper";
   const greeting = useGreeting(displayName);
   const { sessions, addSession } = useSleep();
-  const { schedule } = useSleepSchedule(user?.uid);
+  const { schedule, saveSchedule } = useSleepSchedule(user?.uid, isGuestMode);
+  const readiness = useSleepReadiness();
 
   // ── Default preset ────────────────────────────────────────────────────────
-  const defaultNight = NIGHT_PRESETS.find(p => p.id === 'night-7.5') ?? NIGHT_PRESETS[2];
+  const defaultNight =
+    NIGHT_PRESETS.find((p) => p.id === "night-7.5") ?? NIGHT_PRESETS[2];
   const initialPreset =
     (params.preset && getPresetById(params.preset)) || defaultNight;
 
@@ -458,7 +681,6 @@ export default function SleepScreen() {
     hydrated,
     busy,
     selectedPreset,
-    setSelectedPreset,
     tracking,
     alarmPastDue,
     startTime,
@@ -474,21 +696,27 @@ export default function SleepScreen() {
   } = tracker;
 
   // ── Tab state ─────────────────────────────────────────────────────────────
-  const initialTab: SleepSegment = params.tab === 'routine' ? 'routine' : 'tonight';
+  const initialTab: SleepSegment =
+    params.tab === "routine"
+      ? "routine"
+      : params.tab === "analysis"
+        ? "analysis"
+        : "tonight";
   const [segment, setSegment] = useState<SleepSegment>(initialTab);
 
   useEffect(() => {
-    if (params.tab === 'routine') setSegment('routine');
-    if (params.tab === 'tonight') setSegment('tonight');
+    if (params.tab === "routine") setSegment("routine");
+    if (params.tab === "tonight") setSegment("tonight");
+    if (params.tab === "analysis") setSegment("analysis");
   }, [params.tab]);
 
   useEffect(() => {
-    if (tracker.tracking) setSegment('tonight');
+    if (tracker.tracking) setSegment("tonight");
   }, [tracker.tracking]);
 
   // ── Bedtime / wake selection ──────────────────────────────────────────────
-  const defaultBedtime = schedule?.bedtime ?? '23:00';
-  const defaultWake = schedule?.wakeTime ?? '06:30';
+  const defaultBedtime = schedule?.bedtime ?? "23:00";
+  const defaultWake = schedule?.wakeTime ?? "06:30";
   const [sliderBedtime, setSliderBedtime] = useState(defaultBedtime);
   const [sliderWakeTime, setSliderWakeTime] = useState(defaultWake);
 
@@ -499,10 +727,6 @@ export default function SleepScreen() {
     }
   }, [schedule]);
 
-  const setupDurationMin = timeDiffMinutes(sliderBedtime, sliderWakeTime);
-  const setupDurH = Math.floor(setupDurationMin / 60);
-  const setupDurM = setupDurationMin % 60;
-
   // ── Elapsed timer + live device clock ─────────────────────────────────────
   const [elapsed, setElapsed] = useState(0);
   const [clockNow, setClockNow] = useState(() => new Date());
@@ -512,7 +736,9 @@ export default function SleepScreen() {
     if (!hydrated) return;
     if (tracking && startTime) {
       const tick = () => {
-        setElapsed(Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000)));
+        setElapsed(
+          Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000)),
+        );
         setClockNow(new Date());
       };
       tick();
@@ -528,18 +754,25 @@ export default function SleepScreen() {
 
   // Live clock parts for the tracking hero.
   const clockHour24 = clockNow.getHours();
-  const clockHm = `${String(clockHour24 % 12 === 0 ? 12 : clockHour24 % 12).padStart(2, '0')} : ${String(clockNow.getMinutes()).padStart(2, '0')}`;
-  const clockAmPm = clockHour24 < 12 ? 'AM' : 'PM';
-  const clockDate = clockNow.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+  const clockHm = `${String(clockHour24 % 12 === 0 ? 12 : clockHour24 % 12).padStart(2, "0")} : ${String(clockNow.getMinutes()).padStart(2, "0")}`;
+  const clockAmPm = clockHour24 < 12 ? "AM" : "PM";
+  const clockDate = clockNow.toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 
   // ── Alarm state refresh ───────────────────────────────────────────────────
   useEffect(() => {
     if (!tracking) return;
     const id = setInterval(() => refreshAlarmState(), 1000);
-    const sub = AppState.addEventListener('change', s => {
-      if (s === 'active') refreshAlarmState();
+    const sub = AppState.addEventListener("change", (s) => {
+      if (s === "active") refreshAlarmState();
     });
-    return () => { clearInterval(id); sub.remove(); };
+    return () => {
+      clearInterval(id);
+      sub.remove();
+    };
   }, [tracking, refreshAlarmState]);
 
   // ── Alarm settings for test preview ──────────────────────────────────────
@@ -547,7 +780,62 @@ export default function SleepScreen() {
   const [showTestAlarm, setShowTestAlarm] = useState(false);
 
   // ── Manual time entry (no dial) ───────────────────────────────────────────
-  const [editingTime, setEditingTime] = useState<'bedtime' | 'wake' | null>(null);
+  const [editingTime, setEditingTime] = useState<"bedtime" | "wake" | null>(
+    null,
+  );
+
+  // ── Sleep goal selection (Min / Recommended / Optimal / Recovery) ─────────
+  // The planned duration drives the goal label; snap to a named goal only when
+  // the actual planned duration matches one exactly, else describe it generically.
+  const plannedHours =
+    Math.round((timeDiffMinutes(sliderBedtime, sliderWakeTime) / 60) * 10) / 10;
+  const matchedGoal = SLEEP_GOALS.find((g) => g.hours === plannedHours);
+  const goalLabel = matchedGoal
+    ? `${matchedGoal.label} (${matchedGoal.hours}h)`
+    : `Custom (${plannedHours}h)`;
+
+  // ── Save Tonight's Plan ────────────────────────────────────────────────────
+  const [saving, setSaving] = useState(false);
+  const [savedPulse, setSavedPulse] = useState(false);
+
+  const handleSavePlan = useCallback(async () => {
+    if (saving) return;
+    setSaving(true);
+    const planMinutes = timeDiffMinutes(sliderBedtime, sliderWakeTime);
+    try {
+      await saveSchedule({
+        uid: user?.uid ?? "guest",
+        bedtime: sliderBedtime,
+        wakeTime: sliderWakeTime,
+        duration: Math.round((planMinutes / 60) * 10) / 10,
+        activeDays: schedule?.activeDays ?? ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        reminderEnabled: schedule?.reminderEnabled ?? true,
+        reminderMinutes: schedule?.reminderMinutes ?? 30,
+        sleepNotesEnabled: schedule?.sleepNotesEnabled ?? true,
+      });
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setSavedPulse(true);
+      setTimeout(() => setSavedPulse(false), 2000);
+    } catch {
+      /* local copy already saved by the hook */
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    saving,
+    sliderBedtime,
+    sliderWakeTime,
+    saveSchedule,
+    user?.uid,
+    schedule,
+  ]);
+
+  // ── AI insight about tonight's plan ────────────────────────────────────────
+  const planInsight = useSleepPlanInsight({
+    bedtime: sliderBedtime,
+    wakeTime: sliderWakeTime,
+    goalLabel,
+  });
 
   // ── Breathing & Rating ────────────────────────────────────────────────────
   const [snoozeCount, setSnoozeCount] = useState(0);
@@ -584,7 +872,7 @@ export default function SleepScreen() {
   const handleSnooze = useCallback(async () => {
     if (snoozeCount >= 3 || busy) return;
     await snooze();
-    setSnoozeCount(prev => prev + 1);
+    setSnoozeCount((prev) => prev + 1);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, [snooze, snoozeCount, busy]);
 
@@ -611,7 +899,9 @@ export default function SleepScreen() {
   const handleSaveSession = useCallback(async () => {
     if (actionBusyRef.current || !startTime || !pendingEnd) return;
     actionBusyRef.current = true;
-    const durationMinutes = Math.round((pendingEnd.getTime() - startTime.getTime()) / 60000);
+    const durationMinutes = Math.round(
+      (pendingEnd.getTime() - startTime.getTime()) / 60000,
+    );
     if (durationMinutes >= 1) {
       try {
         await addSession({
@@ -621,7 +911,9 @@ export default function SleepScreen() {
           durationMinutes,
           quality: selectedQuality,
         });
-      } catch { /* shown by context */ }
+      } catch {
+        /* shown by context */
+      }
     }
     setShowRating(false);
     await clearSession();
@@ -640,7 +932,8 @@ export default function SleepScreen() {
     } else {
       timerScale.value = withRepeat(
         withTiming(1.03, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-        -1, true,
+        -1,
+        true,
       );
     }
     return () => {
@@ -648,7 +941,9 @@ export default function SleepScreen() {
     };
   }, [tracking]);
 
-  const timerScaleAnim = useAnimatedStyle(() => ({ transform: [{ scale: timerScale.value }] }));
+  const timerScaleAnim = useAnimatedStyle(() => ({
+    transform: [{ scale: timerScale.value }],
+  }));
   // ── Stats ─────────────────────────────────────────────────────────────────
   const streak = calculateStreak(sessions);
   const avg = avgDuration(sessions);
@@ -660,369 +955,1077 @@ export default function SleepScreen() {
     return <SleepSkeleton />;
   }
 
+  // ── Ambient glow behind the tracking hero ──────────────────────────────
+  function TrackingGlow({ frame: _f }: { frame: number }) {
+    return (
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: "18%",
+          alignSelf: "center",
+          width: 320,
+          height: 320,
+        }}
+      >
+        <Svg width={320} height={320} viewBox="0 0 380 380">
+          <Defs>
+            <SvgRadialGradient id="sleepBgGlow" cx="50%" cy="50%" r="50%">
+              <Stop offset="0%" stopColor={SLEEP.accent} stopOpacity={0.25} />
+              <Stop offset="55%" stopColor={SLEEP.accent} stopOpacity={0.08} />
+              <Stop offset="100%" stopColor={SLEEP.accent} stopOpacity={0} />
+            </SvgRadialGradient>
+          </Defs>
+          <Circle cx={190} cy={190} r={190} fill="url(#sleepBgGlow)" />
+        </Svg>
+      </View>
+    );
+  }
+
   return (
-    <ScreenShell safeBottom>
+    <ScreenShell safeBottom pillar="sleep" ambient={<AmbientBackground />}>
       <ScreenTransition>
-      <View className="px-1 pt-1 pb-4">
-        {/* Header */}
-        <View className="mb-6 flex-row items-center justify-between">
-          <View>
-            <Text style={{ fontSize: 30, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.5 }}>Sleep</Text>
-            <Text numberOfLines={1} ellipsizeMode="tail" style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 2, maxWidth: 180 }}>{greeting}</Text>
-          </View>
-          <View className="flex-row items-center gap-2">
-            <SubscriptionBadge />
-            {/* Alarm settings button */}
-            <TouchableOpacity
-              onPress={() => router.push(ROUTES.appAlarmSettings)}
-              activeOpacity={0.7}
-              className="w-9 h-9 rounded-full items-center justify-center bg-white/[0.06] border border-white/10"
-            >
-              <Settings size={16} color="rgba(255,255,255,0.5)" />
-            </TouchableOpacity>
-            <View style={{ flexShrink: 0 }} className="flex-row items-center gap-1.5 bg-white/[0.06] px-3 py-1.5 rounded-full border border-white/10">
-              <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <Text style={{ fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.5)', letterSpacing: 0.5 }}>
-                {tracking ? 'Tracking' : 'Ready'}
+        <View className="px-1 pt-1 pb-4">
+          {/* Header */}
+          <View className="mb-6 flex-row items-center justify-between">
+            <View>
+              <Text
+                style={{
+                  fontSize: 30,
+                  fontWeight: "800",
+                  color: "#FFFFFF",
+                  letterSpacing: -0.5,
+                }}
+              >
+                Sleep
+              </Text>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={{
+                  fontSize: 14,
+                  color: "rgba(255,255,255,0.5)",
+                  marginTop: 2,
+                  maxWidth: 180,
+                }}
+              >
+                {greeting}
               </Text>
             </View>
+            <View className="flex-row items-center gap-2">
+              <SubscriptionBadge />
+              {/* Readiness indicator */}
+              {!tracking && (
+                <View className="flex-row items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full bg-white/[0.06] border border-white/10">
+                  <ReadinessRing
+                    score={readiness.score}
+                    color={readiness.color}
+                    size={30}
+                  />
+                  <View>
+                    <Text
+                      style={{
+                        fontSize: 7.5,
+                        fontWeight: "800",
+                        letterSpacing: 1,
+                        color: "rgba(255,255,255,0.4)",
+                      }}
+                    >
+                      READY
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: "700",
+                        color: readiness.color,
+                      }}
+                    >
+                      {readiness.label.split(" ")[0]}
+                    </Text>
+                  </View>
+                </View>
+              )}
+              {/* Alarm settings button */}
+              <TouchableOpacity
+                onPress={() => router.push(ROUTES.appAlarmSettings)}
+                activeOpacity={0.7}
+                className="w-9 h-9 rounded-full items-center justify-center bg-white/[0.06] border border-white/10"
+              >
+                <Settings size={16} color="rgba(255,255,255,0.5)" />
+              </TouchableOpacity>
+              {tracking && (
+                <View
+                  style={{ flexShrink: 0 }}
+                  className="flex-row items-center gap-1.5 bg-white/[0.06] px-3 py-1.5 rounded-full border border-white/10"
+                >
+                  <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "600",
+                      color: "rgba(255,255,255,0.5)",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Tracking
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
 
-        {/* Tab toggle */}
-        {!tracking && (
-          <View className="flex-row gap-2 mb-5 p-1 rounded-xl" style={{ backgroundColor: '#0D1128' }}>
-            {([
-              { id: 'tonight' as const, label: 'Tonight', icon: Moon, iconFocused: MoonStar },
-              { id: 'routine' as const, label: 'My Routine', icon: Clock },
-            ]).map(tab => {
-              const active = segment === tab.id;
-              const TabIcon = active && tab.iconFocused ? tab.iconFocused : tab.icon;
-              return (
-                <TouchableOpacity
-                  key={tab.id}
-                  onPress={() => setSegment(tab.id)}
-                  activeOpacity={0.85}
-                  className="flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-lg"
+          {/* Tab toggle — premium segmented control with gradient active pill */}
+          {!tracking && (
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 4,
+                marginBottom: 20,
+                padding: 5,
+                borderRadius: 18,
+                backgroundColor: "rgba(12,8,28,0.6)",
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.1)",
+              }}
+            >
+              {[
+                {
+                  id: "tonight" as const,
+                  label: "Tonight",
+                  icon: Moon,
+                  iconFocused: MoonStar,
+                },
+                { id: "routine" as const, label: "Routine", icon: Clock },
+                { id: "analysis" as const, label: "Analysis", icon: BarChart3 },
+              ].map((tab) => {
+                const active = segment === tab.id;
+                const TabIcon =
+                  active && tab.iconFocused ? tab.iconFocused : tab.icon;
+                return (
+                  <TouchableOpacity
+                    key={tab.id}
+                    onPress={() => {
+                      void Haptics.impactAsync(
+                        Haptics.ImpactFeedbackStyle.Light,
+                      );
+                      setSegment(tab.id);
+                    }}
+                    activeOpacity={0.85}
+                    style={{ flex: 1, borderRadius: 14, overflow: "hidden" }}
+                  >
+                    {active ? (
+                      <LinearGradient
+                        colors={["#3b82f6", "#7c3aed"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 6,
+                          paddingVertical: 11,
+                          shadowColor: "#3b82f6",
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.45,
+                          shadowRadius: 10,
+                          elevation: 6,
+                        }}
+                      >
+                        <TabIcon size={15} color="#fff" />
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            fontWeight: "800",
+                            color: "#FFFFFF",
+                            letterSpacing: 0.2,
+                          }}
+                        >
+                          {tab.label}
+                        </Text>
+                      </LinearGradient>
+                    ) : (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 6,
+                          paddingVertical: 11,
+                        }}
+                      >
+                        <TabIcon size={15} color="rgba(255,255,255,0.4)" />
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            fontWeight: "700",
+                            color: "rgba(255,255,255,0.45)",
+                          }}
+                        >
+                          {tab.label}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* ── TRACKING STATE ─────────────────────────────────────────────────── */}
+          {tracking ? (
+            <View className="gap-6 pt-2">
+              {/* Ambient glow behind the clock/moon area */}
+              <TrackingGlow frame={0} />
+
+              {/* Live device clock */}
+              <View className="items-center">
+                <View className="flex-row items-end">
+                  <Text
+                    style={{
+                      fontSize: 66,
+                      fontWeight: "800",
+                      color: "#FFFFFF",
+                      letterSpacing: -2,
+                      fontVariant: ["tabular-nums"],
+                    }}
+                  >
+                    {clockHm}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 22,
+                      fontWeight: "800",
+                      color: "rgba(255,255,255,0.85)",
+                      marginBottom: 14,
+                      marginLeft: 6,
+                    }}
+                  >
+                    {clockAmPm}
+                  </Text>
+                </View>
+                <Text
                   style={{
-                    backgroundColor: active ? 'rgba(123, 97, 255, 0.2)' : 'rgba(255,255,255,0.05)',
-                    borderWidth: active ? 1 : 0,
-                    borderColor: active ? 'rgba(123, 97, 255, 0.5)' : 'transparent',
+                    fontSize: 15,
+                    fontWeight: "600",
+                    color: "rgba(255,255,255,0.5)",
+                    marginTop: 2,
                   }}
                 >
-                  <TabIcon size={15} color={active ? '#fff' : 'rgba(255,255,255,0.35)'} />
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: active ? '#FFFFFF' : 'rgba(255,255,255,0.4)' }}>
-                    {tab.label}
+                  {clockDate}
+                </Text>
+              </View>
+
+              {/* Moon + drifting golden wave */}
+              <MoonWave width={Math.min(width - 48, 340)} />
+
+              {/* Time asleep */}
+              <View className="items-center">
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: "800",
+                    letterSpacing: 2.5,
+                    color: "rgba(255,255,255,0.35)",
+                  }}
+                >
+                  TIME ASLEEP
+                </Text>
+                <Animated.View style={timerScaleAnim}>
+                  <Text
+                    style={{
+                      fontSize: 34,
+                      fontWeight: "800",
+                      color: "#FFFFFF",
+                      fontVariant: ["tabular-nums"],
+                      letterSpacing: 1,
+                      marginTop: 4,
+                    }}
+                  >
+                    {formatElapsed(elapsed)}
+                  </Text>
+                </Animated.View>
+              </View>
+
+              {/* Alarm + Sounds list cards — shared ActionCard */}
+              <View>
+                <ActionCard
+                  icon={Clock}
+                  title="Alarm"
+                  description={
+                    wakeAt
+                      ? alarmPastDue
+                        ? "Passed — wake when ready"
+                        : `${formatWakeTime(wakeAt)} · in ${formatAlarmCountdown(wakeAt)}`
+                      : "—"
+                  }
+                  accent="#a78bfa"
+                  descriptionColor={alarmPastDue ? "#FF9800" : undefined}
+                  trailing={
+                    smartAlarmEnabled ? (
+                      <View
+                        className={`px-2.5 py-0.5 rounded-full border ${stageBadgeClass(sleepStage)}`}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            color: "#FFFFFF",
+                            fontWeight: "700",
+                            letterSpacing: 0.3,
+                          }}
+                        >
+                          {sleepStage}
+                        </Text>
+                      </View>
+                    ) : null
+                  }
+                />
+                <ActionCard
+                  icon={Music}
+                  title="Sounds & Music"
+                  description="Ringtone & alarm volume"
+                  accent="#4FC3F7"
+                  onPress={() => router.push(ROUTES.appAlarmSettings)}
+                />
+              </View>
+
+              {/* Snooze (only when alarm is past due) */}
+              {alarmPastDue && snoozeCount < 3 && (
+                <TouchableOpacity
+                  onPress={handleSnooze}
+                  disabled={busy}
+                  activeOpacity={0.75}
+                  className="self-center flex-row items-center gap-2 px-6 py-3 rounded-full border border-white/10 bg-white/[0.04]"
+                >
+                  <Bell size={16} color="rgba(255,255,255,0.6)" />
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "700",
+                      color: "rgba(255,255,255,0.7)",
+                    }}
+                  >
+                    Snooze 10 min ({3 - snoozeCount} left)
                   </Text>
                 </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
+              )}
 
-        {/* ── TRACKING STATE ─────────────────────────────────────────────────── */}
-        {tracking ? (
-          <View className="gap-6 pt-2">
-            {/* Live device clock */}
-            <View className="items-center">
-              <View className="flex-row items-end">
-                <Text style={{ fontSize: 66, fontWeight: '800', color: '#FFFFFF', letterSpacing: -2, fontVariant: ['tabular-nums'] }}>
-                  {clockHm}
+              {/* Wake up — hold to confirm */}
+              <View className="items-center">
+                <HoldButton
+                  label="Wake up"
+                  onComplete={handleStop}
+                  disabled={busy}
+                  bg="#0E1116"
+                />
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "600",
+                    color: "rgba(255,255,255,0.4)",
+                    marginTop: 10,
+                  }}
+                >
+                  Hold to wake up
                 </Text>
-                <Text style={{ fontSize: 22, fontWeight: '800', color: 'rgba(255,255,255,0.85)', marginBottom: 14, marginLeft: 6 }}>{clockAmPm}</Text>
               </View>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{clockDate}</Text>
             </View>
+          ) : segment === "tonight" ? (
+            <View className="gap-5">
+              {/* ── Main Sleep Setup Card — matches HomeDashboard aesthetic ── */}
+              <GlassCard noPadding tint={SLEEP.cardTint}>
+                {/* 24h sleep dial */}
+                <View
+                  style={{
+                    alignItems: "center",
+                    paddingTop: 20,
+                    paddingBottom: 16,
+                  }}
+                >
+                  <SleepDial
+                    bedtime={sliderBedtime}
+                    wakeTime={sliderWakeTime}
+                    alarmWindowEnabled={smartAlarmEnabled}
+                    radius={100}
+                    onBedtimeChange={setSliderBedtime}
+                    onWakeTimeChange={setSliderWakeTime}
+                  />
+                </View>
 
-            {/* Moon + drifting golden wave */}
-            <MoonWave width={Math.min(width - 48, 340)} />
+                <View className="h-px bg-white/[0.06]" />
 
-            {/* Time asleep */}
-            <View className="items-center">
-              <Text style={{ fontSize: 10, fontWeight: '800', letterSpacing: 2.5, color: 'rgba(255,255,255,0.35)' }}>TIME ASLEEP</Text>
-              <Animated.View style={timerScaleAnim}>
-                <Text style={{ fontSize: 34, fontWeight: '800', color: '#FFFFFF', fontVariant: ['tabular-nums'], letterSpacing: 1, marginTop: 4 }}>
-                  {formatElapsed(elapsed)}
-                </Text>
-              </Animated.View>
-            </View>
+                {/* Bedtime row */}
+                <TouchableOpacity
+                  onPress={() => setEditingTime("bedtime")}
+                  activeOpacity={0.7}
+                  className="flex-row items-center px-4"
+                  style={{ paddingVertical: 16, gap: 12 }}
+                >
+                  <View
+                    className="items-center justify-center"
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 13,
+                      backgroundColor: "rgba(96,165,250,0.14)",
+                      borderWidth: 1,
+                      borderColor: "rgba(96,165,250,0.28)",
+                    }}
+                  >
+                    <Moon size={18} color="#60a5fa" fill="#60a5fa" />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "700",
+                        color: "#f6f8fc",
+                      }}
+                    >
+                      Bedtime
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: "rgba(245,247,251,0.4)",
+                        marginTop: 1,
+                      }}
+                    >
+                      {(() => {
+                        const diffH = timeDiffMinutes(
+                          sliderBedtime,
+                          sliderWakeTime,
+                        );
+                        const h = Math.floor(diffH / 60);
+                        const m = diffH % 60;
+                        return `${h}h${m > 0 ? ` ${m}m` : ""} of sleep`;
+                      })()}
+                    </Text>
+                  </View>
+                  <View className="items-end">
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: "800",
+                        color: "#60a5fa",
+                      }}
+                    >
+                      {formatTimeAmPm(sliderBedtime)}
+                    </Text>
+                    <View className="flex-row items-center gap-1 mt-0.5">
+                      <View
+                        style={{
+                          width: 4,
+                          height: 4,
+                          borderRadius: 2,
+                          backgroundColor: "rgba(245,247,251,0.2)",
+                        }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 9,
+                          fontWeight: "700",
+                          color: "rgba(245,247,251,0.3)",
+                          letterSpacing: 1,
+                        }}
+                      >
+                        TAP TO SET
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
 
-            {/* Alarm + Sounds list cards */}
-            <View className="gap-3">
+                <View className="h-px bg-white/[0.06]" />
+
+                {/* Alarm row */}
+                <TouchableOpacity
+                  onPress={() => setEditingTime("wake")}
+                  activeOpacity={0.7}
+                  className="flex-row items-center px-4"
+                  style={{ paddingVertical: 16, gap: 12 }}
+                >
+                  <View
+                    className="items-center justify-center"
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 13,
+                      backgroundColor: "rgba(167,139,250,0.14)",
+                      borderWidth: 1,
+                      borderColor: "rgba(167,139,250,0.28)",
+                    }}
+                  >
+                    <Bell size={18} color="#a78bfa" fill="#a78bfa" />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "700",
+                        color: "#f6f8fc",
+                      }}
+                    >
+                      Wake Up
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: "rgba(245,247,251,0.4)",
+                        marginTop: 1,
+                      }}
+                    >
+                      {smartAlarmEnabled
+                        ? `Window: ${formatTimeAmPm(addMinutesToTime(sliderWakeTime, -30))} — ${formatTimeAmPm(sliderWakeTime)}`
+                        : "Alarm set"}
+                    </Text>
+                  </View>
+                  <View className="items-end">
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: "800",
+                        color: "#a78bfa",
+                      }}
+                    >
+                      {formatTimeAmPm(sliderWakeTime)}
+                    </Text>
+                    <View className="flex-row items-center gap-1 mt-0.5">
+                      {smartAlarmEnabled && (
+                        <View
+                          className="px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25"
+                          style={{ marginRight: 4 }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 7,
+                              fontWeight: "800",
+                              color: "#34d399",
+                              letterSpacing: 0.5,
+                            }}
+                          >
+                            SMART
+                          </Text>
+                        </View>
+                      )}
+                      <View
+                        style={{
+                          width: 4,
+                          height: 4,
+                          borderRadius: 2,
+                          backgroundColor: "rgba(245,247,251,0.2)",
+                        }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 9,
+                          fontWeight: "700",
+                          color: "rgba(245,247,251,0.3)",
+                          letterSpacing: 1,
+                        }}
+                      >
+                        TAP TO SET
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                <View className="h-px bg-white/[0.06]" />
+                <View style={{ height: 14 }} />
+
+                {/* Sleep goal cards — Minimum / Recommended / Optimal / Recovery */}
+                <View style={{ paddingHorizontal: 16 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Sparkles size={12} color="rgba(245,247,251,0.45)" />
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: "800",
+                        letterSpacing: 1.5,
+                        color: "rgba(245,247,251,0.45)",
+                      }}
+                    >
+                      SLEEP GOAL
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    {SLEEP_GOALS.map((g) => {
+                      const GoalIcon = g.icon;
+                      // Highlight the goal that matches the actual planned duration so
+                      // the selection stays in sync after dragging the dial.
+                      const active = plannedHours === g.hours;
+                      return (
+                        <TouchableOpacity
+                          key={g.hours}
+                          onPress={() => {
+                            void Haptics.impactAsync(
+                              Haptics.ImpactFeedbackStyle.Light,
+                            );
+                            // Keep the chosen bedtime; shift wake to hit the goal duration.
+                            setSliderWakeTime(
+                              addMinutesToTime(
+                                sliderBedtime,
+                                Math.round(g.hours * 60),
+                              ),
+                            );
+                          }}
+                          activeOpacity={0.8}
+                          style={{
+                            flex: 1,
+                            alignItems: "center",
+                            paddingVertical: 12,
+                            borderRadius: 18,
+                            borderWidth: 1.5,
+                            backgroundColor: active
+                              ? `${g.color}1f`
+                              : "rgba(255,255,255,0.04)",
+                            borderColor: active
+                              ? g.color
+                              : "rgba(255,255,255,0.1)",
+                            shadowColor: g.color,
+                            shadowOffset: { width: 0, height: 6 },
+                            shadowOpacity: active ? 0.35 : 0,
+                            shadowRadius: active ? 12 : 0,
+                          }}
+                        >
+                          {active && (
+                            <View
+                              style={{
+                                position: "absolute",
+                                top: 8,
+                                right: 8,
+                                width: 6,
+                                height: 6,
+                                borderRadius: 3,
+                                backgroundColor: g.color,
+                              }}
+                            />
+                          )}
+                          <View
+                            style={{
+                              width: 24,
+                              height: 24,
+                              borderRadius: 12,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginBottom: 4,
+                              backgroundColor: active
+                                ? `${g.color}30`
+                                : "rgba(255,255,255,0.06)",
+                            }}
+                          >
+                            <GoalIcon
+                              size={13}
+                              color={
+                                active ? g.color : "rgba(245,247,251,0.45)"
+                              }
+                            />
+                          </View>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              fontWeight: "800",
+                              color: active
+                                ? "#FFFFFF"
+                                : "rgba(245,247,251,0.65)",
+                            }}
+                          >
+                            {g.hours}h
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 8,
+                              fontWeight: "700",
+                              letterSpacing: 0.6,
+                              marginTop: 2,
+                              color: active ? g.color : "rgba(245,247,251,0.3)",
+                            }}
+                          >
+                            {g.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                <View style={{ height: 14 }} />
+
+                {/* Divider */}
+                <View className="h-px bg-white/[0.06]" />
+
+                {/* Smart alarm toggle */}
+                <TouchableOpacity
+                  onPress={() => router.push(ROUTES.appAlarmSettings)}
+                  activeOpacity={0.7}
+                  className="flex-row items-center justify-between px-4"
+                  style={{ paddingVertical: 16, gap: 12 }}
+                >
+                  <View className="flex-row items-center gap-2 flex-1">
+                    <View
+                      className="items-center justify-center"
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 13,
+                        backgroundColor: "rgba(26,143,255,0.14)",
+                        borderWidth: 1,
+                        borderColor: "rgba(26,143,255,0.28)",
+                      }}
+                    >
+                      <Bell size={18} color="#1A8FFF" />
+                    </View>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "700",
+                        color: "#f6f8fc",
+                      }}
+                    >
+                      Smart Alarm
+                    </Text>
+                    {smartAlarmEnabled && (
+                      <View className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30">
+                        <Text
+                          style={{
+                            fontSize: 8,
+                            fontWeight: "700",
+                            color: "#34d399",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          On
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View className="flex-row items-center gap-2">
+                    <TouchableOpacity
+                      onPress={() => setShowTestAlarm(true)}
+                      activeOpacity={0.7}
+                      className="w-7 h-7 rounded-full items-center justify-center bg-white/[0.04] border border-white/10"
+                    >
+                      <Play size={11} color="rgba(255,255,255,0.35)" />
+                    </TouchableOpacity>
+                    <ToggleSwitch
+                      value={smartAlarmEnabled}
+                      onToggle={() => setSmartAlarmEnabled(!smartAlarmEnabled)}
+                    />
+                    <ChevronRight size={16} color="rgba(255,255,255,0.25)" />
+                  </View>
+                </TouchableOpacity>
+
+                {/* Divider */}
+                <View className="h-px bg-white/[0.06]" />
+
+                {/* AI Insight card */}
+                <View style={{ paddingHorizontal: 16, paddingTop: 18 }}>
+                  <View
+                    style={{
+                      borderRadius: 18,
+                      overflow: "hidden",
+                      borderWidth: 1,
+                      borderColor: "rgba(167,139,250,0.3)",
+                      shadowColor: "rgba(167,139,250,0.2)",
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 16,
+                    }}
+                  >
+                    <LinearGradient
+                      colors={[
+                        "rgba(167,139,250,0.18)",
+                        "rgba(79,195,247,0.1)",
+                      ]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "flex-start",
+                        gap: 12,
+                        padding: 18,
+                      }}
+                    >
+                      <View
+                        className="w-9 h-9 rounded-full items-center justify-center"
+                        style={{
+                          backgroundColor: "rgba(167,139,250,0.22)",
+                          borderWidth: 1,
+                          borderColor: "rgba(167,139,250,0.35)",
+                        }}
+                      >
+                        <Sparkles size={16} color="#c4b5fd" />
+                      </View>
+                      <View style={{ flex: 1, flexShrink: 1 }}>
+                        <View className="flex-row items-center gap-1.5">
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              fontWeight: "800",
+                              letterSpacing: 1.3,
+                              color: "#c4b5fd",
+                            }}
+                          >
+                            {planInsight.isAi ? "AI INSIGHT" : "TONIGHT'S PLAN"}
+                          </Text>
+                          {planInsight.loading && (
+                            <View
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{ backgroundColor: "#c4b5fd" }}
+                            />
+                          )}
+                        </View>
+                        <Text
+                          style={{
+                            fontSize: 13.5,
+                            lineHeight: 21,
+                            fontWeight: "500",
+                            color: "rgba(245,247,251,0.9)",
+                            marginTop: 6,
+                          }}
+                        >
+                          {planInsight.text}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Action buttons — Save (secondary) + Start Sleep (primary) */}
+                <View
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingTop: 16,
+                    paddingBottom: 18,
+                    gap: 12,
+                  }}
+                >
+                  {/* Save Tonight's Plan */}
+                  <TouchableOpacity
+                    onPress={handleSavePlan}
+                    disabled={saving}
+                    activeOpacity={0.8}
+                    className="w-full flex-row items-center justify-center gap-2 border"
+                    style={{
+                      minHeight: 56,
+                      borderRadius: 18,
+                      backgroundColor: savedPulse
+                        ? "rgba(52,211,153,0.16)"
+                        : "rgba(255,255,255,0.05)",
+                      borderColor: savedPulse
+                        ? "rgba(52,211,153,0.5)"
+                        : "rgba(255,255,255,0.1)",
+                      opacity: saving ? 0.6 : 1,
+                    }}
+                  >
+                    {savedPulse ? (
+                      <>
+                        <Check size={16} color="#34d399" />
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            fontWeight: "800",
+                            color: "#34d399",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          Plan Saved
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Moon size={15} color="rgba(245,247,251,0.7)" />
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            fontWeight: "800",
+                            color: "rgba(245,247,251,0.8)",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          Save Tonight’s Plan
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+
+                  {/* Start Sleep CTA — premium gradient button (matches onboarding) */}
+                  <GradientCTA
+                    label="START SLEEP"
+                    sublabel={`WAKE AT ${formatTimeAmPm(sliderWakeTime).toUpperCase()}`}
+                    icon={<MoonStar size={20} color="#fff" />}
+                    onPress={handleStartSleep}
+                    disabled={busy}
+                    colors={["#3b82f6", "#7c3aed", "#c026d3"]}
+                    glowColor="rgba(124,58,237,0.5)"
+                    letterSpacing={2}
+                  />
+                </View>
+              </GlassCard>
+
+              {/* Stats row — compact text */}
               <View
-                className="flex-row items-center gap-3 px-4 py-3.5 rounded-2xl"
-                style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 16,
+                  paddingVertical: 12,
+                }}
               >
-                <View className="w-10 h-10 rounded-full items-center justify-center" style={{ backgroundColor: 'rgba(157,138,255,0.15)' }}>
-                  <Clock size={18} color="#9d8aff" />
-                </View>
-                <View className="flex-1">
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>Alarm</Text>
-                  <Text style={{ fontSize: 12, color: alarmPastDue ? '#FF9800' : 'rgba(255,255,255,0.5)', marginTop: 1, fontWeight: alarmPastDue ? '700' : '500' }}>
-                    {wakeAt
-                      ? alarmPastDue
-                        ? 'Passed — wake when ready'
-                        : `${formatWakeTime(wakeAt)} · in ${formatAlarmCountdown(wakeAt)}`
-                      : '—'}
-                  </Text>
-                </View>
-                {smartAlarmEnabled && (
-                  <View className={`px-2.5 py-0.5 rounded-full border ${stageBadgeClass(sleepStage)}`}>
-                    <Text style={{ fontSize: 10, color: '#FFFFFF', fontWeight: '700', letterSpacing: 0.3 }}>{sleepStage}</Text>
+                {lastSession?.durationMinutes != null && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: "#a78bfa",
+                      }}
+                    />
+                    <Text
+                      style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}
+                    >
+                      Last:{" "}
+                      <Text
+                        style={{
+                          color: "rgba(255,255,255,0.7)",
+                          fontWeight: "700",
+                        }}
+                      >
+                        {formatDuration(lastSession.durationMinutes)}
+                      </Text>
+                    </Text>
+                  </View>
+                )}
+                {avg > 0 && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: "#4FC3F7",
+                      }}
+                    />
+                    <Text
+                      style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}
+                    >
+                      Avg:{" "}
+                      <Text
+                        style={{
+                          color: "rgba(255,255,255,0.7)",
+                          fontWeight: "700",
+                        }}
+                      >
+                        {formatDuration(avg)}
+                      </Text>
+                    </Text>
+                  </View>
+                )}
+                {streak >= 1 && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: "#FF9800",
+                      }}
+                    />
+                    <Text
+                      style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}
+                    >
+                      <Text
+                        style={{
+                          color: "rgba(255,255,255,0.7)",
+                          fontWeight: "700",
+                        }}
+                      >
+                        {streak}d
+                      </Text>{" "}
+                      streak
+                    </Text>
                   </View>
                 )}
               </View>
-
-              <TouchableOpacity
-                onPress={() => router.push(ROUTES.appAlarmSettings)}
-                activeOpacity={0.8}
-                className="flex-row items-center gap-3 px-4 py-3.5 rounded-2xl"
-                style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
-              >
-                <View className="w-10 h-10 rounded-full items-center justify-center" style={{ backgroundColor: 'rgba(79,195,247,0.15)' }}>
-                  <Music size={18} color="#4FC3F7" />
-                </View>
-                <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>Sounds & Music</Text>
-                <ChevronRight size={18} color="rgba(255,255,255,0.3)" />
-              </TouchableOpacity>
             </View>
+          ) : segment === "routine" ? (
+            /* ── ROUTINE TAB ────────────────────────────────────────────────── */
+            <SleepRoutinePanel />
+          ) : (
+            /* ── ANALYSIS TAB ───────────────────────────────────────────────── */
+            <SleepAnalysisPanel onStartSession={() => setSegment("tonight")} />
+          )}
 
-            {/* Snooze (only when alarm is past due) */}
-            {alarmPastDue && snoozeCount < 3 && (
-              <TouchableOpacity
-                onPress={handleSnooze}
-                disabled={busy}
-                activeOpacity={0.75}
-                className="self-center flex-row items-center gap-2 px-6 py-3 rounded-full border border-white/10 bg-white/[0.04]"
-              >
-                <Bell size={16} color="rgba(255,255,255,0.6)" />
-                <Text style={{ fontSize: 14, fontWeight: '700', color: 'rgba(255,255,255,0.7)' }}>Snooze 10 min ({3 - snoozeCount} left)</Text>
-              </TouchableOpacity>
-            )}
+          {/* Modals */}
+          <Modal
+            visible={showBreathing}
+            animationType="fade"
+            statusBarTranslucent
+          >
+            <BreatheToDismiss
+              onComplete={handleBreathingComplete}
+              onEmergencySkip={handleBreathingComplete}
+            />
+          </Modal>
 
-            {/* Wake up — hold to confirm */}
-            <View className="items-center">
-              <HoldButton label="Wake up" onComplete={handleStop} disabled={busy} bg="#0E1116" />
-              <Text style={{ fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.4)', marginTop: 10 }}>Hold to wake up</Text>
-            </View>
-          </View>
-        ) : segment === 'tonight' ? (
-          <View className="gap-5">
-            {/* ── Main Sleep Setup Card ── */}
-            <GlassCard style={{ gap: 0 }}>
-              {/* Bedtime → Wake (tap a time to set it) */}
-              <View className="px-4 pt-5 pb-4">
-                <View className="flex-row items-start justify-between">
-                  <TouchableOpacity onPress={() => setEditingTime('bedtime')} activeOpacity={0.8} className="items-center flex-1">
-                    <View className="w-12 h-12 rounded-full items-center justify-center mb-2" style={{ backgroundColor: 'rgba(157,138,255,0.15)' }}>
-                      <Moon size={22} color="#9d8aff" />
-                    </View>
-                    <Text style={{ fontSize: 9, fontWeight: '700', letterSpacing: 1.2, color: 'rgba(255,255,255,0.4)' }}>BEDTIME</Text>
-                    <Text style={{ fontSize: 24, fontWeight: '800', color: '#FFFFFF', marginTop: 2 }}>{formatTimeAmPm(sliderBedtime)}</Text>
-                  </TouchableOpacity>
-
-                  <View className="items-center px-2" style={{ paddingTop: 14 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '800', color: '#9d8aff', letterSpacing: 0.5 }}>
-                      {setupDurH}h{setupDurM > 0 ? ` ${setupDurM}m` : ''}
-                    </Text>
-                    <View style={{ width: 44, height: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginVertical: 6 }} />
-                    <Text style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 }}>OF SLEEP</Text>
-                  </View>
-
-                  <TouchableOpacity onPress={() => setEditingTime('wake')} activeOpacity={0.8} className="items-center flex-1">
-                    <View className="w-12 h-12 rounded-full items-center justify-center mb-2" style={{ backgroundColor: 'rgba(79,195,247,0.15)' }}>
-                      <Sun size={22} color="#4FC3F7" />
-                    </View>
-                    <Text style={{ fontSize: 9, fontWeight: '700', letterSpacing: 1.2, color: 'rgba(255,255,255,0.4)' }}>WAKE</Text>
-                    <Text style={{ fontSize: 24, fontWeight: '800', color: '#FFFFFF', marginTop: 2 }}>{formatTimeAmPm(sliderWakeTime)}</Text>
-                  </TouchableOpacity>
-                </View>
-                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 12 }}>Tap a time to change it</Text>
-              </View>
-
-              <View className="h-px bg-white/[0.06]" />
-              <View style={{ height: 12 }} />
-
-              {/* Duration presets row */}
-              <View className="flex-row gap-2 justify-center px-2 pb-4">
-                {[
-                  { id: 'night-7', label: '7h', icon: Moon, sub: 'Min' },
-                  { id: 'night-7.5', label: '7.5h', icon: Star, sub: 'Sweet' },
-                  { id: 'night-8', label: '8h', icon: Sparkles, sub: 'Optimal' },
-                  { id: 'night-9', label: '9h', icon: Bed, sub: 'Extra' },
-                ].map(p => {
-                  const PresetIcon = p.icon;
-                  const preset = getPresetById(p.id) as SleepPreset;
-                  const active = selectedPreset.id === p.id;
-                  return (
-                    <TouchableOpacity
-                      key={p.id}
-                      onPress={() => {
-                        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setSelectedPreset(preset);
-                        const mins = resolvePresetMinutes(preset, schedule?.duration);
-                        const now = new Date();
-                        const nowStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                        setSliderBedtime(nowStr);
-                        setSliderWakeTime(addMinutesToTime(nowStr, mins));
-                      }}
-                      activeOpacity={0.75}
-                      className={`flex-1 items-center py-3 rounded-xl border ${
-                        active
-                          ? 'bg-[#7B61FF]/15 border-[#7B61FF]/60'
-                          : 'bg-white/[0.03] border-white/10'
-                      }`}
-                    >
-                      <PresetIcon size={16} color={active ? '#9d8aff' : 'rgba(255,255,255,0.4)'} />
-                      <Text style={{ fontSize: 12, fontWeight: '800', marginTop: 4, color: active ? '#FFFFFF' : 'rgba(255,255,255,0.6)' }}>
-                        {p.label}
-                      </Text>
-                      <Text style={{ fontSize: 8, fontWeight: '700', letterSpacing: 1, marginTop: 2, color: active ? '#9d8aff' : 'rgba(255,255,255,0.3)' }}>
-                        {p.sub}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Divider */}
-              <View className="h-px bg-white/[0.06]" />
-
-              {/* Smart alarm toggle (inline, compact) */}
-              <View className="flex-row items-center justify-between px-4 py-3">
-                <View className="flex-row items-center gap-2 flex-1">
-                  <View className="w-7 h-7 rounded-full bg-app-purple/20 items-center justify-center">
-                    <Bell size={13} color="#9d8aff" />
-                  </View>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>Smart Alarm</Text>
-                  {smartAlarmEnabled && (
-                    <View className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30">
-                      <Text style={{ fontSize: 8, fontWeight: '700', color: '#34d399', letterSpacing: 0.5 }}>On</Text>
-                    </View>
-                  )}
-                </View>
-                <View className="flex-row items-center gap-1.5">
-                  <TouchableOpacity
-                    onPress={() => setShowTestAlarm(true)}
-                    activeOpacity={0.7}
-                    className="w-7 h-7 rounded-full items-center justify-center bg-white/[0.04] border border-white/10"
-                  >
-                    <Play size={11} color="rgba(255,255,255,0.35)" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => router.push(ROUTES.appAlarmSettings)}
-                    activeOpacity={0.7}
-                    className="w-7 h-7 rounded-full items-center justify-center bg-white/[0.04] border border-white/10"
-                  >
-                    <Settings size={11} color="rgba(255,255,255,0.35)" />
-                  </TouchableOpacity>
-                  <ToggleSwitch value={smartAlarmEnabled} onToggle={() => setSmartAlarmEnabled(!smartAlarmEnabled)} />
-                </View>
-              </View>
-
-              {/* Divider */}
-              <View className="h-px bg-white/[0.06]" />
-
-              {/* Start Sleep CTA */}
-              <View className="p-4">
-                <TouchableOpacity
-                  onPress={handleStartSleep}
-                  disabled={busy}
-                  activeOpacity={0.8}
-                  className={`w-full flex-row items-center justify-center gap-3 py-3.5 rounded-2xl ${
-                    busy ? 'opacity-55' : ''
-                  } bg-app-purple`}
-                  style={{
-                    shadowColor: '#7B61FF',
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowRadius: 16,
-                    shadowOpacity: busy ? 0 : 0.4,
-                    elevation: 6,
-                  }}
-                >
-                  <MoonStar size={20} color="#fff" />
-                  <View className="items-start">
-                    <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFFFFF', letterSpacing: 2 }}>START SLEEP</Text>
-                    <Text style={{ fontSize: 9, fontWeight: '700', color: 'rgba(255,255,255,0.5)', letterSpacing: 1.5 }}>
-                      Wake at {formatTimeAmPm(sliderWakeTime)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </GlassCard>
-
-            {/* Stats row — compact text */}              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, paddingVertical: 12 }}>
-              {lastSession?.durationMinutes != null && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#9d8aff' }} />
-                  <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-                    Last: <Text style={{ color: 'rgba(255,255,255,0.7)', fontWeight: '700' }}>{formatDuration(lastSession.durationMinutes)}</Text>
-                  </Text>
-                </View>
-              )}
-              {avg > 0 && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4FC3F7' }} />
-                  <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-                    Avg: <Text style={{ color: 'rgba(255,255,255,0.7)', fontWeight: '700' }}>{formatDuration(avg)}</Text>
-                  </Text>
-                </View>
-              )}
-              {streak >= 1 && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF9800' }} />
-                  <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-                    <Text style={{ color: 'rgba(255,255,255,0.7)', fontWeight: '700' }}>{streak}d</Text> streak
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        ) : (
-          /* ── ROUTINE TAB ────────────────────────────────────────────────── */
-          <SleepRoutinePanel />
-        )}
-
-        {/* Modals */}
-        <Modal visible={showBreathing} animationType="fade" statusBarTranslucent>
-          <BreatheToDismiss
-            onComplete={handleBreathingComplete}
-            onEmergencySkip={handleBreathingComplete}
+          <SleepQualityModal
+            visible={showRating}
+            selectedQuality={selectedQuality}
+            onSelectQuality={setSelectedQuality}
+            onSave={handleSaveSession}
+            onSkip={handleSkipRating}
           />
-        </Modal>
 
-        <SleepQualityModal
-          visible={showRating}
-          selectedQuality={selectedQuality}
-          onSelectQuality={setSelectedQuality}
-          onSave={handleSaveSession}
-          onSkip={handleSkipRating}
-        />
+          <TestAlarmModal
+            visible={showTestAlarm}
+            selectedRingtone={selectedRingtone}
+            alarmVolume={alarmVolume}
+            onDismiss={() => setShowTestAlarm(false)}
+          />
 
-        <TestAlarmModal
-          visible={showTestAlarm}
-          selectedRingtone={selectedRingtone}
-          alarmVolume={alarmVolume}
-          onDismiss={() => setShowTestAlarm(false)}
-        />
-
-        {/* Manual time picker for the Bedtime / Wake cards */}
-        <TimePickerModal
-          visible={editingTime !== null}
-          title={editingTime === 'wake' ? 'Set wake time' : 'Set bedtime'}
-          accent={editingTime === 'wake' ? '#4FC3F7' : '#9d8aff'}
-          initialTime={editingTime === 'wake' ? sliderWakeTime : sliderBedtime}
-          onCancel={() => setEditingTime(null)}
-          onConfirm={time => {
-            if (editingTime === 'wake') {
-              setSliderWakeTime(time);
-            } else if (editingTime === 'bedtime') {
-              setSliderBedtime(time);
-            }
-            setEditingTime(null);
-          }}
-        />
-      </View>
+          {/* Full-screen Bedtime / Alarm picker for the Bedtime / Wake cards */}
+          <SleepTimePickerSheet
+            visible={editingTime !== null}
+            initialTab={editingTime === "wake" ? "alarm" : "bedtime"}
+            onClose={() => setEditingTime(null)}
+            bedtime={sliderBedtime}
+            wakeTime={sliderWakeTime}
+            onBedtimeChange={setSliderBedtime}
+            onWakeTimeChange={setSliderWakeTime}
+            alarmEnabled={smartAlarmEnabled}
+            onAlarmEnabledChange={setSmartAlarmEnabled}
+            uid={user?.uid}
+            isGuestMode={isGuestMode}
+          />
+        </View>
       </ScreenTransition>
     </ScreenShell>
   );

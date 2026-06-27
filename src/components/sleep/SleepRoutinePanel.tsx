@@ -1,8 +1,6 @@
-import { useState } from 'react';
-import { Alert, StyleSheet, Switch, Text, View } from 'react-native';
+import { AIRecommendation } from '@/components/home/AIRecommendation';
 import { DayPicker } from '@/components/sleep/DayPicker';
 import { TimePickerRow } from '@/components/sleep/TimePickerRow';
-import { AIRecommendation } from '@/components/home/AIRecommendation';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { colors } from '@/constants/colors';
@@ -13,6 +11,8 @@ import { useSleepRecommendation } from '@/hooks/useSleepRecommendation';
 import { useSleepSchedule } from '@/hooks/useSleepSchedule';
 import { SleepSchedule } from '@/types/sleep.types';
 import { calculateSleepDurationHours } from '@/utils/formatTime';
+import { useState } from 'react';
+import { Alert, StyleSheet, Switch, Text, View } from 'react-native';
 
 export function SleepRoutinePanel() {
   const { user, isGuestMode } = useAuth();
@@ -46,10 +46,6 @@ export function SleepRoutinePanel() {
 
   return (
     <View>
-      <Text style={styles.intro}>
-        Set your usual bedtime and wake time. “My Schedule” on the Tonight tab uses this goal.
-      </Text>
-
       <AIRecommendation message={sleepRecommendation} loading={recommendationLoading} />
 
       <TimePickerRow
@@ -99,21 +95,20 @@ export function SleepRoutinePanel() {
 const styles = StyleSheet.create({
   loading: { ...typography.body, color: colors.text.secondary, textAlign: 'center', marginTop: spacing.xl },
   intro: { ...typography.body, color: colors.text.secondary, marginBottom: spacing.md, lineHeight: 20 },
-  durationCard: { marginVertical: spacing.md, gap: spacing.sm },
+  durationCard: { marginBottom: spacing.md, gap: spacing.sm },
   durationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   durationLabel: { ...typography.label, color: colors.text.secondary },
-  durationValue: { ...typography.headingSmall, color: colors.accent.purple },
+  durationValue: { ...typography.headingSmall, color: colors.accent.purple, fontWeight: '800' },
   barTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.accent.purpleLight,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     overflow: 'hidden',
   },
-  barFill: { height: '100%', backgroundColor: colors.accent.purple, borderRadius: 4 },
+  barFill: { height: '100%', backgroundColor: colors.accent.purple, borderRadius: 5 },
   sectionTitle: {
     ...typography.headingSmall,
     color: colors.text.primary,
-    marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
   reminderRow: {
@@ -121,6 +116,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: 4,
   },
   reminderText: { flex: 1, gap: spacing.xs },
   reminderTitle: { ...typography.bodyLarge, color: colors.text.primary, fontWeight: '600' },

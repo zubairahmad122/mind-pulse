@@ -8,24 +8,24 @@ export type OnboardingSlide = {
 
 export const ONBOARDING_SLIDES: OnboardingSlide[] = [
   {
-    icon: 'mind',
-    title: 'Your Mind\nHas a Pulse',
-    desc: 'Track sleep, focus, stress and mental wellness in one intelligent platform.',
-    accent: '#3b82f6',
-    category: 'MIND PULSE',
+    icon: 'eyes',
+    title: 'Your Eyes Blink\n66% Less at Screens',
+    desc: 'Digital eye strain affects millions. Our guided exercises protect your vision in just 2 minutes a day.',
+    accent: '#22d3ee',
+    category: 'EYE WELLNESS',
   },
   {
     icon: 'sleep',
-    title: 'Sleep Smarter,\nRecover Deeper',
-    desc: 'Understand your sleep cycles and wake up fully restored every morning.',
+    title: '70% Sleep Better\nWith a Routine',
+    desc: 'Track your sleep cycles, set smart alarms, and wake up fully restored every morning.',
     accent: '#a78bfa',
     category: 'DEEP REST',
   },
   {
-    icon: 'eyes',
-    title: 'Your Eyes\nNeed a Break',
-    desc: 'Track screen time, detect eye-strain patterns and protect your long-term vision health.',
-    accent: '#22d3ee',
-    category: 'EYE WELLNESS',
+    icon: 'mind',
+    title: '2 Minutes of Breathing\nReduces Stress 40%',
+    desc: 'Guided relaxation, meditation, and journaling — your complete mental wellness toolkit.',
+    accent: '#3b82f6',
+    category: 'MIND PULSE',
   },
 ];

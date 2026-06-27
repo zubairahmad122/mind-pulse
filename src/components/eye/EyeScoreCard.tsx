@@ -1,18 +1,19 @@
-import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { ScoreResult } from '@/utils/scoring';
+import { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withRepeat,
+    withSequence,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
 
 interface Props {
   result: ScoreResult;
@@ -55,7 +56,8 @@ export function EyeScoreCard({ result, loading }: Props) {
   const barWidth = loading ? 0 : Math.min(score, 100);
 
   return (
-    <View style={styles.card}>
+    <GlassCard style={{ marginBottom: spacing.md }}>
+      <View style={{ gap: spacing.sm }}>
       {/* Label row */}
       <View style={styles.labelRow}>
         <Text style={styles.cardLabel}>EYE SCORE</Text>
@@ -82,7 +84,11 @@ export function EyeScoreCard({ result, loading }: Props) {
 
         <View style={styles.scoreInfo}>
           <Text style={styles.messageSub}>
-            Higher is better. See the breakdown below for exactly why your score is what it is today.
+            {loading
+              ? 'Loading today’s score…'
+              : score >= 75
+                ? 'Resets every morning. Keep up the breaks and recovery sessions.'
+                : 'Resets every morning — a break or recovery session below raises it today.'}
           </Text>
         </View>
       </View>
@@ -93,6 +99,8 @@ export function EyeScoreCard({ result, loading }: Props) {
           <Animated.View
             style={[styles.barFill, { width: `${barWidth}%`, backgroundColor: theme.color }]}
           />
+          {/* NativeWind/RN style accepts a number for `left`, but the slider
+              mark uses a percentage string so `as any` is required here. */}
           {SEGMENT_MARKS.map(mark => (
             <View key={mark} style={[styles.segmentMark, { left: `${mark}%` as any }]} />
           ))}
@@ -103,20 +111,12 @@ export function EyeScoreCard({ result, loading }: Props) {
           <Text style={styles.barLabelText}>Feeling Fresh</Text>
         </View>
       </View>
-    </View>
+      </View>
+    </GlassCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: 20,
-    padding: spacing.md,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-  },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     height: 76,
     borderRadius: 38,
     shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 20,
+    shadowRadius: 24,
     shadowOpacity: 1,
     elevation: 0,
   },
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   barTrack: {
     height: 8,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: 'rgba(255,255,255,0.09)',
     borderRadius: 4,
     overflow: 'hidden',
     position: 'relative',
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: 1.5,
     height: 8,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   barLabels: {
     flexDirection: 'row',

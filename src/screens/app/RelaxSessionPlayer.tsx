@@ -16,6 +16,8 @@ import { BreathingOrb } from '@/components/breathing/BreathingOrb';
 import { FinalSessionLayout } from '@/components/breathing/FinalSessionLayout';
 import { ParticleField } from '@/components/breathing/ParticleField';
 import { RelaxBackground } from '@/components/breathing/RelaxBackground';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 import { BREATHING_MUSIC } from '@/constants/breathingMusic';
 import { BREATHING_PATTERNS } from '@/constants/breathingPatterns';
 import { colors } from '@/constants/colors';
@@ -308,32 +310,35 @@ export default function RelaxSessionPlayer() {
 
           {/* Bottom info + CTA */}
           <View style={styles.initBottom}>
-            <Text style={styles.sessionTitle}>{session.title}</Text>
-            <Text style={styles.sessionDesc}>{session.description}</Text>
+            <GlassCard style={styles.initCard}>
+              <Text style={styles.sessionTitle}>{session.title}</Text>
+              <Text style={styles.sessionDesc}>{session.description}</Text>
 
-            <View style={styles.initMeta}>
-              <View style={styles.metaPill}>
-                <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.3)" />
-                <Text style={styles.metaText}>
-                  {session.durationSeconds > 60
-                    ? `${Math.round(session.durationSeconds / 60)} min`
-                    : `${session.durationSeconds} sec`}
-                </Text>
+              <View style={styles.initMeta}>
+                <View style={[styles.metaPill, { borderColor: patternDef.color + '30' }]}>
+                  <Ionicons name="time-outline" size={12} color={patternDef.color} />
+                  <Text style={[styles.metaText, { color: patternDef.color }]}>
+                    {session.durationSeconds > 60
+                      ? `${Math.round(session.durationSeconds / 60)} min`
+                      : `${session.durationSeconds} sec`}
+                  </Text>
+                </View>
+                <View style={[styles.metaPill, { borderColor: patternDef.color + '30' }]}>
+                  <Ionicons name="pulse-outline" size={12} color={patternDef.color} />
+                  <Text style={[styles.metaText, { color: patternDef.color }]}>{patternDef.title}</Text>
+                </View>
               </View>
-              <View style={styles.metaDot} />
-              <View style={styles.metaPill}>
-                <Ionicons name="pulse-outline" size={11} color="rgba(255,255,255,0.3)" />
-                <Text style={styles.metaText}>{patternDef.title}</Text>
-              </View>
-            </View>
+            </GlassCard>
 
-            <TouchableOpacity
+            <GradientCTA
+              label="START SESSION"
+              icon={<Ionicons name="play" size={18} color="#fff" />}
               onPress={handleStart}
-              style={[styles.startBtn, { backgroundColor: patternDef.color + '18' }]}
-            >
-              <Ionicons name="play" size={18} color={patternDef.color} />
-              <Text style={[styles.startBtnText, { color: patternDef.color }]}>Start</Text>
-            </TouchableOpacity>
+              colors={[patternDef.color, patternDef.color + 'cc']}
+              glowColor={patternDef.color + '88'}
+              letterSpacing={1.5}
+              style={styles.initCta}
+            />
           </View>
         </View>
       )}
@@ -450,11 +455,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   initBottom: {
-    gap: 10,
+    gap: 14,
+  },
+  initCard: {
     alignItems: 'center',
+    gap: 10,
   },
   sessionTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: colors.text.primary,
     letterSpacing: -0.5,
@@ -462,51 +470,34 @@ const styles = StyleSheet.create({
   },
   sessionDesc: {
     fontSize: 14,
-    color: colors.text.secondary,
+    color: 'rgba(255,255,255,0.55)',
     lineHeight: 20,
     textAlign: 'center',
-    maxWidth: '80%',
+    maxWidth: '88%',
   },
   initMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 2,
+    gap: 10,
+    marginTop: 4,
   },
   metaPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
   },
   metaText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.35)',
-  },
-  metaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-  startBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 100,
-    marginTop: 6,
-  },
-  startBtnText: {
-    fontSize: 16,
+    fontSize: 11.5,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+  },
+  initCta: {
+    marginTop: 2,
   },
 
   /* ── Active Session ── */

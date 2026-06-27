@@ -571,7 +571,7 @@ const s = StyleSheet.create({
     borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.1)',
     backgroundColor: '#1a1535',
   },
-  diffBtnActive: { borderColor: '#7B61FF', backgroundColor: 'rgba(123,97,255,0.15)' },
+  diffBtnActive: { borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,0.15)' },
   diffBtnLabel: { fontSize: 12, fontWeight: '700', color: '#9b8ec4' },
   diffBtnLabelActive: { color: '#fff' },
 
@@ -586,7 +586,7 @@ const s = StyleSheet.create({
   colorDemoLabel: { fontSize: 10, color: '#9b8ec4', fontWeight: '600' },
 
   startBtn: {
-    alignSelf: 'stretch', backgroundColor: '#7B61FF',
+    alignSelf: 'stretch', backgroundColor: '#22d3ee',
     borderRadius: 100, paddingVertical: 16, alignItems: 'center',
   },
   startBtnText: { fontSize: 16, fontWeight: '800', color: '#fff', letterSpacing: 1 },
@@ -669,7 +669,7 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', gap: 8, zIndex: 10,
   },
   pauseTitle:    { fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 1 },
-  resumeBtn:     { backgroundColor: '#7B61FF', borderRadius: 100, paddingHorizontal: 38, paddingVertical: 13 },
+  resumeBtn:     { backgroundColor: '#22d3ee', borderRadius: 100, paddingHorizontal: 38, paddingVertical: 13 },
   resumeBtnText: { fontSize: 15, fontWeight: '800', color: '#fff' },
   endBtn: {
     borderWidth: 1.5, borderColor: 'rgba(244,67,54,0.45)',

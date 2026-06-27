@@ -18,8 +18,11 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { ArrowLeft, Bell, BellRing, ChevronRight, Clock, Heart, Maximize2, Moon, Play, Sparkles, Sun, Volume2, Waves, X } from 'lucide-react-native';
+import { Bell, BellRing, ChevronRight, Clock, Heart, Maximize2, Moon, Play, Sparkles, Sun, Volume2, Waves, X } from 'lucide-react-native';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
+import { PillarProvider } from '@/context/PillarContext';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { ALARM_RINGTONES, SNOOZE_DURATIONS, SMART_ALARM_WINDOWS, VIBRATION_PATTERNS, getRingtoneRequire, type AlarmRingtoneOption, type VibrationPatternOption } from '@/constants/alarmSounds';
 import { useAlarmSettings } from '@/hooks/useAlarmSettings';
 import { colors } from '@/constants/colors';
@@ -843,6 +846,8 @@ function AlarmSettingsSkeleton({ theme }: { theme: Theme }) {
     return (
       <Animated.View
         style={[{
+          // Reanimated animated styles need `as any` because RN Web types
+          // don't allow animated values in the `width` property.
           width: w as any,
           height: h,
           borderRadius: r,
@@ -1100,34 +1105,34 @@ export default function AlarmSettingsScreen() {
       <View style={[styles.glowTop, { backgroundColor: theme.glowPurple }]} />
       <View style={[styles.glowBottom, { backgroundColor: theme.glowBlue }]} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-          style={[styles.backBtn, { backgroundColor: theme.surfaceHi, borderColor: theme.borderHi }]}
-        >
-          <ArrowLeft size={22} color={theme.text} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Alarm Settings</Text>
-          <Text style={[styles.headerSub, { color: theme.textTertiary }]}>
-            {loaded ? 'Configure your wake-up experience' : 'Loading your settings…'}
-          </Text>
-        </View>
-        {/* Theme toggle */}
-        <TouchableOpacity
-          onPress={() => setDarkMode(!darkMode)}
-          activeOpacity={0.7}
-          style={[styles.backBtn, { backgroundColor: theme.surfaceHi, borderColor: theme.borderHi }]}
-        >
-          {darkMode ? (
-            <Sun size={18} color={theme.textSecondary} strokeWidth={1.8} />
-          ) : (
-            <Moon size={18} color={theme.textSecondary} strokeWidth={1.8} />
-          )}
-        </TouchableOpacity>
-      </View>
+      {/* Pillar-based ambient glow, beams, and particles */}
+      <PillarProvider pillar="mind">
+        <AmbientBackground />
+      </PillarProvider>
+
+      {/* Header — shared across every stack/modal screen */}
+      <ScreenHeader
+        onBack={() => router.back()}
+        title="Alarm Settings"
+        subtitle={loaded ? 'Configure your wake-up experience' : 'Loading your settings…'}
+        textColor={theme.text}
+        subtitleColor={theme.textTertiary}
+        badgeBg={theme.surfaceHi}
+        badgeBorder={theme.borderHi}
+        right={
+          <TouchableOpacity
+            onPress={() => setDarkMode(!darkMode)}
+            activeOpacity={0.7}
+            style={[styles.backBtn, { backgroundColor: theme.surfaceHi, borderColor: theme.borderHi }]}
+          >
+            {darkMode ? (
+              <Sun size={18} color={theme.textSecondary} strokeWidth={1.8} />
+            ) : (
+              <Moon size={18} color={theme.textSecondary} strokeWidth={1.8} />
+            )}
+          </TouchableOpacity>
+        }
+      />
 
       {!loaded ? (
         <AlarmSettingsSkeleton theme={theme} />
@@ -1138,7 +1143,7 @@ export default function AlarmSettingsScreen() {
       >
         {/* ── Smart Alarm ──────────────────────────────────────────────────── */}
         <Animated.View entering={FadeInUp.delay(100).springify()} layout={Layout.springify().damping(15)}>
-          <GlassCard style={{ ...styles.smartCard, backgroundColor: theme.surface, borderColor: theme.border }}>
+          <GlassCard style={styles.smartCard} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
             <View style={styles.smartHeader}>
               <View style={[styles.smartIcon, { backgroundColor: theme.smartIconOff }, !smartAlarm && { opacity: 0.6 }]}>
                 <BellRing size={22} color={smartAlarm ? colors.accent.purple : theme.bellMuted} strokeWidth={1.8} />
@@ -1188,7 +1193,7 @@ export default function AlarmSettingsScreen() {
 
         {/* ── Alarm Label ──────────────────────────────────────────────────── */}
         <Animated.View entering={FadeInUp.delay(200).springify()}>
-          <GlassCard style={{ gap: spacing.sm, backgroundColor: theme.surface, borderColor: theme.border }}>
+          <GlassCard style={{ gap: spacing.sm }} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
             <SectionTitle icon={Bell} label="Alarm Label" theme={theme} />
             <AlarmLabelInput value={alarmLabel} onChange={setAlarmLabel} theme={theme} />
           </GlassCard>
@@ -1196,7 +1201,7 @@ export default function AlarmSettingsScreen() {
 
         {/* ── Ringtone ──────────────────────────────────────────────────────── */}
         <Animated.View entering={FadeInUp.delay(300).springify()}>
-          <GlassCard style={{ gap: spacing.sm, backgroundColor: theme.surface, borderColor: theme.border }}>
+          <GlassCard style={{ gap: spacing.sm }} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
             <SectionTitle icon={Volume2} label="Ringtone" theme={theme} />
             <SelectedRingtoneRow
               ringtone={selectedRingtoneOption}
@@ -1213,7 +1218,7 @@ export default function AlarmSettingsScreen() {
 
         {/* ── Volume ─────────────────────────────────────────────────────────── */}
         <Animated.View entering={FadeInUp.delay(400).springify()}>
-          <GlassCard style={{ gap: spacing.sm, backgroundColor: theme.surface, borderColor: theme.border }}>
+          <GlassCard style={{ gap: spacing.sm }} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
             <SectionTitle icon={Volume2} label="Alarm Volume" theme={theme} />
             <VolumeSlider value={alarmVolume} onChange={setAlarmVolume} theme={theme} />
           </GlassCard>
@@ -1221,7 +1226,7 @@ export default function AlarmSettingsScreen() {
 
         {/* ── Vibration & Snooze ─────────────────────────────────────────────── */}
         <Animated.View entering={FadeInUp.delay(500).springify()}>
-          <GlassCard style={{ gap: spacing.sm, backgroundColor: theme.surface, borderColor: theme.border }}>
+          <GlassCard style={{ gap: spacing.sm }} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
             <SectionTitle icon={Maximize2} label="Vibration Pattern" theme={theme} />
             <View style={{ gap: spacing.sm }}>
               {VIBRATION_PATTERNS.map(p => (
@@ -1240,7 +1245,7 @@ export default function AlarmSettingsScreen() {
 
         {/* ── Snooze ─────────────────────────────────────────────────────────── */}
         <Animated.View entering={FadeInUp.delay(600).springify()}>
-          <GlassCard style={{ gap: spacing.sm, backgroundColor: theme.surface, borderColor: theme.border }}>
+          <GlassCard style={{ gap: spacing.sm }} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
             <SectionTitle icon={Clock} label="Snooze Duration" theme={theme} />
             <PillGrid
               options={SNOOZE_DURATIONS}

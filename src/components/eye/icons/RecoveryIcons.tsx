@@ -6,7 +6,7 @@ interface IconProps {
 }
 
 /** Daily Recovery — 6-step CVS protocol */
-export function DailyRecoveryIcon({ size = 40, color = '#7B61FF' }: IconProps) {
+export function DailyRecoveryIcon({ size = 40, color = '#22d3ee' }: IconProps) {
   const stepDots = [0, 60, 120, 180, 240, 300].map(deg => {
     const rad = (deg * Math.PI) / 180;
     return {
@@ -65,7 +65,7 @@ export function QuickReliefIcon({ size = 40, color = '#4FC3F7' }: IconProps) {
 }
 
 export const RECOVERY_ICON_COLORS: Record<string, string> = {
-  'cvs-protocol': '#7B61FF',
+  'cvs-protocol': '#22d3ee',
   'quick-relief': '#4FC3F7',
   'comet-trace': '#34d399',
 };
@@ -82,7 +82,7 @@ type RecoveryIconProps = {
 };
 
 export function RecoverySessionIcon({ sessionId, size = 36 }: RecoveryIconProps) {
-  const color = RECOVERY_ICON_COLORS[sessionId] ?? '#7B61FF';
+  const color = RECOVERY_ICON_COLORS[sessionId] ?? '#22d3ee';
 
   switch (sessionId) {
     case 'quick-relief':

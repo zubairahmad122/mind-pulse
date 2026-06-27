@@ -35,7 +35,7 @@ export const BREATH_MODES: BreathMode[] = [
     description: 'No rhythm to follow. No rules. Just a soft light and enough space to slow down.',
     intensity:   1,
     durationMin: 5,
-    color:       '#7B61FF',
+    color:       '#4FC3F7',
     bgFrom:      '#0D0B2E',
     bgTo:        '#1a1535',
     icon:        Radio,

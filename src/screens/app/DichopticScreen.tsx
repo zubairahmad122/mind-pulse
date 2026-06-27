@@ -2,8 +2,10 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { DichopticReaction } from '@/components/eye/games/DichopticReaction';
 import {
   type DichopticColors,
@@ -110,7 +112,7 @@ export default function DichopticScreen() {
 
   if (!loaded) {
     return (
-      <ScreenShell scroll={false} safeBottom>
+      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="3D Game" showBack />
         <View style={cs.loading} />
       </ScreenShell>
@@ -119,7 +121,7 @@ export default function DichopticScreen() {
 
   if (!hasAccess) {
     return (
-      <ScreenShell safeBottom>
+      <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="3D Reaction" subtitle="Pick your colors" showBack />
         <PaywallGate featureId="eye_dichoptic">{null}</PaywallGate>
       </ScreenShell>
@@ -129,7 +131,7 @@ export default function DichopticScreen() {
   // ─── Game screen ────────────────────────────────────────────────────────────
   if (screen === 'game' || gameStats) {
     return (
-      <ScreenShell scroll={false} safeBottom>
+      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader
           title="3D Reaction"
           subtitle={gameStats ? 'Done' : 'Tap the right color'}
@@ -164,7 +166,7 @@ export default function DichopticScreen() {
 
   // ─── Calibration screen ─────────────────────────────────────────────────────
   return (
-    <ScreenShell safeBottom>
+    <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
       <ScreenHeader
         title="3D Reaction"
         subtitle="Pick your colors"
@@ -184,33 +186,36 @@ export default function DichopticScreen() {
       </TouchableOpacity>
 
       {showCalHelp && (
-        <View style={cs.helpCard}>
+        <GlassCard style={{ marginBottom: spacing.sm }}>
           <Text style={cs.helpText}>
             1. Put on your anaglyph 3D glasses{'\n'}
             2. Close your <Text style={{ color: '#FF3366', fontWeight: '800' }}>RIGHT</Text> eye — pick RED so the square blends into the dark{'\n'}
             3. Close your <Text style={{ color: '#00D4FF', fontWeight: '800' }}>LEFT</Text> eye — pick CYAN so the square blends in{'\n'}
             4. Both eyes open — each sees only its own color
           </Text>
-        </View>
+        </GlassCard>
       )}
 
       {/* Calibration squares */}
       <CalibPreview leftColor={dColors.left} rightColor={dColors.right} />
 
-      {/* Color pickers */}
-      <ColorSelect
-        label="👁️ Left Eye → picks RED"
-        color={dColors.left}
-        onChange={c => setDColors(prev => ({ ...prev, left: c, leftLabel: 'RED' }))}
-        presets={LEFT_PRESETS}
-      />
+      <GlassCard style={{ marginBottom: spacing.sm }}>
+        <ColorSelect
+          label="👁️ Left Eye → picks RED"
+          color={dColors.left}
+          onChange={c => setDColors(prev => ({ ...prev, left: c, leftLabel: 'RED' }))}
+          presets={LEFT_PRESETS}
+        />
+      </GlassCard>
 
-      <ColorSelect
-        label="👁️ Right Eye → picks CYAN"
-        color={dColors.right}
-        onChange={c => setDColors(prev => ({ ...prev, right: c, rightLabel: 'CYAN' }))}
-        presets={RIGHT_PRESETS}
-      />
+      <GlassCard style={{ marginBottom: spacing.sm }}>
+        <ColorSelect
+          label="👁️ Right Eye → picks CYAN"
+          color={dColors.right}
+          onChange={c => setDColors(prev => ({ ...prev, right: c, rightLabel: 'CYAN' }))}
+          presets={RIGHT_PRESETS}
+        />
+      </GlassCard>
 
       {/* Save + Play */}
       <TouchableOpacity style={cs.saveBtn} onPress={handleSave} activeOpacity={0.85}>
@@ -275,14 +280,9 @@ const cs = StyleSheet.create({
   previewInner: { width: 50, height: 50, borderRadius: 10 },
   previewLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 1 },
 
-  /* Color Select */
   card: {
-    backgroundColor: colors.background.card,
-    borderRadius: 14,
-    borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.08)',
-    padding: spacing.md,
-    marginBottom: spacing.sm,
     gap: spacing.sm,
+    marginBottom: 0,
   },
   label: { ...typography.label, color: colors.text.secondary },
   swatchRow: { flexDirection: 'row', gap: spacing.sm },

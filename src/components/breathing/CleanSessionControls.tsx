@@ -146,6 +146,8 @@ function BottomSoundMenu({
               ]}
               activeOpacity={0.7}
             >
+              {/* Ionicons name prop expects a specific icon name type, but our
+                  music config uses string constants that are known-safe at runtime. */}
               <Ionicons
                 name={music.icon as any}
                 size={isSelected ? 20 : 16}

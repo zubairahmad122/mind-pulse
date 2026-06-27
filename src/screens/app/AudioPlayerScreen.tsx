@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { colors } from '@/constants/colors';
@@ -32,7 +33,7 @@ export default function AudioPlayerScreen() {
 
   if (!track) {
     return (
-      <ScreenShell scroll={false} safeBottom>
+      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="Audio" showBack />
         <View style={styles.center}>
           <Text style={styles.missing}>Track not found.</Text>
@@ -43,7 +44,7 @@ export default function AudioPlayerScreen() {
 
   if (audioUnavailable) {
     return (
-      <ScreenShell scroll={false} safeBottom>
+      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader title={track.title} showBack />
         <View style={styles.center}>
           <Text style={styles.missingTitle}>Audio needs a dev build</Text>
@@ -59,7 +60,7 @@ export default function AudioPlayerScreen() {
 
   if (!PlayerContent) {
     return (
-      <ScreenShell scroll={false} safeBottom>
+      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader title={track.title} showBack />
         <View style={styles.center}>
           <ActivityIndicator color={colors.accent.purple} size="large" />

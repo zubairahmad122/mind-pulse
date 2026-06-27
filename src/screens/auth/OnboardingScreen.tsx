@@ -1,67 +1,89 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import type { ColorValue } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Easing, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { rs } from '@/utils/responsive';
-import { ROUTES, ONBOARDING_SLIDES } from '@/constants';
+import { ROUTES, ONBOARDING_SLIDES, FONTS, GLASS_CARD, getPillarTheme } from '@/constants';
 import type { OnboardingSlide } from '@/constants/onboarding';
 import { MindHero, SleepHero, EyeHero } from '@/components/onboarding';
 import { NightSky } from '@/components/onboarding/SleepHero';
+import { useAuth } from '@/context/AuthContext';
+import { markOnboardingComplete } from '@/services/onboardingPersistence';
 
-function SlideVisual({ slide }: { slide: Onbo ardingSlide }) {
+function SlideVisual({ slide }: { slide: OnboardingSlide }) {
   if (slide.icon === 'mind') return <MindHero />;
   if (slide.icon === 'sleep') return <SleepHero />;
   if (slide.icon === 'eyes') return <EyeHero />;
   return null;
 }
 
-// Per-slide background gradients — only sleep gets the moon night-sky
-function getBgGradient(icon: string): readonly [ColorValue, ColorValue, ColorValue] {
-  switch (icon) {
-    case 'mind':
-      return ['#0C1225', '#080D1A', '#040810'] as const;
-    case 'sleep':
-      return ['#1e1438', '#0d0a1a', '#06040e'] as const;
-    case 'eyes':
-      return ['#0B1920', '#071216', '#03080B'] as const;
-    default:
-      return ['#0A0E1A', '#0D1128', '#080C1A'] as const;
-  }
-}
-
-function getCardGradient(icon: string): readonly [ColorValue, ColorValue] {
-  switch (icon) {
-    case 'mind':
-      return ['rgba(16,20,40,0.3)', 'rgba(8,12,24,0.55)'] as const;
-    case 'sleep':
-      // Semi-transparent so NightSky shows through the glass
-      return ['rgba(20,14,44,0.25)', 'rgba(8,4,18,0.55)'] as const;
-    case 'eyes':
-      return ['rgba(12,22,28,0.3)', 'rgba(6,12,16,0.55)'] as const;
-    default:
-      return ['rgba(16,20,40,0.3)', 'rgba(8,12,24,0.55)'] as const;
-  }
-}
-
 export default function OnboardingScreen() {
   const [index, setIndex] = useState(0);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { continueAsGuest } = useAuth();
   const slide = ONBOARDING_SLIDES[index];
   const isLast = index === ONBOARDING_SLIDES.length - 1;
   const totalSlides = ONBOARDING_SLIDES.length;
 
+  const progressAnim = useRef(ONBOARDING_SLIDES.map(() => new Animated.Value(0))).current;
+  const primaryPressScale = useRef(new Animated.Value(1)).current;
+  const secondaryPressScale = useRef(new Animated.Value(1)).current;
+  const shineX = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    ONBOARDING_SLIDES.forEach((_, i) => {
+      if (i < index) {
+        progressAnim[i].setValue(1);
+      } else if (i > index) {
+        progressAnim[i].setValue(0);
+      } else {
+        progressAnim[i].setValue(0);
+        Animated.timing(progressAnim[i], {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }).start();
+      }
+    });
+  }, [index, progressAnim]);
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(1600),
+        Animated.timing(shineX, { toValue: 1, duration: 950, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(shineX, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [shineX]);
+
+  const pressIn = (v: Animated.Value) => Animated.spring(v, { toValue: 0.96, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
+  const pressOut = (v: Animated.Value) => Animated.spring(v, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 6 }).start();
+
   if (!slide) return null;
 
-  const goNext = () => {
+  const goNext = async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (isLast) router.replace(ROUTES.authSignUp);
-    else setIndex((i) => i + 1);
+    if (isLast) {
+      // Post-onboarding: continue as guest → land in Eye Exercise for immediate value
+      try {
+        await continueAsGuest();
+        void markOnboardingComplete();
+        router.replace(ROUTES.appEyeRelax as never);
+      } catch (error) {
+        Alert.alert('Could Not Continue', error instanceof Error ? error.message : 'Please try again.');
+      }
+    } else {
+      setIndex((i) => i + 1);
+    }
   };
 
   const goBack = () => {
@@ -75,46 +97,39 @@ export default function OnboardingScreen() {
 
   const goLogin = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    void markOnboardingComplete();
     router.push(ROUTES.authSignIn);
   };
 
-  const goSkip = () => {
+  const goSkip = async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace(ROUTES.authSignUp);
+    try {
+      await continueAsGuest();
+      void markOnboardingComplete();
+    } catch (error) {
+      Alert.alert('Could Not Continue', error instanceof Error ? error.message : 'Please try again.');
+    }
   };
+
+  const pillar = getPillarTheme(slide.icon);
 
   const primaryLabel: Record<string, string> = {
-    mind: 'Get Started',
+    eyes: 'Protect My Eyes',
     sleep: 'Explore Sleep Insights',
-    eyes: 'Start Eye Protection',
-  };
-  const primaryGradients: Record<string, [string, string]> = {
-    mind: ['#3b82f6', '#2563eb'],
-    sleep: ['#a78bfa', '#7c3aed'],
-    eyes: ['#5eead4', '#06b6d4'],
-  };
-  const primaryTextColor: Record<string, string> = {
-    mind: '#fff',
-    sleep: '#fff',
-    eyes: '#03212c',
-  };
-  const primaryShadow: Record<string, string> = {
-    mind: 'rgba(37,99,235,0.6)',
-    sleep: 'rgba(124,58,237,0.6)',
-    eyes: 'rgba(8,145,178,0.6)',
+    mind: 'Get Started Free',
   };
   const secondaryLabel: Record<string, string> = {
-    mind: 'Log In',
-    sleep: 'Skip for now',
-    eyes: 'Log In',
+    eyes: 'Already have an account?',
+    sleep: 'Already have an account?',
+    mind: 'Already have an account?',
   };
   const secondaryAction: Record<string, () => void> = {
-    mind: goLogin,
-    sleep: goSkip,
     eyes: goLogin,
+    sleep: goLogin,
+    mind: goLogin,
   };
 
-  const activeAccent = slide.accent;
+  const activeAccent = pillar.accent;
   const isActive = (tag: string) =>
     (slide.icon === 'mind' && tag === 'MIND') ||
     (slide.icon === 'sleep' && tag === 'SLEEP') ||
@@ -127,7 +142,7 @@ export default function OnboardingScreen() {
 
       {/* Full background gradient — per-slide colors */}
       <LinearGradient
-        colors={getBgGradient(slide.icon)}
+        colors={pillar.bgGradient}
         locations={[0, 0.48, 1]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
@@ -197,49 +212,71 @@ export default function OnboardingScreen() {
       {/* Hero visualization */}
       <SlideVisual slide={slide} />
 
-      {/* Bottom card — glassmorphism */}
+      {/* Bottom card — glassmorphism, outer wrapper carries the glow so it isn't clipped */}
       <View style={{
-        borderTopLeftRadius: rs(28),
-        borderTopRightRadius: rs(28),
-        overflow: 'hidden',
-        borderTopWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
-        paddingTop: rs(14),
-        paddingHorizontal: rs(20),
-        paddingBottom: rs(36),
+        shadowColor: activeAccent,
+        ...GLASS_CARD.outerGlow,
+        shadowRadius: rs(GLASS_CARD.outerGlow.shadowRadius),
       }}>
-        {/* Frosted glass background */}
-        <BlurView
-          intensity={28}
-          tint="dark"
-          style={{
-            ...StyleSheet.absoluteFill,
-            borderTopLeftRadius: rs(28),
-            borderTopRightRadius: rs(28),
-          }}
-        />
-        {/* Subtle tint gradient on top of blur */}
-        <LinearGradient
-          colors={getCardGradient(slide.icon)}
-          style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            borderTopLeftRadius: rs(28),
-            borderTopRightRadius: rs(28),
-          }}
-        />
-        {/* Card content */}
+        <View style={{
+          borderTopLeftRadius: rs(GLASS_CARD.borderRadius),
+          borderTopRightRadius: rs(GLASS_CARD.borderRadius),
+          overflow: 'hidden',
+          borderTopWidth: GLASS_CARD.borderTopWidth,
+          borderColor: GLASS_CARD.borderColor,
+          paddingTop: rs(12),
+          paddingHorizontal: rs(20),
+          paddingBottom: rs(26),
+        }}>
+          {/* Frosted glass background */}
+          <BlurView
+            intensity={GLASS_CARD.blurIntensity}
+            tint="dark"
+            style={{
+              ...StyleSheet.absoluteFill,
+              borderTopLeftRadius: rs(GLASS_CARD.borderRadius),
+              borderTopRightRadius: rs(GLASS_CARD.borderRadius),
+            }}
+          />
+          {/* Subtle tint gradient on top of blur */}
+          <LinearGradient
+            colors={pillar.cardTint}
+            style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              borderTopLeftRadius: rs(GLASS_CARD.borderRadius),
+              borderTopRightRadius: rs(GLASS_CARD.borderRadius),
+            }}
+          />
+          {/* Top highlight line — light catching the glass edge */}
+          <LinearGradient
+            colors={GLASS_CARD.highlightColors}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={{ position: 'absolute', top: 0, left: rs(24), right: rs(24), height: 1.5 }}
+          />
+          {/* Soft inner shadow — top inner glow + bottom inner darkening */}
+          <LinearGradient
+            colors={GLASS_CARD.innerTopColors}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: rs(GLASS_CARD.innerTopHeight) }}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={GLASS_CARD.innerBottomColors}
+            style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: rs(GLASS_CARD.innerBottomHeight) }}
+            pointerEvents="none"
+          />
+          {/* Card content */}
         {/* Handle */}
         <View style={{
           width: rs(38), height: rs(4), borderRadius: rs(99),
           backgroundColor: 'rgba(255,255,255,0.16)',
-          alignSelf: 'center', marginBottom: rs(16),
+          alignSelf: 'center', marginBottom: rs(12),
         }} />
 
         {/* Tags row + counter */}
         <View style={{
           flexDirection: 'row', justifyContent: 'space-between',
-          alignItems: 'center', marginBottom: rs(18),
+          alignItems: 'center', marginBottom: rs(14),
         }}>
           <View style={{
             flexDirection: 'row', alignItems: 'center', gap: rs(7), alignSelf: 'flex-start',
@@ -262,7 +299,7 @@ export default function OnboardingScreen() {
           </View>
 
           <Text style={{
-            fontFamily: 'SpaceGrotesk_600SemiBold',
+            fontFamily: FONTS.headingSemi,
             fontSize: rs(11), letterSpacing: 1,
             color: 'rgba(245,247,251,0.38)',
           }}>
@@ -272,7 +309,7 @@ export default function OnboardingScreen() {
         </View>
 
         {/* Section label */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(9), marginBottom: rs(10) }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rs(9), marginBottom: rs(8) }}>
           <View style={{
             width: rs(20), height: rs(2), borderRadius: rs(2),
             backgroundColor: activeAccent,
@@ -286,85 +323,127 @@ export default function OnboardingScreen() {
 
         {/* Title */}
         <Text style={{
-          fontFamily: 'SpaceGrotesk_700Bold',
+          fontFamily: FONTS.heading,
           fontSize: rs(29), lineHeight: rs(32), letterSpacing: -0.7,
-          color: '#f6f8fc',
+          color: '#f6f8fc', textAlign: 'center',
         }}>
           {slide.title}
         </Text>
 
         {/* Description */}
         <Text style={{
-          fontSize: rs(13), lineHeight: rs(20), marginTop: rs(12),
+          fontSize: rs(13), lineHeight: rs(20), marginTop: rs(10),
           color: 'rgba(245,247,251,0.58)', maxWidth: rs(252),
+          textAlign: 'center', alignSelf: 'center',
         }}>
           {slide.desc}
         </Text>
 
         {/* Buttons */}
-        <View style={{ gap: rs(10), marginTop: rs(20) }}>
-          <TouchableOpacity
-            onPress={goNext}
-            activeOpacity={0.85}
-            style={{
-              height: rs(54), borderRadius: rs(16), overflow: 'hidden',
-              shadowColor: primaryShadow[slide.icon],
-              shadowOffset: { width: 0, height: rs(12) },
-              shadowRadius: rs(28), shadowOpacity: 0.6, elevation: 10,
-            }}
-          >
-            <LinearGradient
-              colors={primaryGradients[slide.icon]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8) }}
-            >
-              <Text style={{
-                fontFamily: 'Inter_700Bold', fontSize: rs(15),
-                color: primaryTextColor[slide.icon], letterSpacing: 0.2,
-              }}>
-                {primaryLabel[slide.icon]}
-              </Text>
-              <Svg width={rs(17)} height={rs(17)} viewBox="0 0 24 24">
-                <Path
-                  d="M5 12h14M13 6l6 6-6 6"
-                  fill="none" stroke={primaryTextColor[slide.icon]}
-                  strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
-                />
-              </Svg>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={secondaryAction[slide.icon]}
-            activeOpacity={0.7}
-            style={{
-              height: rs(50), borderRadius: rs(15),
-              alignItems: 'center', justifyContent: 'center',
-              backgroundColor: 'rgba(255,255,255,0.045)',
-              borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
-            }}
-          >
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: rs(14), color: 'rgba(245,247,251,0.8)' }}>
-              {secondaryLabel[slide.icon]}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Pagination dots */}
-        <View style={{
-          flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: rs(7), marginTop: rs(18),
-        }}>
-          {ONBOARDING_SLIDES.map((_, i) => (
+        <View style={{ gap: rs(8), marginTop: rs(16) }}>
+          <Animated.View style={{ transform: [{ scale: primaryPressScale }] }}>
             <TouchableOpacity
-              key={i}
-              onPress={() => setIndex(i)}
+              onPress={goNext}
+              onPressIn={() => pressIn(primaryPressScale)}
+              onPressOut={() => pressOut(primaryPressScale)}
+              activeOpacity={0.92}
+              style={{
+                height: rs(54), borderRadius: rs(16), overflow: 'hidden',
+                shadowColor: pillar.buttonShadow,
+                shadowOffset: { width: 0, height: rs(12) },
+                shadowRadius: rs(30), shadowOpacity: 0.7, elevation: 10,
+              }}
+            >
+              <LinearGradient
+                colors={pillar.buttonGradient}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(8) }}
+              >
+                <Text style={{
+                  fontFamily: FONTS.bodyBold, fontSize: rs(15),
+                  color: pillar.buttonTextColor, letterSpacing: 0.2,
+                }}>
+                  {primaryLabel[slide.icon]}
+                </Text>
+                <Svg width={rs(17)} height={rs(17)} viewBox="0 0 24 24">
+                  <Path
+                    d="M5 12h14M13 6l6 6-6 6"
+                    fill="none" stroke={pillar.buttonTextColor}
+                    strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
+                  />
+                </Svg>
+              </LinearGradient>
+              {/* Shine sweep */}
+              <Animated.View pointerEvents="none" style={{
+                position: 'absolute', top: -rs(20), bottom: -rs(20), width: rs(46),
+                transform: [
+                  { translateX: shineX.interpolate({ inputRange: [0, 1], outputRange: [-rs(70), rs(340)] }) },
+                  { rotate: '20deg' },
+                ],
+              }}>
+                <LinearGradient
+                  colors={['transparent', 'rgba(255,255,255,0.4)', 'transparent']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ flex: 1 }}
+                />
+              </Animated.View>
+            </TouchableOpacity>
+          </Animated.View>
+
+          <Animated.View style={{ transform: [{ scale: secondaryPressScale }] }}>
+            <TouchableOpacity
+              onPress={secondaryAction[slide.icon]}
+              onPressIn={() => pressIn(secondaryPressScale)}
+              onPressOut={() => pressOut(secondaryPressScale)}
               activeOpacity={0.7}
               style={{
-                width: i === index ? rs(22) : rs(6), height: rs(6), borderRadius: rs(99),
-                backgroundColor: i === index ? activeAccent : 'rgba(255,255,255,0.18)',
+                height: rs(50), borderRadius: rs(15),
+                alignItems: 'center', justifyContent: 'center',
+                backgroundColor: 'rgba(255,255,255,0.045)',
+                borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
               }}
-            />
-          ))}
+            >
+              <Text style={{ fontFamily: FONTS.bodySemi, fontSize: rs(14), color: 'rgba(245,247,251,0.8)' }}>
+                {secondaryLabel[slide.icon]}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+
+          {/* Animated segmented progress bar */}
+          <View style={{
+            flexDirection: 'row', alignItems: 'center', gap: rs(6), marginTop: rs(14),
+          }}>
+            {ONBOARDING_SLIDES.map((_, i) => (
+              <TouchableOpacity
+                key={i}
+                onPress={() => setIndex(i)}
+                activeOpacity={0.7}
+                style={{ flex: 1 }}
+              >
+                <View style={{
+                  height: i === index ? rs(5) : rs(4),
+                  borderRadius: rs(99),
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                  overflow: 'hidden',
+                  ...(i === index ? {
+                    shadowColor: activeAccent,
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.7,
+                    shadowRadius: rs(6),
+                    elevation: 4,
+                  } : null),
+                }}>
+                  <Animated.View style={{
+                    height: '100%',
+                    borderRadius: rs(99),
+                    backgroundColor: i <= index ? activeAccent : 'transparent',
+                    width: progressAnim[i].interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+                  }} />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </View>
     </SafeAreaView>

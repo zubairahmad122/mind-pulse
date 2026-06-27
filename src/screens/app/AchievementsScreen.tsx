@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { DimensionValue, StyleSheet, Text, View } from 'react-native';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { ACHIEVEMENT_DEFINITIONS, COLORS } from '@/constants';
 import type { AchievementExtras } from '@/constants/achievements';
 import { useAuth } from '@/context/AuthContext';
@@ -48,7 +50,7 @@ export default function AchievementsScreen() {
   const pct = (earned.length / ACHIEVEMENT_DEFINITIONS.length) * 100;
 
   return (
-    <ScreenShell safeBottom>
+    <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
       <ScreenHeader title="Achievements" showBack />
 
       {/* Progress */}
@@ -66,7 +68,7 @@ export default function AchievementsScreen() {
         <>
           <Text style={styles.sectionLabel}>✦ Unlocked</Text>
           {earned.map(a => (
-            <View key={a.id} style={styles.earnedCard}>
+            <GlassCard key={a.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 14 }}>
               <View style={[styles.badge, { borderColor: a.color + '70', shadowColor: a.color }]}>
                 <View style={[styles.badgeInner, { backgroundColor: a.color + '1a' }]}>
                   <Text style={{ fontSize: 24 }}>{a.icon}</Text>
@@ -79,7 +81,7 @@ export default function AchievementsScreen() {
               <View style={[styles.checkBadge, { backgroundColor: a.color + '1a', borderColor: a.color + '50' }]}>
                 <Text style={{ color: a.color, fontSize: 12, fontWeight: '800' }}>✓</Text>
               </View>
-            </View>
+            </GlassCard>
           ))}
         </>
       )}
@@ -88,7 +90,7 @@ export default function AchievementsScreen() {
         <>
           <Text style={[styles.sectionLabel, { marginTop: 16 }]}>🔒 Locked</Text>
           {locked.map(a => (
-            <View key={a.id} style={styles.lockedCard}>
+            <GlassCard key={a.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 14, opacity: 0.45 }}>
               <View style={styles.lockedBadge}>
                 <Text style={{ fontSize: 22, opacity: 0.3 }}>{a.icon}</Text>
               </View>
@@ -96,7 +98,7 @@ export default function AchievementsScreen() {
                 <Text style={styles.lockedTitle}>{a.title}</Text>
                 <Text style={styles.lockedDesc}>{a.desc}</Text>
               </View>
-            </View>
+            </GlassCard>
           ))}
         </>
       )}

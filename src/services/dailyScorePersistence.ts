@@ -1,4 +1,6 @@
-import firestore from '@react-native-firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, query, orderBy, limit } from '@react-native-firebase/firestore';
+
+const db = getFirestore();
 
 export interface DailyScoreData {
   mindPulseScore: number;
@@ -19,22 +21,25 @@ function yesterdayKey(): string {
 }
 
 function scoresRef(uid: string) {
-  return firestore()
-    .collection('users')
-    .doc(uid)
-    .collection('dailyScores');
+  return collection(db, 'users', uid, 'dailyScores');
 }
 
 export async function saveDailyScore(uid: string, data: DailyScoreData): Promise<void> {
-  await scoresRef(uid)
-    .doc(todayKey())
-    .set(data, { merge: true });
+  try {
+    await setDoc(doc(scoresRef(uid), todayKey()), data, { merge: true });
+  } catch {
+    // Best-effort snapshot — a transient Firestore error here shouldn't surface to the user.
+  }
 }
 
 export async function getDailyScore(uid: string, dateKey: string): Promise<DailyScoreData | null> {
-  const snap = await scoresRef(uid).doc(dateKey).get();
-  if (!snap.exists()) return null;
-  return snap.data() as DailyScoreData;
+  try {
+    const snap = await getDoc(doc(scoresRef(uid), dateKey));
+    if (!snap.exists()) return null;
+    return snap.data() as DailyScoreData;
+  } catch {
+    return null;
+  }
 }
 
 export async function getYesterdayScore(uid: string): Promise<DailyScoreData | null> {
@@ -57,26 +62,27 @@ export async function getLastNDayScores(
 }
 
 export async function getDailyScoreStreak(uid: string): Promise<number> {
-  const snap = await scoresRef(uid)
-    .orderBy('savedAt', 'desc')
-    .limit(90)
-    .get();
-  if (snap.empty) return 0;
+  try {
+    const snap = await getDocs(query(scoresRef(uid), orderBy('savedAt', 'desc'), limit(90)));
+    if (snap.empty) return 0;
 
-  const keys = snap.docs.map(d => d.id).sort().reverse();
-  let streak = 0;
-  const current = new Date();
-  current.setHours(0, 0, 0, 0);
+    const keys = snap.docs.map(d => d.id).sort().reverse();
+    let streak = 0;
+    const current = new Date();
+    current.setHours(0, 0, 0, 0);
 
-  for (const key of keys) {
-    const expected = new Date(current);
-    expected.setDate(expected.getDate() - streak);
-    const expectedKey = expected.toISOString().slice(0, 10);
-    if (key === expectedKey) {
-      streak++;
-    } else {
-      break;
+    for (const key of keys) {
+      const expected = new Date(current);
+      expected.setDate(expected.getDate() - streak);
+      const expectedKey = expected.toISOString().slice(0, 10);
+      if (key === expectedKey) {
+        streak++;
+      } else {
+        break;
+      }
     }
+    return streak;
+  } catch {
+    return 0;
   }
-  return streak;
 }

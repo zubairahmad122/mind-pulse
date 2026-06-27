@@ -1,5 +1,6 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import firestore from '@react-native-firebase/firestore';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { collection, getDocs, addDoc, query, orderBy, getFirestore } from '@react-native-firebase/firestore';
+
 import {
   loadGuestSessions,
   saveGuestSessions,
@@ -18,10 +19,16 @@ type SleepContextType = {
 
 const SleepContext = createContext<SleepContextType>({} as SleepContextType);
 
+let _sleepCounter = 0;
+
 export function SleepProvider({ children }: { children: React.ReactNode }) {
   const { user, isGuestMode } = useAuth();
   const [sessions, setSessions] = useState<SleepSession[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Evaluated at render time, not import time — avoids edge cases where
+  // Firebase config isn't ready yet and makes the provider unit-testable.
+  const db = useMemo(() => getFirestore(), []);
 
   const refresh = useCallback(async () => {
     if (!user) {
@@ -34,23 +41,19 @@ export function SleepProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const snap = await firestore()
-        .collection('users')
-        .doc(user.uid)
-        .collection('sleepSessions')
-        .orderBy('startTime', 'desc')
-        .get();
+      const snap = await getDocs(query(collection(db, 'users', user.uid, 'sleepSessions'), orderBy('startTime', 'desc')));
       const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() } as SleepSession));
       setSessions(loaded);
       void saveUserSessionsCache(user.uid, loaded);
-    } catch {
+    } catch (error) {
       // offline, load from local cache
+      reportError(error, { tag: 'SleepContext', action: 'refresh' });
       const cached = await loadUserSessionsCache(user.uid);
       setSessions(cached);
     } finally {
       setLoading(false);
     }
-  }, [user, isGuestMode]);
+  }, [user, isGuestMode, db]);
 
   useEffect(() => {
     setLoading(true);
@@ -60,7 +63,7 @@ export function SleepProvider({ children }: { children: React.ReactNode }) {
   const addSession = async (session: Omit<SleepSession, 'id'>) => {
     if (!user) {
       if (isGuestMode) {
-        const localId = `guest-${Date.now()}`;
+        const localId = `guest-${Date.now()}-${++_sleepCounter}`;
         setSessions(prev => {
           const next = [{ id: localId, ...session }, ...prev];
           void saveGuestSessions(next);
@@ -70,11 +73,7 @@ export function SleepProvider({ children }: { children: React.ReactNode }) {
       }
       throw new Error('Please sign in to save sessions.');
     }
-    const docRef = await firestore()
-      .collection('users')
-      .doc(user.uid)
-      .collection('sleepSessions')
-      .add(session);
+    const docRef = await addDoc(collection(db, 'users', user.uid, 'sleepSessions'), session);
     setSessions(prev => {
       const next = [{ id: docRef.id, ...session }, ...prev];
       void saveUserSessionsCache(user.uid, next);

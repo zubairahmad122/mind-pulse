@@ -97,7 +97,7 @@ export function FigureEightGuide({ active }: Props) {
       <Svg width="260" height="260" style={StyleSheet.absoluteFill}>
         <Defs>
           <RadialGradient id="f8Glow" cx="130" cy="130" r="110">
-            <Stop offset="0%" stopColor="#ec4899" stopOpacity="0.14" /><Stop offset="60%" stopColor="#7B61FF" stopOpacity="0.06" /><Stop offset="100%" stopColor="#0A0E1A" stopOpacity="0" />
+            <Stop offset="0%" stopColor="#ec4899" stopOpacity="0.14" /><Stop offset="60%" stopColor="#22d3ee" stopOpacity="0.06" /><Stop offset="100%" stopColor="#0A0E1A" stopOpacity="0" />
           </RadialGradient>
           <LinearGradient id="f8Track" x1="0" y1="0" x2="1" y2="0">
             <Stop offset="0%" stopColor="#ec4899" stopOpacity="0.55" /><Stop offset="50%" stopColor="#a78bfa" stopOpacity="0.65" /><Stop offset="100%" stopColor="#4FC3F7" stopOpacity="0.55" />

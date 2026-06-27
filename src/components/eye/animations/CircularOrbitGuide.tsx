@@ -222,7 +222,7 @@ export function CircularOrbitGuide({ active, singleShape }: Props) {
         <Defs>
           <RadialGradient id="cmNebula" cx="130" cy="130" r="100">
             <Stop offset="0%" stopColor={currentShape.color} stopOpacity="0.20" />
-            <Stop offset="60%" stopColor="#7B61FF" stopOpacity="0.06" />
+            <Stop offset="60%" stopColor="#22d3ee" stopOpacity="0.06" />
             <Stop offset="100%" stopColor="#0A0E1A" stopOpacity="0" />
           </RadialGradient>
         </Defs>

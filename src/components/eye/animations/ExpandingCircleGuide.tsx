@@ -109,7 +109,7 @@ export function ExpandingCircleGuide({ active }: Props) {
           {/* Glowing horizon sun/moon */}
           <RadialGradient id="celestialGlow" cx="130" cy="95" r="35">
             <Stop offset="0%" stopColor="#4FC3F7" stopOpacity="0.8" />
-            <Stop offset="45%" stopColor="#7B61FF" stopOpacity="0.25" />
+            <Stop offset="45%" stopColor="#22d3ee" stopOpacity="0.25" />
             <Stop offset="100%" stopColor="#000" stopOpacity="0" />
           </RadialGradient>
         </Defs>

@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/expo.icon/Assets/mind-pulse-icon.png",
     "scheme": "mindpulse",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon/Assets/mind-pulse-icon.png",
       "bundleIdentifier": "com.zubzen.sleepy",
@@ -62,6 +62,7 @@
         }
       ],
       "expo-asset",
+      "@react-native-community/datetimepicker",
       [
         "expo-build-properties",
         {

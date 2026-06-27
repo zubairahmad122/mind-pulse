@@ -42,7 +42,7 @@ export const EMOTIONAL_STATES: EmotionOption[] = [
     emoji: '😴',
     label: 'Sleepy',
     description: 'Ready to rest',
-    color: '#7B61FF',
+    color: '#a78bfa',
   },
 ];
 

@@ -1,31 +1,59 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-  ],
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
       colors: {
-        'app-bg': '#080D1A',
-        'app-surface': '#0D1128',
-        'app-card': 'rgba(255, 255, 255, 0.07)',
-        'app-border': 'rgba(26, 143, 255, 0.28)',
-        'app-border-hi': '#1A8FFF',
-        'app-purple': '#1A8FFF',
-        'app-purple-light': '#7EB8FF',
-        'app-purple-dim': 'rgba(26, 143, 255, 0.35)',
-        'app-muted': 'rgba(255, 255, 255, 0.6)',
-        'app-muted-hi': 'rgba(255, 255, 255, 0.8)',
-        'app-gold': '#FF9800',
-        'app-gold-dim': '#c77a00',
-        'app-success': '#4CAF50',
-        'app-error': '#F44336',
-        'app-blue': '#00D4FF',
-        'app-eye':   '#6ee7b7',
-        'app-sleep': '#a78bfa',
-        'app-mind':  '#4FC3F7',
-        'app-pink':  '#FF6B9D',
+        // ── Backgrounds ──────────────────────────────────────────────────
+        "bg-primary": "#0F0F1A",
+        "bg-card": "#1A1A2E",
+        "bg-elevated": "#252542",
+        "bg-input": "#13132A",
+
+        // ── Accent ───────────────────────────────────────────────────────
+        "accent-purple": "#8B5CF6",
+        "accent-purple-light": "#A78BFA",
+        "accent-blue": "#3B82F6",
+        "accent-cyan": "#06B6D4",
+        "accent-green": "#10B981",
+        "accent-gold": "#F59E0B",
+        "accent-red": "#EF4444",
+        "accent-orange": "#F97316",
+
+        // ── Text ─────────────────────────────────────────────────────────
+        "text-primary": "#FFFFFF",
+        "text-secondary": "#9CA3AF",
+        "text-muted": "#6B7280",
+
+        // ── Border ───────────────────────────────────────────────────────
+        "border-subtle": "rgba(255,255,255,0.05)",
+        "border-active": "rgba(255,255,255,0.1)",
+      },
+      fontFamily: {
+        heading: ["SpaceGrotesk_700Bold"],
+        "heading-semi": ["SpaceGrotesk_600SemiBold"],
+        "body-bold": ["Inter_700Bold"],
+        "body-semi": ["Inter_600SemiBold"],
+        body: ["Inter_400Regular"],
+      },
+      borderRadius: {
+        sm: "8px",
+        md: "12px",
+        lg: "16px",
+        xl: "20px",
+        "2xl": "24px",
+        full: "9999px",
+      },
+      spacing: {
+        xs: "4px",
+        sm: "8px",
+        md: "12px",
+        lg: "16px",
+        xl: "20px",
+        "2xl": "24px",
+        "3xl": "32px",
+        "4xl": "48px",
       },
     },
   },

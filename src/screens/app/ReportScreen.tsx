@@ -11,6 +11,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { ScoreTrendChart } from '@/components/report/ScoreTrendChart';
 import { ScreenShell } from '@/components/layout/ScreenShell';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
@@ -171,18 +173,20 @@ export default function ReportScreen() {
   };
 
   return (
-    <ScreenShell>
+    <ScreenShell ambient={<AmbientBackground subtle />}>
       <ScreenTransition>
       <Text style={styles.header}>Today's Reality Report</Text>
       <Text style={styles.date}>{today}</Text>
 
       {/* Stats list */}
-      <View style={styles.statsList}>
-        <StatRow icon={Moon} label="Sleep sessions logged" value={String(sessions.length)} />
-        <StatRow icon={Eye} label="Eye score" value={`${eyes}/100`} />
-        <StatRow icon={Flame} label="Day streak" value={`${streak} days`} />
-        <StatRow icon={BarChart3} label="Sleep score" value={`${sleepScore}/100`} />
-      </View>
+      <GlassCard style={{ marginBottom: spacing.md }}>
+        <View style={{ gap: spacing.sm }}>
+          <StatRow icon={Moon} label="Sleep sessions logged" value={String(sessions.length)} />
+          <StatRow icon={Eye} label="Eye score" value={`${eyes}/100`} />
+          <StatRow icon={Flame} label="Day streak" value={`${streak} days`} />
+          <StatRow icon={BarChart3} label="Sleep score" value={`${sleepScore}/100`} />
+        </View>
+      </GlassCard>
 
       {/* 7-day trend */}
       {weekData.length > 0 && (
@@ -193,18 +197,20 @@ export default function ReportScreen() {
 
       {/* Weekly Reflection — Gemini-powered narrative summary */}
       <PaywallGate featureId="report_weekly_summary">
-        <View style={styles.reflectionCard}>
-          <View style={styles.reflectionHeader}>
-            <Sparkles size={14} color={colors.accent.purple} />
-            <Text style={styles.reflectionTitle}>Weekly Reflection</Text>
-            {reflectionLoading && (
-              <ActivityIndicator size={10} color={colors.accent.purple} style={{ marginLeft: 'auto' }} />
-            )}
+        <GlassCard style={{ marginBottom: spacing.md }}>
+          <View style={{ gap: spacing.sm }}>
+            <View style={styles.reflectionHeader}>
+              <Sparkles size={14} color={colors.accent.purple} />
+              <Text style={styles.reflectionTitle}>Weekly Reflection</Text>
+              {reflectionLoading && (
+                <ActivityIndicator size={10} color={colors.accent.purple} style={{ marginLeft: 'auto' }} />
+              )}
+            </View>
+            <Text style={styles.reflectionBody}>
+              {reflectionLoading ? 'Reflecting on your week…' : weeklyReflection}
+            </Text>
           </View>
-          <Text style={styles.reflectionBody}>
-            {reflectionLoading ? 'Reflecting on your week…' : weeklyReflection}
-          </Text>
-        </View>
+        </GlassCard>
       </PaywallGate>
 
       {/* Big score display with animated glow */}
@@ -220,7 +226,7 @@ export default function ReportScreen() {
       <View style={styles.shareCard}>
         <View style={styles.shareCardHeader}>
           <View style={styles.shareCardBrand}>
-            <Activity size={16} color={'#9d8aff'} />
+            <Activity size={16} color={'#a78bfa'} />
             <Text style={styles.shareCardTitle}>MindPulse</Text>
           </View>
           <Text style={styles.shareCardDate}>{today}</Text>
@@ -372,7 +378,7 @@ const styles = StyleSheet.create({
   shareCardTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#9d8aff',
+    color: '#a78bfa',
   },
   shareCardDate: {
     fontSize: 11,
@@ -476,7 +482,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: '#9d8aff',
+    backgroundColor: '#a78bfa',
     borderRadius: 14,
     paddingVertical: spacing.md,
     marginBottom: spacing.lg,

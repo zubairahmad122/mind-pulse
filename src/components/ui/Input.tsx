@@ -6,10 +6,11 @@ import { COLORS } from '../../constants/colors';
 type Props = TextInputProps & {
   label: string;
   secureToggle?: boolean;
+  icon?: keyof typeof Ionicons.glyphMap;
 };
 
 const Input = forwardRef<TextInput, Props>(function Input(
-  { label, secureToggle = false, style, ...props },
+  { label, secureToggle = false, icon, style, ...props },
   ref,
 ) {
   const [show, setShow] = useState(false);
@@ -38,9 +39,12 @@ const Input = forwardRef<TextInput, Props>(function Input(
     <View style={styles.wrap}>
       <Text style={focused ? styles.labelFocused : styles.label}>{label}</Text>
       <View style={[styles.field, focused && styles.fieldFocused]}>
+        {icon ? (
+          <Ionicons name={icon} size={18} color={focused ? COLORS.purpleLight : COLORS.textMuted} style={styles.leftIcon} />
+        ) : null}
         <TextInput
           ref={setRefs}
-          style={[styles.input, secureToggle && styles.inputWithToggle, style]}
+          style={[styles.input, icon && styles.inputWithIcon, secureToggle && styles.inputWithToggle, style]}
           placeholderTextColor={COLORS.textMuted}
           secureTextEntry={secureToggle ? !show : props.secureTextEntry}
           onFocus={e => {
@@ -104,7 +108,13 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
   },
+  inputWithIcon: {
+    paddingLeft: 0,
+  },
   inputWithToggle: {
     paddingRight: 8,
+  },
+  leftIcon: {
+    marginLeft: 16,
   },
 });

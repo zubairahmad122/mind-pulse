@@ -65,6 +65,8 @@ function SkeletonLine({ width, height = 14 }: { width: number | string; height?:
     <Animated.View
       style={[
         {
+          // Reanimated animated width comes back as a number from the shared
+          // value; `as any` avoids the RN Web style type mismatch.
           width: width as any,
           height,
           borderRadius: 7,

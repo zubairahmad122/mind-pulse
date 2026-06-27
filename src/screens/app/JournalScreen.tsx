@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PaywallGate } from '@/components/paywall/PaywallGate';
@@ -83,7 +84,7 @@ export default function JournalScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
     >
-      <ScreenShell safeBottom>
+      <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="Stress Journal" subtitle="Reflect on your day" showBack />
 
         <GlassCard style={styles.streakCard}>

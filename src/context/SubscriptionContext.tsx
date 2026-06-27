@@ -9,9 +9,10 @@ import React, {
   useState,
 } from 'react';
 import Purchases, { CustomerInfo, CustomerInfoUpdateListener } from 'react-native-purchases';
+import { reportError } from '@/utils/errorLogger';
 
 const PRO_ENTITLEMENT_ID = 'pro';
-const CACHE_KEY = 'subscription_cache';
+const CACHE_KEY = '@mindpulse/subscription-cache';
 
 interface SubscriptionCache {
   isPremium: boolean;
@@ -63,7 +64,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           setCustomerInfo(parsed.customerInfo);
           setIsPremium(parsed.isPremium);
         }
-      } catch {
+      } catch (error) {
+        reportError(error, { tag: 'SubscriptionContext', action: 'load-cache' });
         // ignore corrupt cache
       } finally {
         if (!cancelled) {

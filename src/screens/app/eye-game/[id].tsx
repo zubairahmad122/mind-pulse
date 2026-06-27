@@ -15,6 +15,7 @@ import { EyeResetOverlay } from '@/components/eye/games/EyeResetOverlay';
 import { FocusSprint } from '@/components/eye/games/FocusSprint';
 import { GameOverScreen, type GameEndStats } from '@/components/eye/games/GameOverScreen';
 import { SaccadeSniper } from '@/components/eye/games/SaccadeSniper';
+import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -110,7 +111,7 @@ export default function EyeGameScreen() {
 
   if (!activity) {
     return (
-      <ScreenShell scroll={false} safeBottom>
+      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="Eye Game" showBack />
         <Text style={styles.missing}>Activity not found</Text>
       </ScreenShell>
@@ -140,7 +141,7 @@ export default function EyeGameScreen() {
   }
 
   return (
-    <ScreenShell scroll={isSelfManaged} safeBottom>
+    <ScreenShell scroll={isSelfManaged} safeBottom ambient={<AmbientBackground subtle />}>
       <ScreenHeader title={activity.title} subtitle={activity.subtitle} showBack />
 
       {/* Timer + personal best row — hidden for self-managed games */}

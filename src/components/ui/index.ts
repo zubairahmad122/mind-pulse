@@ -1,7 +1,11 @@
+export { ActionCard } from './ActionCard';
 export { default as AuthBackButton } from './AuthBackButton';
 export { default as Button } from './Button';
+export { AmbientBackground } from './AmbientBackground';
 export { GlassCard } from './GlassCard';
+export { GradientCTA } from './GradientCTA';
 export { default as Input } from './Input';
 export { OutlineButton } from './OutlineButton';
 export { PrimaryButton } from './PrimaryButton';
 export { ScoreBreakdownCard } from './ScoreBreakdownCard';
+export { SectionLabel } from './SectionLabel';

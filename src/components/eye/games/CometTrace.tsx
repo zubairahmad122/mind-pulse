@@ -13,9 +13,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { FocusDot } from '@/components/eye/animations/FocusDot';
-import firestore from '@react-native-firebase/firestore';
+import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
-import { getDb } from '@/lib/firebase';
+
+const db = getFirestore();
 import { type GameEndStats } from './GameOverScreen';
 
 interface Props {
@@ -409,16 +410,14 @@ export function CometTrace({ running, onGameEnd }: Props) {
 
   function saveToFirestore() {
     try {
-      void firestore()
-        .collection('eyeGameScores')
-        .add({
-          userId:       user?.uid ?? 'guest',
-          game:         'comet_trace',
-          kind:         'exercise',
-          durationSecs: SESSION_SECS,
-          pathStyle:    sessionStyleRef.current,
-          timestamp:    new Date(),
-        });
+      void addDoc(collection(db, 'eyeGameScores'), {
+        userId:       user?.uid ?? 'guest',
+        game:         'comet_trace',
+        kind:         'exercise',
+        durationSecs: SESSION_SECS,
+        pathStyle:    sessionStyleRef.current,
+        timestamp:    new Date(),
+      });
     } catch { /* offline */ }
   }
 

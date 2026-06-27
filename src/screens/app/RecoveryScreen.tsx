@@ -3,7 +3,9 @@ import { CheckCircle, ChevronRight, Eye, Moon, Smartphone, Timer, type LucideIco
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AnimatedBackground from '@/components/AnimatedBackground';
+import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { radius } from '@/constants/radius';
@@ -53,7 +55,7 @@ const OPTIONS: RecoveryOption[] = [
   {
     id: 'sleep-prep',
     icon: Moon,
-    iconColor: '#9d8aff',
+    iconColor: '#a78bfa',
     title: 'Sleep prep mode',
     subtitle: 'Wind down for tonight',
     durationLabel: '30 min',
@@ -152,7 +154,7 @@ export default function RecoveryScreen() {
   }
 
   return (
-    <ScreenShell>
+    <ScreenShell ambient={<AmbientBackground subtle />}>
       <ScreenTransition>
       <Text style={styles.header}>Recovery Mode</Text>
       <Text style={styles.subtitle}>Small actions. Real impact.</Text>
@@ -162,10 +164,11 @@ export default function RecoveryScreen() {
         return (
           <TouchableOpacity
             key={opt.id}
-            style={styles.optionCard}
-            onPress={() => startTimer(opt)}
             activeOpacity={0.85}
+            onPress={() => startTimer(opt)}
           >
+            <GlassCard style={{ marginBottom: spacing.sm }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
             <View style={[styles.optionIconWrap, { backgroundColor: opt.iconColor + '1a' }]}>
               <OptIcon size={26} color={opt.iconColor} />
             </View>
@@ -177,6 +180,8 @@ export default function RecoveryScreen() {
               <Text style={styles.optionDurationText}>{opt.durationLabel}</Text>
               <ChevronRight size={14} color={colors.text.tertiary} />
             </View>
+            </View>
+          </GlassCard>
           </TouchableOpacity>
         );
       })}
@@ -229,7 +234,7 @@ const styles = StyleSheet.create({
   optionDurationText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#9d8aff',
+    color: '#a78bfa',
   },
   // Timer full-screen
   timerScreen: {

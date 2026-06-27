@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import firestore from '@react-native-firebase/firestore';
 import { useCallback, useEffect, useState } from 'react';
+import { getFirestore, collection, doc, getDocs, addDoc, updateDoc, query, orderBy, serverTimestamp } from '@react-native-firebase/firestore';
+
+const db = getFirestore();
 import { getJournalInsight } from '@/services/gemini';
 import { getCachedInsight, setCachedInsight } from '@/services/journalInsightCache';
 import { JournalEntry, Mood, StressTrigger } from '@/types/journal.types';
@@ -55,12 +57,7 @@ export function useJournal(uid?: string, isGuestMode = false) {
     setLoading(true);
     try {
       if (uid && !isGuestMode) {
-        const snap = await firestore()
-          .collection('users')
-          .doc(uid)
-          .collection('journal')
-          .orderBy('date', 'desc')
-          .get();
+        const snap = await getDocs(query(collection(db, 'users', uid, 'journal'), orderBy('date', 'desc')));
         const loaded = snap.docs.map(d => mapDoc(d.id, d.data() as Record<string, unknown>));
         setEntries(loaded);
         await AsyncStorage.setItem(storageKey, JSON.stringify(loaded.map(e => ({ ...e, date: e.date.toISOString() }))));
@@ -108,18 +105,14 @@ export function useJournal(uid?: string, isGuestMode = false) {
 
       if (uid && !isGuestMode) {
         try {
-          const docRef = await firestore()
-            .collection('users')
-            .doc(uid)
-            .collection('journal')
-            .add({
-              uid,
-              mood: entry.mood,
-              text: entry.text,
-              triggers: entry.triggers,
-              aiInsight: cached,
-              date: firestore.FieldValue.serverTimestamp(),
-            });
+          const docRef = await addDoc(collection(db, 'users', uid, 'journal'), {
+            uid,
+            mood: entry.mood,
+            text: entry.text,
+            triggers: entry.triggers,
+            aiInsight: cached,
+            date: serverTimestamp(),
+          });
           entry.id = docRef.id;
         } catch {
           // fall through to local save
@@ -151,18 +144,14 @@ export function useJournal(uid?: string, isGuestMode = false) {
     let firestoreDocId: string | null = null;
     if (uid && !isGuestMode) {
       try {
-        const docRef = await firestore()
-          .collection('users')
-          .doc(uid)
-          .collection('journal')
-          .add({
-            uid,
-            mood: entry.mood,
-            text: entry.text,
-            triggers: entry.triggers,
-            aiInsight: fallback,
-            date: firestore.FieldValue.serverTimestamp(),
-          });
+        const docRef = await addDoc(collection(db, 'users', uid, 'journal'), {
+          uid,
+          mood: entry.mood,
+          text: entry.text,
+          triggers: entry.triggers,
+          aiInsight: fallback,
+          date: serverTimestamp(),
+        });
         firestoreDocId = docRef.id;
         entry.id = docRef.id;
       } catch {
@@ -201,12 +190,7 @@ export function useJournal(uid?: string, isGuestMode = false) {
       // Update Firestore doc with the real insight
       if (firestoreDocId && uid && !isGuestMode) {
         try {
-          await firestore()
-            .collection('users')
-            .doc(uid)
-            .collection('journal')
-            .doc(firestoreDocId)
-            .update({ aiInsight: realInsight });
+          await updateDoc(doc(db, 'users', uid, 'journal', firestoreDocId), { aiInsight: realInsight });
         } catch {
           // local state + AsyncStorage already updated
         }

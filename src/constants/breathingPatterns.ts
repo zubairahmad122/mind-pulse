@@ -31,11 +31,11 @@ export const BREATHING_PATTERNS: Record<BreathingPattern, BreathingPatternDef> =
         name: 'inhale',
         duration: 0, // User paced
         label: 'Breathe In',
-        color: '#7B61FF',
+        color: '#4FC3F7',
       },
     ],
-    color: '#7B61FF',
-    glowColor: 'rgba(123,97,255,0.25)',
+    color: '#4FC3F7',
+    glowColor: 'rgba(79,195,247,0.25)',
     emoji: '🫁',
   },
 
@@ -48,7 +48,7 @@ export const BREATHING_PATTERNS: Record<BreathingPattern, BreathingPatternDef> =
     phases: [
       { name: 'inhale', duration: 4, label: 'Inhale', color: '#4FC3F7' },
       { name: 'hold-in', duration: 4, label: 'Hold', color: '#B39DDB' },
-      { name: 'exhale', duration: 4, label: 'Exhale', color: '#7B61FF' },
+      { name: 'exhale', duration: 4, label: 'Exhale', color: '#4FC3F7' },
       { name: 'hold-out', duration: 4, label: 'Hold', color: '#4DB6AC' },
     ],
     color: '#4FC3F7',
@@ -80,13 +80,13 @@ export const BREATHING_PATTERNS: Record<BreathingPattern, BreathingPatternDef> =
     durationSeconds: 648,
     cycles: 50,
     phases: [
-      { name: 'inhale', duration: 4, label: 'Inhale', color: '#7B61FF' },
-      { name: 'hold-in', duration: 4, label: 'Hold', color: '#6A4C93' },
-      { name: 'exhale', duration: 8, label: 'Exhale', color: '#5A3A7D' },
-      { name: 'hold-out', duration: 5, label: 'Hold', color: '#4A2A6D' },
+      { name: 'inhale', duration: 4, label: 'Inhale', color: '#a78bfa' },
+      { name: 'hold-in', duration: 4, label: 'Hold', color: '#8b6fd6' },
+      { name: 'exhale', duration: 8, label: 'Exhale', color: '#7c5cbf' },
+      { name: 'hold-out', duration: 5, label: 'Hold', color: '#6d4aa8' },
     ],
-    color: '#7B61FF',
-    glowColor: 'rgba(123,97,255,0.25)',
+    color: '#a78bfa',
+    glowColor: 'rgba(167,139,250,0.25)',
     emoji: '😴',
   },
 };

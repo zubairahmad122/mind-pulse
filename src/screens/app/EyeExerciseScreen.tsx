@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SessionCompleteOverlay } from '@/components/eye/SessionCompleteOverlay';
+import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -52,7 +53,7 @@ export default function EyeExerciseScreen() {
 
   if (!exercise) {
     return (
-      <ScreenShell scroll={false} safeBottom>
+      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="Exercise" showBack />
         <Text style={styles.missing}>Not found</Text>
       </ScreenShell>
@@ -73,7 +74,7 @@ export default function EyeExerciseScreen() {
   };
 
   return (
-    <ScreenShell scroll={false} safeBottom>
+    <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
       <ScreenHeader title={exercise.title} subtitle={exercise.subtitle} showBack />
 
       <Animated.View style={[styles.center, animStyle]}>

@@ -55,6 +55,8 @@ function FloatingOrb({ config, gradId, color, floatT }: {
   color: string;
   floatT: SharedValue<number>;
 }) {
+  // Reanimated animatedProps needs `as any` — RN Web types are too strict
+  // for drive-by animated SVG coordinate values.
   const animatedProps = useAnimatedProps(() => {
     const angle = floatT.value * Math.PI * 2 * config.speed + config.phase;
     return {
@@ -145,6 +147,8 @@ export function RelaxBackground({ pattern, isActive }: RelaxBackgroundProps) {
   }, [isActive, patternDef]);
 
   // ── Animated props for pulse and ring groups ──
+  // Reanimated animatedProps needs `as any` — RN Web types are too strict
+  // for drive-by animated transform/opacity values.
   const pulseGroupProps = useAnimatedProps(() => ({
     transform: [{ scale: pulseBg.value }],
   } as any));

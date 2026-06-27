@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import firestore from '@react-native-firebase/firestore';
+import { getFirestore, collection, doc, getDoc, setDoc } from '@react-native-firebase/firestore';
+
+const db = getFirestore();
 import { useCallback, useEffect, useState } from 'react';
 import { SleepSchedule } from '@/types/sleep.types';
 
@@ -13,6 +15,7 @@ const DEFAULT_SCHEDULE: Omit<SleepSchedule, 'uid'> = {
   activeDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
   reminderEnabled: true,
   reminderMinutes: 30,
+  sleepNotesEnabled: true,
 };
 
 export function useSleepSchedule(uid?: string, isGuestMode = false) {
@@ -27,12 +30,7 @@ export function useSleepSchedule(uid?: string, isGuestMode = false) {
 
     try {
       if (uid && !isGuestMode) {
-        const snap = await firestore()
-          .collection('users')
-          .doc(uid)
-          .collection('settings')
-          .doc(FIRESTORE_DOC)
-          .get();
+        const snap = await getDoc(doc(db, 'users', uid, 'settings', FIRESTORE_DOC));
         if (snap.exists()) {
           const data = snap.data() as Omit<SleepSchedule, 'uid'>;
           const loaded = { uid, ...data };
@@ -67,12 +65,7 @@ export function useSleepSchedule(uid?: string, isGuestMode = false) {
     if (uid && !isGuestMode) {
       try {
         const { uid: _uid, ...data } = next;
-        await firestore()
-          .collection('users')
-          .doc(uid)
-          .collection('settings')
-          .doc(FIRESTORE_DOC)
-          .set(data, { merge: true });
+        await setDoc(doc(db, 'users', uid, 'settings', FIRESTORE_DOC), data, { merge: true });
       } catch {
         // local copy already saved
       }

@@ -1,20 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, DimensionValue, StyleSheet, Text, View } from 'react-native';
+import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { SleepSummaryCard, type SleepSummaryData, type SleepStageData } from '@/components/sleep/SleepSummaryCard';
 import { COLORS, HISTORY_CHART, qualityEmojiForRating } from '@/constants';
 import { useSleep } from '@/context/SleepContext';
 import { formatHistoryClock, formatHistorySessionDate } from '@/utils/historyDisplay';
 import { avgDuration, formatDuration } from '@/utils/sleepUtils';
+import { estimateStages } from '@/utils/stageEstimator';
 
 export default function HistoryScreen() {
   const { sessions, loading } = useSleep();
+  const lastSession = sessions[0] ?? null;
   const avg = avgDuration(sessions);
   const last7 = sessions.slice(0, 7).reverse();
 
   if (loading) {
     return (
-      <ScreenShell scroll={false} safeBottom>
+      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="Sleep History" showBack />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color={COLORS.purple} size="large" />
@@ -24,7 +29,7 @@ export default function HistoryScreen() {
   }
 
   return (
-    <ScreenShell safeBottom>
+    <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
       <ScreenHeader title="Sleep History" showBack />
 
       {sessions.length === 0 ? (
@@ -39,7 +44,31 @@ export default function HistoryScreen() {
         </View>
       ) : (
         <>
-          <View style={styles.summaryCard}>
+          {/* Latest session summary card */}
+          {lastSession && (() => {
+            const start = new Date(lastSession.startTime);
+            const end = new Date(lastSession.endTime);
+            const fmtTime = (d: Date) =>
+              d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            const summary: SleepSummaryData = {
+              durationLabel: formatDuration(lastSession.durationMinutes),
+              bedtime: fmtTime(start),
+              wakeTime: fmtTime(end),
+            };
+            const stages: SleepStageData = estimateStages(lastSession.id, lastSession.durationMinutes);
+            const insight = lastSession.durationMinutes >= 420
+              ? 'You met your sleep target — great consistency.'
+              : 'Your sleep was shorter than recommended. Try an earlier bedtime.';
+            return (
+              <SleepSummaryCard
+                summary={summary}
+                stages={stages}
+                insight={insight}
+              />
+            );
+          })()}
+
+          <GlassCard style={{ marginBottom: 20 }}>
             <View className="flex-row justify-between items-start mb-5">
               <View>
                 <Text style={styles.summaryLabel}>
@@ -83,12 +112,12 @@ export default function HistoryScreen() {
                 );
               })}
             </View>
-          </View>
+          </GlassCard>
 
           <Text style={styles.sectionLabel}>All Sessions</Text>
 
           {sessions.map(session => (
-            <View key={session.id} style={styles.sessionCard}>
+            <GlassCard key={session.id} simple style={{ marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ gap: 4 }}>
                 <Text style={styles.sessionDate}>{formatHistorySessionDate(session.date)}</Text>
                 <Text style={styles.sessionTime}>
@@ -104,7 +133,7 @@ export default function HistoryScreen() {
                   return <QualityIcon size={20} color="rgba(255,255,255,0.6)" />;
                 })()}
               </View>
-            </View>
+            </GlassCard>
           ))}
         </>
       )}

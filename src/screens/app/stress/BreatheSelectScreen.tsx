@@ -1,5 +1,7 @@
 import { X, Clock, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { AmbientBackground } from '@/components/ui';
+import { PillarProvider } from '@/context/PillarContext';
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
@@ -43,7 +45,7 @@ function ModeCard({ mode, index, onPress }: { mode: BreathMode; index: number; o
         activeOpacity={1}
         style={[
           styles.card,
-          { borderColor: isDefault ? mode.color + '55' : 'rgba(255,255,255,0.08)' },
+          { borderColor: isDefault ? mode.color + '55' : 'rgba(255,255,255,0.1)' },
           isDefault && { backgroundColor: mode.color + '10' },
         ]}
       >
@@ -100,6 +102,7 @@ export default function BreatheSelectScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
+      <PillarProvider pillar="mind"><AmbientBackground subtle /></PillarProvider>
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity

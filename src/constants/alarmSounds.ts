@@ -104,7 +104,7 @@ export const ALARM_RINGTONES: AlarmRingtoneOption[] = [
     icon: CloudMoon,
     soundFile: 'night-bells.mp3',
     remoteUrl: '',
-    color: '#7B61FF',
+    color: '#a78bfa',
   },
   {
     id: 'soft-ringtone',

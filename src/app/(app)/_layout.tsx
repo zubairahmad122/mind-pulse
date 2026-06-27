@@ -1,5 +1,6 @@
 import { useRouter , Stack } from 'expo-router';
 import { useEffect } from 'react';
+import { COLORS } from '@/theme';
 import { AlarmOverlayProvider } from '@/context/AlarmOverlayContext';
 import { SleepProvider } from '@/context/SleepContext';
 import { EYE_BREAK_NOTIF_PREFIX } from '@/services/eyeBreakNotification';
@@ -30,7 +31,7 @@ export default function AppStackLayout() {
   return (
     <AlarmOverlayProvider>
       <SleepProvider>
-        <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: COLORS.bg } }} />
       </SleepProvider>
     </AlarmOverlayProvider>
   );

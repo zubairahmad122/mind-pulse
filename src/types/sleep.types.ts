@@ -6,5 +6,6 @@ export interface SleepSchedule {
   activeDays: string[];
   reminderEnabled: boolean;
   reminderMinutes: number;
+  sleepNotesEnabled: boolean;
 }
 

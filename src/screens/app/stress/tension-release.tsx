@@ -11,6 +11,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
@@ -162,7 +163,7 @@ export default function TensionReleaseScreen() {
   }));
 
   return (
-    <ScreenShell scroll={false} safeBottom>
+    <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
       {/* Custom header with language switcher */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => { reset(); router.back(); }} style={styles.closeBtn}>

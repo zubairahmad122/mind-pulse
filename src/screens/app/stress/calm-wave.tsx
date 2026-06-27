@@ -33,7 +33,7 @@ const PHASE_ORDER: CWPhase[] = ['inhale', 'hold', 'exhale'];
 const PHASE_COLOR: Record<CWPhase, string> = {
   inhale: '#4FC3F7',
   hold:   '#B39DDB',
-  exhale: '#7B61FF',
+  exhale: '#a78bfa',
 };
 
 const SETTLE_MS = 5000;

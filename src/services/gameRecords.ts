@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import firestore from '@react-native-firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc } from '@react-native-firebase/firestore';
+
+const db = getFirestore();
 
 export type GameId = 'saccade-sniper' | 'focus-sprint' | 'comet-trace' | 'dichoptic-reaction';
 
@@ -19,11 +21,7 @@ function storageKey(uid: string | undefined, gameId: GameId): string {
 
 /** Firestore doc ref for a specific game's best record. */
 function gameRecordRef(uid: string, gameId: GameId) {
-  return firestore()
-    .collection('users')
-    .doc(uid)
-    .collection('gameRecords')
-    .doc(gameId);
+  return doc(db, 'users', uid, 'gameRecords', gameId);
 }
 
 export async function getGameRecord(
@@ -33,7 +31,7 @@ export async function getGameRecord(
   // For logged-in users: try Firestore first for cross-device sync
   if (uid) {
     try {
-      const snap = await gameRecordRef(uid, gameId).get();
+      const snap = await getDoc(gameRecordRef(uid, gameId));
       if (snap.exists()) {
         const data = snap.data() as GameRecord;
         // Update local cache in background
@@ -72,7 +70,7 @@ export async function submitGameScore(
       // Firestore (cloud backup) — only for logged-in users
       if (uid) {
         try {
-          await gameRecordRef(uid, gameId).set(record);
+          await setDoc(gameRecordRef(uid, gameId), record);
         } catch {
           // offline — local cache is sufficient
         }

@@ -1,9 +1,12 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedBackground from '@/components/AnimatedBackground';
-import { colors } from '@/constants/colors';
+import { PILLAR_THEME, type PillarKey } from '@/constants/theme';
+import { PillarProvider } from '@/context/PillarContext';
 import { spacing } from '@/constants/spacing';
+import { useTabBarSpace } from '@/components/layout/GlassTabBar';
 
 type Props = {
   children: React.ReactNode;
@@ -16,6 +19,16 @@ type Props = {
    * Do not use on tab screens (they already sit above the tab bar).
    */
   safeBottom?: boolean;
+  /**
+   * Pillar theme for the background gradient.
+   * - 'mind': dark navy (default, matches dashboard)
+   * - 'sleep': deep purple
+   * - 'eyes': dark teal
+   * Screens can also pass a custom gradient array via `customGradient`.
+   */
+  pillar?: PillarKey;
+  /** Override the gradient colors entirely. Takes precedence over `pillar`. */
+  customGradient?: readonly [string, string, string];
 };
 
 export function ScreenShell({
@@ -24,11 +37,18 @@ export function ScreenShell({
   contentStyle,
   edges = ['top'],
   safeBottom = false,
-}: Props) {
+  pillar = 'mind',
+  customGradient,
+  ambient,
+}: Props & { ambient?: React.ReactNode }) {
   const insets = useSafeAreaInsets();
+  // On tab screens this is the floating glass bar's reserved space; 0 elsewhere.
+  const tabBarSpace = useTabBarSpace();
+
+  const gradientColors = customGradient ?? PILLAR_THEME[pillar].bgGradient;
 
   const scrollBottomPadding =
-    spacing.xl + (safeBottom ? Math.max(insets.bottom, spacing.sm) : 0);
+    spacing.xl + tabBarSpace + (safeBottom ? Math.max(insets.bottom, spacing.sm) : 0);
 
   const safeAreaEdges: Props['edges'] = safeBottom
     ? edges.includes('bottom')
@@ -64,8 +84,19 @@ export function ScreenShell({
 
   return (
     <SafeAreaView style={styles.safe} edges={safeAreaEdges}>
+      {/* Pillar gradient background — replaces the old flat backgroundColor */}
+      <LinearGradient
+        colors={gradientColors}
+        locations={[0, 0.48, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+      {/* Animated ambient depth layer */}
       <AnimatedBackground />
-      {content}
+      {/* Fixed ambient overlay (glow, beams, particles) — rendered outside ScrollView */}
+      {ambient}
+      <PillarProvider pillar={pillar}>
+        {content}
+      </PillarProvider>
     </SafeAreaView>
   );
 }
@@ -73,7 +104,7 @@ export function ScreenShell({
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: '#040810',
   },
   flex: { flex: 1 },
   scrollContent: {

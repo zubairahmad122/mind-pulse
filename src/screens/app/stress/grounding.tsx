@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
@@ -87,7 +88,7 @@ export default function GroundingScreen() {
   const accentColor = done ? '#80CBC4' : STEP_COLORS[step];
 
   return (
-    <ScreenShell scroll={false} safeBottom>
+    <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
       {/* Custom header with language button */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => { stop(); router.back(); }} style={styles.closeBtn}>

@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { AmbientBackground } from '@/components/ui';
+import { PillarProvider } from '@/context/PillarContext';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
@@ -160,6 +162,7 @@ export default function BodyScanScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
+      <PillarProvider pillar="mind"><AmbientBackground subtle /></PillarProvider>
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity

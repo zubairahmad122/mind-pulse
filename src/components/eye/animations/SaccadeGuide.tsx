@@ -166,7 +166,7 @@ export function SaccadeGuide({ active }: Props) {
         <Defs>
           <RadialGradient id="sgBg" cx="130" cy="130" r="125">
             <Stop offset="0%" stopColor={jumpColor} stopOpacity="0.10" />
-            <Stop offset="55%" stopColor="#7B61FF" stopOpacity="0.04" />
+            <Stop offset="55%" stopColor="#22d3ee" stopOpacity="0.04" />
             <Stop offset="100%" stopColor="#0A0E1A" stopOpacity="0" />
           </RadialGradient>
           <RadialGradient id="sgFlash" cx="50%" cy="50%" r="50%">

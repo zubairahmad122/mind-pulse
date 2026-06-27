@@ -21,6 +21,7 @@
   "exclude": [
     "smart-sleepy-app",
     "example",
-    "node_modules"
+    "node_modules",
+    "src/types/reanimated-mock.d.ts"
   ]
 }

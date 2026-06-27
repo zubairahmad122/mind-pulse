@@ -36,7 +36,6 @@ export const ROUTES = {
   authOnboarding: '/(auth)/onboarding',
   authAgeInput: '/(auth)/age-input',
   authSignIn: '/(auth)/sign-in',
-  authSignUp: '/(auth)/sign-up',
   authCreateAccount: '/(auth)/create-account',
   authForgotPassword: '/(auth)/forgot-password',
 } as const;

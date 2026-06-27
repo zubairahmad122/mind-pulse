@@ -1,5 +1,6 @@
 import { Check, ChevronRight, Timer, Eye, CheckCircle, AlertCircle, Flame } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
@@ -11,10 +12,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { EyeRelaxIcon, eyeRelaxIconBg } from '@/components/eye/icons/EyeRelaxIcon';
 import { ScreenShell } from '@/components/layout/ScreenShell';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
 import { EyeScoreCard } from '@/components/eye/EyeScoreCard';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ScoreBreakdownCard } from '@/components/ui/ScoreBreakdownCard';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { SectionLabel } from '@/components/ui/SectionLabel';
 import { EYE_GAMES, RECOVERY_SESSIONS, ROUTES } from '@/constants';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
@@ -28,6 +31,7 @@ import { useGameRecord } from '@/hooks/useGameRecord';
 import { useDailyEyeGoals } from '@/hooks/useDailyEyeGoals';
 import { useLastBreakTime } from '@/hooks/useLastBreakTime';
 import { ScreenTransition } from '@/components/ui/ScreenTransition';
+import { recordLastFeature } from '@/components/home/ContinueJourney';
 
 const WEEK_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -64,50 +68,55 @@ function GoalRow({ label, done }: { label: string; done: boolean }) {
   );
 }
 
-function SectionHeader({ title, action }: { title: string; action?: { label: string; onPress: () => void } }) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {action && (
-        <TouchableOpacity onPress={action.onPress} activeOpacity={0.7}>
-          <Text style={styles.sectionAction}>{action.label}</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}  function ActivityCard({
+const EYE_ACCENT = '#22d3ee';
+
+function ActivityCard({
   id,
   title,
   subtitle,
   onPress,
   badge,
-  meta,
+  badgeColor = EYE_ACCENT,
+  pb,
 }: {
   id: string;
   title: string;
   subtitle: string;
   onPress: () => void;
   badge?: string;
-  meta?: React.ReactNode;
+  badgeColor?: string;
+  pb?: string | null;
 }) {
+  const iconBg = eyeRelaxIconBg(id);
   return (
     <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
-      <GlassCard style={styles.activityCard}>
-        <View style={[styles.iconWrap, { backgroundColor: eyeRelaxIconBg(id) }]}>
-          <EyeRelaxIcon id={id} size={28} />
-        </View>
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardTitle}>{title}</Text>
-          <Text style={styles.cardSub}>{subtitle}</Text>
-        </View>
-        <View style={styles.cardMeta}>
-          {badge ? (
-            <Text style={styles.gameBadge}>{badge}</Text>
-          ) : meta ? (
-            meta
-          ) : (
-            <ChevronRight size={16} color={colors.text.tertiary} strokeWidth={2.5} />
-          )}
+      <GlassCard simple noPadding style={[styles.activityCard, { borderColor: EYE_ACCENT + '22' }]}>
+        <LinearGradient
+          colors={[EYE_ACCENT + '0E', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.activityRow}>
+          <View style={[styles.iconWrap, { backgroundColor: iconBg, borderColor: 'rgba(255,255,255,0.12)' }]}>
+            <EyeRelaxIcon id={id} size={26} />
+          </View>
+          <View style={styles.cardInfo}>
+            <Text style={styles.cardTitle} numberOfLines={1}>{title}</Text>
+            <Text style={styles.cardSub} numberOfLines={1}>{subtitle}</Text>
+          </View>
+          <View style={styles.cardMeta}>
+            {badge ? (
+              <View style={[styles.badgePill, { backgroundColor: badgeColor + '1f', borderColor: badgeColor + '40' }]}>
+                <Text style={[styles.badgePillText, { color: badgeColor }]}>{badge}</Text>
+              </View>
+            ) : (
+              <View style={[styles.arrowBtn, { backgroundColor: EYE_ACCENT + '18', borderColor: EYE_ACCENT + '30' }]}>
+                <ChevronRight size={17} color={EYE_ACCENT} strokeWidth={2.3} />
+              </View>
+            )}
+            {pb ? <Text style={styles.pbText}>{pb}</Text> : null}
+          </View>
         </View>
       </GlassCard>
     </TouchableOpacity>
@@ -117,6 +126,9 @@ function SectionHeader({ title, action }: { title: string; action?: { label: str
 export default function EyeRelaxScreen() {
   const router = useRouter();
   const { user } = useAuth();
+
+  // Record this feature for ContinueYourJourney on Home
+  useEffect(() => { void recordLastFeature('eye-exercise'); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const { todayDone, streak, weekDots, loading: progressLoading } = useEyeProgress(user?.uid);
   const { enabled: breakEnabled, loading: breakLoading, toggle: toggleBreak } = useEyeBreakEnforcer(user?.uid);
@@ -149,7 +161,7 @@ export default function EyeRelaxScreen() {
   const recoveryDisplayColor = goals.loading ? colors.text.tertiary : recoveryColor(recoveryPct);
 
   return (
-    <ScreenShell>
+    <ScreenShell pillar="eyes" ambient={<AmbientBackground subtle />}>
       <ScreenTransition>
       <ScreenHeader title="Eye Training" subtitle="Recover · train · protect" />
 
@@ -161,6 +173,7 @@ export default function EyeRelaxScreen() {
           score={eyeScore.score}
           theme={eyeScore.theme}
           breakdown={eyeScore.breakdown}
+          hideScoreHeader
         />
       )}
 
@@ -213,7 +226,7 @@ export default function EyeRelaxScreen() {
             value={breakEnabled}
             onValueChange={toggleBreak}
             disabled={breakLoading}
-            trackColor={{ false: colors.background.secondary, true: colors.accent.purple }}
+            trackColor={{ false: colors.background.secondary, true: EYE_ACCENT }}
             thumbColor={breakEnabled ? '#FFFFFF' : colors.text.secondary}
           />
         </GlassCard>
@@ -223,7 +236,7 @@ export default function EyeRelaxScreen() {
           onPress={() => router.push(ROUTES.appEyeBreak as never)}
           activeOpacity={0.85}
         >
-          <Eye size={20} color={colors.accent.purple} strokeWidth={2} />
+          <Eye size={20} color={EYE_ACCENT} strokeWidth={2} />
           <Text style={styles.quickBreakLabel}>Eye Break</Text>
         </TouchableOpacity>
       </View>
@@ -245,7 +258,7 @@ export default function EyeRelaxScreen() {
       )}
 
       {/* 4. Recovery Sessions */}
-      <SectionHeader title="Recovery Sessions" />
+      <SectionLabel>RECOVERY SESSIONS</SectionLabel>
       {RECOVERY_SESSIONS.map(s => {
         const route = s.id === 'comet-trace'
           ? ROUTES.appEyeGame('comet-trace')
@@ -259,27 +272,25 @@ export default function EyeRelaxScreen() {
             subtitle={s.subtitle}
             onPress={() => router.push(route as never)}
             badge={isPrimary ? 'RECOMMENDED' : undefined}
+            badgeColor="#6ee7b7"
           />
         );
       })}
 
       {/* 5. Eye Games */}
-      <SectionHeader title="Eye Games" />
-      {EYE_GAMES.map(item => {
-        const pb = getGamePB(item.id);
-        return (
-          <View key={item.id} style={styles.gameCardOuter}>
-            <ActivityCard
-              id={item.id}
-              title={item.title}
-              subtitle={item.subtitle}
-              onPress={() => openActivity(item)}
-              badge="GAME"
-            />
-            {pb && <Text style={styles.pbText}>{pb}</Text>}
-          </View>
-        );
-      })}
+      <SectionLabel>EYE GAMES</SectionLabel>
+      {EYE_GAMES.map(item => (
+        <ActivityCard
+          key={item.id}
+          id={item.id}
+          title={item.title}
+          subtitle={item.subtitle}
+          onPress={() => openActivity(item)}
+          badge="GAME"
+          badgeColor="#06B6D4"
+          pb={getGamePB(item.id)}
+        />
+      ))}
       </ScreenTransition>
     </ScreenShell>
   );
@@ -304,7 +315,7 @@ const styles = StyleSheet.create({
   },
   goalCircle: {
     width: 22, height: 22, borderRadius: 11,
-    borderWidth: 1.5, borderColor: colors.accent.purpleBorder,
+    borderWidth: 1.5, borderColor: EYE_ACCENT + '55',
     alignItems: 'center', justifyContent: 'center',
   },
   goalCircleDone: { backgroundColor: '#6ee7b7', borderColor: '#6ee7b7' },
@@ -318,15 +329,15 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm, marginTop: spacing.xs, gap: spacing.sm,
   },
   streakLeft: { flexDirection: 'row', alignItems: 'center', gap: 3, minWidth: 80 },
-  streakValue: { ...typography.headingSmall, color: colors.accent.purple },
+  streakValue: { ...typography.headingSmall, color: EYE_ACCENT },
   streakLabel: { ...typography.caption, color: colors.text.secondary },
   weekRow: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
   dotCol: { alignItems: 'center', gap: 3 },
   dot: {
     width: 14, height: 14, borderRadius: 7,
-    borderWidth: 1.5, borderColor: colors.accent.purpleBorder,
+    borderWidth: 1.5, borderColor: EYE_ACCENT + '55',
   },
-  dotFilled: { backgroundColor: colors.accent.purple, borderColor: colors.accent.purple },
+  dotFilled: { backgroundColor: EYE_ACCENT, borderColor: EYE_ACCENT },
   dotLabel: { fontSize: 8, color: colors.text.secondary, fontWeight: '600' },
   todayBadge: {
     ...typography.caption, color: colors.text.secondary,
@@ -361,12 +372,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: colors.background.card,
     borderWidth: 1,
-    borderColor: colors.accent.purpleBorder,
+    borderColor: EYE_ACCENT + '55',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
-  quickBreakLabel: { fontSize: 10, fontWeight: '800', color: colors.accent.purple, letterSpacing: 0.3 },
+  quickBreakLabel: { fontSize: 10, fontWeight: '800', color: EYE_ACCENT, letterSpacing: 0.3 },
 
   /* Break Chip */
   breakChip: {
@@ -382,41 +393,40 @@ const styles = StyleSheet.create({
   },
   breakChipText: { fontSize: 12, fontWeight: '600' },
 
-  /* Section Header */
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  sectionTitle: {
-    ...typography.headingSmall,
-    color: colors.text.primary,
-  },
-  sectionAction: {
-    ...typography.caption,
-    color: colors.accent.purple,
-    fontWeight: '700',
-  },
-
   /* Activity Cards */
   activityCard: {
+    marginBottom: 10,
+    borderWidth: 1,
+  },
+  activityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
-    gap: spacing.md,
+    gap: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    minHeight: 74,
   },
   iconWrap: {
-    width: 44, height: 44, borderRadius: 12,
+    width: 52, height: 52, borderRadius: 15,
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   cardInfo: { flex: 1, gap: 3, minWidth: 0 },
-  cardTitle: { ...typography.bodyLarge, color: colors.text.primary, fontWeight: '600' },
-  cardSub: { ...typography.caption, color: colors.text.secondary },
-  cardMeta: { alignItems: 'flex-end', gap: 4, minWidth: 36 },
-  gameBadge: { ...typography.caption, color: colors.accent.purple, fontWeight: '800', fontSize: 9 },
-
-  gameCardOuter: { marginBottom: spacing.sm },
-  pbText: { fontSize: 10, color: '#FFD700', fontWeight: '600', paddingLeft: 56, marginTop: -4, marginBottom: 2 },
+  cardTitle: { fontSize: 16, color: '#f6f8fc', fontWeight: '700', letterSpacing: 0.15 },
+  cardSub: { fontSize: 12.5, color: 'rgba(245,247,251,0.5)' },
+  cardMeta: { alignItems: 'flex-end', gap: 6, minWidth: 36, justifyContent: 'center' },
+  badgePill: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  badgePillText: { fontSize: 8.5, fontWeight: '800', letterSpacing: 0.6 },
+  arrowBtn: {
+    width: 34, height: 34, borderRadius: 17,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1,
+  },
+  pbText: { fontSize: 10, color: '#FFD700', fontWeight: '700' },
 });

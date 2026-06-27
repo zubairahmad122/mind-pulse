@@ -1,23 +1,22 @@
-import { memo, useRef, useEffect } from 'react';
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  PanResponder,
-  Dimensions,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
-import { useAudioPlayer } from 'expo-audio';
 import type { BreathingMusicId } from '@/constants/breathingMusic';
 import { BREATHING_MUSIC } from '@/constants/breathingMusic';
+import { Ionicons } from '@expo/vector-icons';
+import { useAudioPlayer } from 'expo-audio';
+import * as Haptics from 'expo-haptics';
+import { memo, useEffect, useRef } from 'react';
+import {
+    Dimensions,
+    PanResponder,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming
+} from 'react-native-reanimated';
 
 interface PremiumRelaxControlsProps {
   // Timer
@@ -151,6 +150,8 @@ function SoundSelectionGrid({
             ]}
             activeOpacity={0.8}
           >
+            {/* Ionicons name prop expects a specific icon name type, but our
+                music config uses string constants that are known-safe at runtime. */}
             <Ionicons
               name={music.icon as any}
               size={isSelected ? 22 : 18}
@@ -305,13 +306,18 @@ export const PremiumRelaxControls = memo(function PremiumRelaxControls({
 const styles = StyleSheet.create({
   wrapper: {
     width: '100%',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    paddingTop: 16,
-    paddingBottom: 24,
+    borderColor: 'rgba(255,255,255,0.12)',
+    paddingTop: 18,
+    paddingBottom: 28,
+    shadowColor: 'rgba(124, 58, 237, 0.15)',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 8,
   },
 
   // Timer section
@@ -322,9 +328,11 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingHorizontal: 24,
     marginBottom: 24,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 16,
-    paddingVertical: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 18,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
 
   timerItem: {
@@ -387,11 +395,11 @@ const styles = StyleSheet.create({
 
   sliderTrack: {
     width: 44,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 22,
     position: 'relative',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.12)',
     overflow: 'visible',
   },
 
@@ -458,22 +466,27 @@ const styles = StyleSheet.create({
   },
 
   playBtn: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     borderWidth: 2.5,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: 'rgba(124, 58, 237, 0.2)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 4,
   },
 
   stopBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -493,7 +506,7 @@ const styles = StyleSheet.create({
   soundButton: {
     width: '30%',
     aspectRatio: 0.85,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',

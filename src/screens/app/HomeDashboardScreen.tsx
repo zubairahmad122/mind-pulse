@@ -1,308 +1,51 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import {
-  Animated,
-  ScrollView,
-  Text,
-  TextStyle,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import Svg, {
-  Circle,
-  LinearGradient as SvgLinearGradient,
-  Path,
-  Stop,
-} from 'react-native-svg';
+import { DailyTip } from '@/components/home/DailyTip';
+import { DailyChallenge } from '@/components/home/DailyChallenge';
+import { FeatureGrid } from '@/components/home/FeatureGrid';
+import { ContinueJourney } from '@/components/home/ContinueJourney';
 import { ScreenShell } from '@/components/layout/ScreenShell';
+import { AmbientBackground, GlassCard, SectionLabel } from '@/components/ui';
 import { SoftPaywallModal } from '@/components/ui/SoftPaywallModal';
-import { SubscriptionBadge } from '@/components/ui/SubscriptionBadge';
+import { StaggerItem } from '@/components/ui/StaggerItem';
+import { MPProgressRing } from '@/components/molecules/MPProgressRing';
+
 import { ROUTES } from '@/constants';
+import { spacing } from '@/constants/spacing';
 import { useAuth } from '@/context/AuthContext';
 import { useSleep } from '@/context/SleepContext';
 import { useSubscription } from '@/context/SubscriptionContext';
-import { useGreeting } from '@/hooks/useGreeting';
+import { useProgressStore } from '@/stores/useProgressStore';
+import { useDailyTip } from '@/hooks/useDailyTip';
 import { useEyeScore } from '@/hooks/useEyeScore';
+import { useGreeting } from '@/hooks/useGreeting';
+import { useHomeInsight } from '@/hooks/useHomeInsight';
 import { useMindScore } from '@/hooks/useMindScore';
 import { useSleepScore } from '@/hooks/useSleepScore';
-import { useHomeInsight } from '@/hooks/useHomeInsight';
-import { useDailyTip } from '@/hooks/useDailyTip';
-import { DailyTip } from '@/components/home/DailyTip';
-import { StaggerItem } from '@/components/ui/StaggerItem';
-import { calculateStreak } from '@/utils/sleepUtils';
+import { getYesterdayScore, saveDailyScore } from '@/services/dailyScorePersistence';
 import {
-  calculateMindPulseScore,
-  getFocusArea,
-  pulseScoreTheme,
-  type FocusArea,
+    calculateMindPulseScore,
+    getFocusArea,
+    pulseScoreTheme,
 } from '@/utils/scoring';
-import { saveDailyScore } from '@/services/dailyScorePersistence';
+import { calculateStreak } from '@/utils/sleepUtils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Text, TouchableOpacity, View } from 'react-native';
+import { User, Sparkles, ArrowRight } from 'lucide-react-native';
 
-const ONBOARDING_PAYWALL_KEY = 'onboarding_paywall_shown';
-const STREAK_PAYWALL_KEY     = 'streak_paywall_shown';
+const ONBOARDING_PAYWALL_KEY = '@mindpulse/onboarding-paywall-shown';
+const STREAK_PAYWALL_KEY     = '@mindpulse/streak-paywall-shown';
 
-// ── SVG progress ring (circular) ──────────────────────────────────────────────
 
-function ProgressRing({
-  size = 96,
-  strokeWidth = 8,
-  progress,      // 0–100
-  color,
-  label,
-  value,
-  valueSuffix = '%',
-  icon,
-  gradient,
-}: {
-  size?: number; strokeWidth?: number;
-  progress: number; color: string;
-  label?: string; value: string | number;
-  valueSuffix?: string;
-  icon?: React.ReactNode;
-  gradient?: { id: string; stops: { offset: string; color: string }[] };
-}) {
-  const r = (size - strokeWidth) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (progress / 100) * circ;
 
+// ── MiniStat — compact score-card breakdown row ───────────────────────────────
+
+function MiniStat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <View style={{ alignItems: 'center' }}>
-      <View style={{ position: 'relative', width: size, height: size }}>
-        <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          {gradient && (
-            <SvgLinearGradient id={gradient.id} x1="0" y1="0" x2="1" y2="1">
-              {gradient.stops.map((s, i) => (
-                <Stop key={i} offset={s.offset} stopColor={s.color} />
-              ))}
-            </SvgLinearGradient>
-          )}
-          <Circle
-            cx={size / 2} cy={size / 2} r={r}
-            fill="none"
-            stroke="rgba(255,255,255,0.08)"
-            strokeWidth={strokeWidth}
-          />
-          <Circle
-            cx={size / 2} cy={size / 2} r={r}
-            fill="none"
-            stroke={gradient ? `url(#${gradient.id})` : color}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={circ}
-            strokeDashoffset={offset}
-            transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          />
-        </Svg>
-        <View style={{
-          position: 'absolute', inset: 0,
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          {icon ? icon : (
-            <>
-              <Text style={{
-                fontFamily: 'SpaceGrotesk_700Bold',
-                fontSize: size * 0.27,
-                color: '#f6f8fc',
-                lineHeight: size * 0.3,
-              }}>
-                {value}
-              </Text>
-              {valueSuffix ? (
-                <Text style={{
-                  fontSize: size * 0.085,
-                  letterSpacing: 1.5,
-                  color: 'rgba(245,247,251,0.5)',
-                  marginTop: 1,
-                }}>
-                  {valueSuffix}
-                </Text>
-              ) : null}
-            </>
-          )}
-        </View>
-      </View>
-      {label ? (
-        <Text style={{
-          fontFamily: 'SpaceGrotesk_600SemiBold',
-          fontSize: 13, color: '#f6f8fc', marginTop: 8,
-        }}>
-          {label}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
-// ── PillarRow ─────────────────────────────────────────────────────────────────
-
-function PillarRow({
-  icon, value, label, sublabel, color, progress,
-  onPress,
-}: {
-  icon: React.ReactNode; value: string; label: string;
-  sublabel: string; color: string; progress: number;
-  onPress: () => void;
-}) {
-  const r = 18;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (progress / 100) * circ;
-
-  return (
-    <TouchableOpacity
-      onPress={() => { void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onPress(); }}
-      activeOpacity={0.7}
-      style={{
-        flexDirection: 'row', alignItems: 'center', gap: 13,
-        paddingVertical: 13, paddingHorizontal: 14,
-        borderRadius: 18,
-        backgroundColor: 'rgba(255,255,255,0.035)',
-        borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
-        marginBottom: 10,
-      }}
-    >
-      <View style={{ position: 'relative', width: 46, height: 46 }}>
-        <Svg width={46} height={46} viewBox="0 0 46 46">
-          <Circle cx={23} cy={23} r={18} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={4} />
-          <Circle
-            cx={23} cy={23} r={18}
-            fill="none"
-            stroke={color}
-            strokeWidth={4}
-            strokeLinecap="round"
-            strokeDasharray={circ}
-            strokeDashoffset={offset}
-            transform="rotate(-90 23 23)"
-          />
-        </Svg>
-        <View style={{ position: 'absolute', inset: 13, alignItems: 'center', justifyContent: 'center' }}>
-          {icon}
-        </View>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{
-          fontFamily: 'SpaceGrotesk_600SemiBold',
-          fontSize: 14, color: '#f6f8fc',
-        }}>
-          {label}
-        </Text>
-        <Text style={{
-          fontSize: 11, color: 'rgba(245,247,251,0.5)',
-          marginTop: 1,
-        }}>
-          {sublabel}
-        </Text>
-      </View>
-      <Text style={{
-        fontFamily: 'SpaceGrotesk_700Bold',
-        fontSize: 16, color,
-      }}>
-        {value}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
-// ── TypewriterText ────────────────────────────────────────────────────────────
-
-function TypewriterText({
-  text, speed = 16, style,
-}: { text: string; speed?: number; style?: TextStyle }) {
-  const [shown, setShown] = useState('');
-  const prevRef = useRef('');
-
-  useEffect(() => {
-    if (!text || text === prevRef.current) return;
-    prevRef.current = text;
-    setShown('');
-    let i = 0;
-    const id = setInterval(() => {
-      i++;
-      setShown(text.slice(0, i));
-      if (i >= text.length) clearInterval(id);
-    }, speed);
-    return () => clearInterval(id);
-  }, [text, speed]);
-
-  return <Text style={style}>{shown || ' '}</Text>;
-}
-
-// ── Small icon SVGs ───────────────────────────────────────────────────────────
-
-function MindIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24">
-      <Path d="M2 12 H6 L8 6 L11 18 L14 9 L16 12 H22" fill="none" stroke="#60a5fa" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function SleepIcon() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24">
-      <Path d="M21 12.8A8 8 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z" fill="none" stroke="#c4b5fd" strokeWidth={2} strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24">
-      <Path d="M2 12 Q12 4 22 12 Q12 20 2 12 Z" fill="none" stroke="#67e8f9" strokeWidth={2} strokeLinejoin="round" />
-      <Circle cx={12} cy={12} r={3.2} fill="#67e8f9" />
-    </Svg>
-  );
-}
-
-function HomeIcon({ active }: { active?: boolean }) {
-  const color = active ? '#60a5fa' : '#f5f7fb';
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24">
-      <Path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z" fill="none" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function TrendsIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24">
-      <Path d="M4 19V5M4 16l5-5 4 4 7-8" fill="none" stroke="#f5f7fb" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function TargetsIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24">
-      <Circle cx={12} cy={12} r={8} fill="none" stroke="#f5f7fb" strokeWidth={1.8} />
-      <Circle cx={12} cy={12} r={3.4} fill="none" stroke="#f5f7fb" strokeWidth={1.8} />
-    </Svg>
-  );
-}
-
-function ProfileIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24">
-      <Circle cx={12} cy={8} r={3.6} fill="none" stroke="#f5f7fb" strokeWidth={1.8} />
-      <Path d="M5 20a7 7 0 0 1 14 0" fill="none" stroke="#f5f7fb" strokeWidth={1.8} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-// ── TabItem ───────────────────────────────────────────────────────────────────
-
-function TabItem({ icon, label, active }: { icon: React.ReactNode; label: string; active?: boolean }) {
-  return (
-    <View style={{ alignItems: 'center', gap: 4, opacity: active ? 1 : 0.5 }}>
-      {icon}
-      <Text style={{
-        fontSize: 9, fontWeight: '600',
-        color: active ? '#60a5fa' : '#f5f7fb',
-      }}>
-        {label}
-      </Text>
+    <View style={{ alignItems: 'center', flex: 1 }}>
+      <Text style={{ fontFamily: 'SpaceGrotesk_700Bold', fontSize: 17, color }}>{value}</Text>
+      <Text style={{ fontSize: 10.5, color: 'rgba(245,247,251,0.5)', marginTop: 2, textAlign: 'center' }}>{label}</Text>
     </View>
   );
 }
@@ -314,8 +57,19 @@ export default function HomeDashboardScreen() {
   const { user }      = useAuth();
   const { isPremium } = useSubscription();
   const { sessions }  = useSleep();
-  const displayName   = user?.displayName ?? user?.email?.split('@')[0] ?? 'Alex';
-  const greeting      = useGreeting(displayName);
+  const displayName   = user?.displayName ?? user?.email?.split('@')[0] ?? null;
+  const rawGreeting   = useGreeting(displayName || '');
+  const greeting      = displayName ? rawGreeting : 'Welcome to MindPulse';
+
+  // ── First-time detection (computed inline for efficient re-renders) ───
+  const hasCompletedAnySession = useProgressStore((s) =>
+    s.eyeExercisesCompleted > 0 ||
+    s.eyeGamesPlayed > 0 ||
+    s.relaxSessionsCompleted > 0 ||
+    s.mindSessionsCompleted > 0 ||
+    s.sleepSessionsTracked > 0
+  );
+  const weeklySessions = useProgressStore((s) => s.weeklySessions);
 
   const eyeResult   = useEyeScore(user?.uid ?? undefined);
   const mindResult  = useMindScore(user?.uid ?? undefined);
@@ -346,6 +100,18 @@ export default function HomeDashboardScreen() {
       mindPulseScore, eyesScore: eyes, sleepScore, mindScore: mind, savedAt: Date.now(),
     });
   }, [anyLoading, user?.uid, mindPulseScore, eyes, sleepScore, mind]);
+
+  const [yesterdayScore, setYesterdayScore] = useState<number | null>(null);
+  useEffect(() => {
+    if (!user?.uid) return;
+    let cancelled = false;
+    void getYesterdayScore(user.uid).then((data) => {
+      if (!cancelled) setYesterdayScore(data?.mindPulseScore ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [user?.uid]);
+
+  const scoreDelta = !anyLoading && yesterdayScore !== null ? mindPulseScore - yesterdayScore : null;
 
   const streak = calculateStreak(sessions);
   const [showOnboardingPaywall, setShowOnboardingPaywall] = useState(false);
@@ -382,11 +148,23 @@ export default function HomeDashboardScreen() {
     weekday: 'short', month: 'short', day: 'numeric',
   }).toUpperCase();
 
-  // Convert sleep score (0-100) to hours display (e.g. 84 -> "8.4h")
-  const sleepHours = sleepScore > 0 ? `${(sleepScore / 10).toFixed(1)}h` : '–';
+  // ── CTA subtle scale pulse (first-time users only) ──────────────────
+  const ctaPulse = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (hasCompletedAnySession) return;
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.delay(1500),
+        Animated.timing(ctaPulse, { toValue: 1.02, duration: 1200, useNativeDriver: true }),
+        Animated.timing(ctaPulse, { toValue: 1, duration: 1200, useNativeDriver: true }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [hasCompletedAnySession, ctaPulse]);
 
   return (
-    <ScreenShell scroll={true}>
+    <ScreenShell scroll={true} ambient={<AmbientBackground subtle />}>
       {/* ── Header ─────────────────────────────────────────────────── */}
       <StaggerItem index={0}>
         <View style={{
@@ -394,179 +172,196 @@ export default function HomeDashboardScreen() {
           justifyContent: 'space-between',
           paddingVertical: 6, marginBottom: 4,
         }}>
-          <View>
+          <View style={{ flex: 1, marginRight: 12 }}>
             <Text style={{
               fontSize: 11, color: 'rgba(245,247,251,0.45)',
               letterSpacing: 0.5,
             }}>
               {dateLabel}
             </Text>
-            <Text style={{
-              fontFamily: 'SpaceGrotesk_700Bold',
-              fontSize: 21, color: '#f6f8fc', marginTop: 3,
-            }}>
-              {anyLoading ? 'Loading…' : greeting}
+            <Text
+              style={{
+                fontFamily: 'SpaceGrotesk_700Bold',
+                fontSize: 21, color: '#f6f8fc', marginTop: 3,
+              }}
+            >
+              {greeting}
             </Text>
           </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <SubscriptionBadge />
-            <TouchableOpacity
-              onPress={() => router.push(ROUTES.appProfile as never)}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={['#3b82f6', '#7c3aed']}
-                style={{
-                  width: 42, height: 42, borderRadius: 21,
-                  alignItems: 'center', justifyContent: 'center',
-                  shadowColor: 'rgba(59,130,246,0.4)',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowRadius: 14, shadowOpacity: 1,
-                  elevation: 8,
-                }}
-              >
-                <Text style={{
-                  fontFamily: 'SpaceGrotesk_700Bold',
-                  fontSize: 15, color: '#fff',
-                }}>
-                  {anyLoading ? '…' : displayName.charAt(0).toUpperCase()}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => router.push(ROUTES.appProfile as never)}
+            activeOpacity={0.7}
+          >
+            <View style={{
+              width: 40, height: 40, borderRadius: 20,
+              alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.15)',
+            }}>
+              <User size={18} color="rgba(245,247,251,0.7)" strokeWidth={2} />
+            </View>
+          </TouchableOpacity>
         </View>
       </StaggerItem>
 
-      {/* ── Wellness Score Card ────────────────────────────────────── */}
+      {/* ── Hero: Wellness Score Card (returning users only) ────────── */}
+      {hasCompletedAnySession && (
       <StaggerItem index={1}>
-        <View style={{
-          marginTop: 16, marginBottom: 8,
-          padding: 18, borderRadius: 22,
-          backgroundColor: 'rgba(59,130,246,0.06)',
-          borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-          flexDirection: 'row', alignItems: 'center', gap: 16,
-        }}>
-          <ProgressRing
-            size={96}
-            strokeWidth={8}
-            progress={anyLoading ? 0 : mindPulseScore}
-            color="#60a5fa"
-            value={anyLoading ? '–' : mindPulseScore}
-            valueSuffix="SCORE"
-            gradient={{
-              id: 'scoreG',
-              stops: [
-                { offset: '0%', color: '#60a5fa' },
-                { offset: '100%', color: '#a78bfa' },
-              ],
-            }}
-          />
+        <View style={{ marginTop: spacing.sm }}>
+          <GlassCard>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              <MPProgressRing
+                size={92}
+                strokeWidth={8}
+                progress={anyLoading ? 0 : mindPulseScore}
+                color="#60a5fa"
+                value={anyLoading ? '–' : mindPulseScore}
+                valueSuffix="SCORE"
+                gradient={{
+                  id: 'scoreG',
+                  stops: [
+                    { offset: '0%', color: '#60a5fa' },
+                    { offset: '100%', color: '#a78bfa' },
+                  ],
+                }}
+              />
 
-          <View style={{ flex: 1 }}>
-            <Text style={{
-              fontFamily: 'SpaceGrotesk_600SemiBold',
-              fontSize: 15, color: '#f6f8fc',
-            }}>
-              {anyLoading ? 'Loading…' : theme.label}
-            </Text>
-            <Text style={{
-              fontSize: 11.5, lineHeight: 17,
-              color: 'rgba(245,247,251,0.6)',
-              marginTop: 4,
-            }}>
-              {anyLoading
-                ? 'Analysing your wellness data…'
-                : homeInsight || 'Mind & sleep are trending up. Keep it steady today.'
-              }
-            </Text>
-            {/* Trend badge */}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 10, fontWeight: '600', letterSpacing: 2, color: 'rgba(245,247,251,0.45)' }}>
+                  OVERALL WELLNESS SCORE
+                </Text>
+                <Text style={{
+                  fontFamily: 'SpaceGrotesk_600SemiBold',
+                  fontSize: 15, color: '#f6f8fc', marginTop: 4,
+                }}>
+                  {anyLoading ? 'Loading…' : theme.label}
+                </Text>
+                {/* Contextual message — encouraging for low scores, not scolding */}
+                {!anyLoading && (
+                  <Text style={{
+                    fontSize: 12, lineHeight: 17,
+                    color: 'rgba(245,247,251,0.6)',
+                    marginTop: 6, flexShrink: 1,
+                  }} numberOfLines={2}>
+                    {mindPulseScore >= 80
+                      ? (homeInsight ?? "You're thriving! Keep up the amazing work.")
+                      : mindPulseScore >= 50
+                      ? (homeInsight ?? 'Good progress! Try a session to boost your score.')
+                      : "You're building habits — keep going!"}
+                  </Text>
+                )}
+              </View>
+            </View>
+
+            {/* Mind Health / Sleep Quality / Focus Level breakdown — only with real data */}
+            {(mind > 0 || sleepScore > 0 || eyes > 0) && (
             <View style={{
-              flexDirection: 'row', alignItems: 'center', gap: 4,
-              alignSelf: 'flex-start',
-              marginTop: 8,
-              paddingHorizontal: 9, paddingVertical: 3,
-              borderRadius: 99,
-              backgroundColor: 'rgba(52,211,153,0.15)',
-              borderWidth: 1, borderColor: 'rgba(52,211,153,0.3)',
+              flexDirection: 'row', marginTop: 18, paddingTop: 16,
+              borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)',
             }}>
+              <MiniStat label="Mind Health" value={anyLoading ? '–' : mind > 0 ? `${mind}%` : '—'} color="#60a5fa" />
+              <MiniStat label="Sleep Quality" value={anyLoading ? '–' : sleepScore > 0 ? `${sleepScore}%` : '—'} color="#a78bfa" />
+              <MiniStat label="Focus Level" value={anyLoading ? '–' : eyes > 0 ? `${eyes}%` : '—'} color="#22d3ee" />
+            </View>
+            )}
+          </GlassCard>
+        </View>
+      </StaggerItem>
+      )}
+
+      {/* ── Continue Your Journey (returning users only) ──────────── */}
+      {hasCompletedAnySession && (
+      <StaggerItem index={2}>
+        <View style={{ marginTop: spacing.md }}>
+          <ContinueJourney />
+        </View>
+      </StaggerItem>
+      )}
+
+      {/* ── Start Journey CTA (first-time users only) ──────────────── */}
+      {!hasCompletedAnySession && (
+      <StaggerItem index={1}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push(ROUTES.appEyeRelax as never)}
+          style={{ marginTop: spacing.sm }}
+        >
+          <GlassCard>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <Sparkles size={18} color="#F59E0B" strokeWidth={2.5} />
               <Text style={{
-                fontSize: 10, fontWeight: '600',
-                color: '#6ee7b7',
+                fontFamily: 'SpaceGrotesk_700Bold',
+                fontSize: 17, color: '#f6f8fc',
               }}>
-                ↑ +{streak > 0 ? streak : 6} this week
+                Welcome to MindPulse
               </Text>
             </View>
-          </View>
+            <Text style={{
+              fontSize: 13, color: 'rgba(245,247,251,0.6)',
+              marginBottom: 14, lineHeight: 18,
+            }}>
+              Your wellness journey starts with your first 2-minute eye exercise.
+            </Text>
+            <Animated.View style={{ transform: [{ scale: ctaPulse }] }}>
+              <LinearGradient
+                colors={['#6366f1', '#8b5cf6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  borderRadius: 16,
+                  paddingVertical: 15,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                <Sparkles size={18} color="#fff" strokeWidth={2.5} />
+                <Text style={{
+                  fontFamily: 'SpaceGrotesk_700Bold',
+                  fontSize: 14, color: '#fff', letterSpacing: 0.3,
+                }}>
+                  Start First Exercise
+                </Text>
+                <ArrowRight size={16} color="#fff" strokeWidth={2.5} />
+              </LinearGradient>
+            </Animated.View>
+          </GlassCard>
+        </TouchableOpacity>
+      </StaggerItem>
+      )}
 
-
+      {/* ── Feature Grid (Your 5 Pillars) ────────────────────────── */}
+      <StaggerItem index={3}>
+        <View style={{ marginTop: 24 }}>
+          <SectionLabel first>EXPLORE</SectionLabel>
+          <FeatureGrid
+            showStartHere={!hasCompletedAnySession}
+            weeklySessions={{
+              'eye-exercise': weeklySessions.eye,
+              'eye-games': weeklySessions.eyeGames,
+              relax: weeklySessions.relax,
+              mind: weeklySessions.mind,
+              sleep: weeklySessions.sleep,
+            }}
+          />
         </View>
       </StaggerItem>
 
-      {/* ── Today's Targets ─────────────────────────────────────────── */}
-      <StaggerItem index={2}>
-        <Text style={{
-          fontSize: 10, fontWeight: '600', letterSpacing: 2,
-          color: 'rgba(245,247,251,0.42)',
-          marginTop: 18, marginBottom: 11, marginLeft: 2,
-        }}>
-          TODAY'S TARGETS
-        </Text>
-
-        {/* Mind */}
-        <PillarRow
-          icon={<MindIcon />}
-          value={anyLoading ? '–' : `${mind}%`}
-          label="Mind"
-          sublabel="Focus & stress · on track"
-          color="#3b82f6"
-          progress={anyLoading ? 0 : mind}
-          onPress={() => router.push(ROUTES.appRelax as never)}
-        />
-
-        {/* Sleep */}
-        <PillarRow
-          icon={<SleepIcon />}
-          value={anyLoading ? '–' : sleepHours}
-          label="Sleep"
-          sublabel={`Last night · ${sleepScore > 70 ? 'great' : sleepScore > 50 ? 'fair' : 'needs work'} recovery`}
-          color="#a78bfa"
-          progress={anyLoading ? 0 : sleepScore}
-          onPress={() => router.push(`${ROUTES.appSleep}?tab=tonight` as never)}
-        />
-
-        {/* Eye */}
-        <PillarRow
-          icon={<EyeIcon />}
-          value={anyLoading ? '–' : `${eyes}%`}
-          label="Eye"
-          sublabel={`Screen strain · ${eyes < 50 ? 'take a break' : eyes < 70 ? 'moderate' : 'looking good'}`}
-          color="#22d3ee"
-          progress={anyLoading ? 0 : eyes}
-          onPress={() => router.push(ROUTES.appEyeRelax as never)}
-        />
-      </StaggerItem>
-
-      {/* ── Daily Tip ──────────────────────────────────────────────── */}
-      <StaggerItem index={3}>
-        <DailyTip tip={dailyTip} focusArea={focusArea} />
-      </StaggerItem>
-
-      {/* ── Bottom Nav ─────────────────────────────────────────────── */}
+      {/* ── Daily Challenge ───────────────────────────────────────── */}
       <StaggerItem index={4}>
-        <View style={{
-          flexDirection: 'row', justifyContent: 'space-around',
-          alignItems: 'center',
-          paddingVertical: 12, paddingHorizontal: 18,
-          marginTop: 20, marginBottom: 4,
-          borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-          backgroundColor: 'rgba(8,10,18,0.5)',
-          borderRadius: 20,
-        }}>
-          <TabItem icon={<HomeIcon active />} label="Home" active />
-          <TabItem icon={<TrendsIcon />} label="Trends" />
-          <TabItem icon={<TargetsIcon />} label="Targets" />
-          <TabItem icon={<ProfileIcon />} label="Profile" />
+        <View style={{ marginTop: spacing.md }}>
+          <DailyChallenge worstArea={focusArea} />
+        </View>
+      </StaggerItem>
+
+      {/* ── Daily Tip ────────────────────────────────────────────── */}
+      <StaggerItem index={5}>
+        <View style={{ marginTop: spacing.md }}>
+          <SectionLabel first>TODAY'S TIP</SectionLabel>
+          <DailyTip tip={dailyTip} focusArea={focusArea} />
         </View>
       </StaggerItem>
 
