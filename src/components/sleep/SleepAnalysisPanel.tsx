@@ -1,17 +1,13 @@
-import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bell, FileText, Moon } from 'lucide-react-native';
-import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
-import { ActionCard } from '@/components/ui/ActionCard';
-import { ROUTES } from '@/constants';
+import { MoonStar } from 'lucide-react-native';
+import { StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
 import { useSleep } from '@/context/SleepContext';
 import { useSleepSchedule } from '@/hooks/useSleepSchedule';
 import { useSleepScore } from '@/hooks/useSleepScore';
-import { useSleepRecommendation } from '@/hooks/useSleepRecommendation';
+import { AnalysisSkeleton } from '@/components/sleep/Skeletons';
 import { formatDuration } from '@/utils/sleepUtils';
 import { SleepSummaryCard, type SleepSummaryData, type SleepStageData } from './SleepSummaryCard';
 import { estimateStages } from '@/utils/stageEstimator';
@@ -51,14 +47,13 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 type Props = { onStartSession: () => void };
 
 export function SleepAnalysisPanel({ onStartSession }: Props) {
-  const router = useRouter();
   const { user, isGuestMode } = useAuth();
   const { sessions } = useSleep();
   useSleepSchedule(user?.uid, isGuestMode);
   const sleepResult = useSleepScore(user?.uid, isGuestMode);
-  const rec = useSleepRecommendation();
 
   const lastSession = [...sessions].sort((a, b) => b.startTime - a.startTime)[0] ?? null;
+  const hasData = lastSession != null;
 
   // ── Build summary data for the SleepSummaryCard ──────────────────────
   const sleepSummary: SleepSummaryData | null = useMemo(() => {
@@ -86,7 +81,6 @@ export function SleepAnalysisPanel({ onStartSession }: Props) {
   // ── Insight text derived from real score + data ──────────────────────
   const insightText = useMemo(() => {
     if (sleepResult.loading) return 'Analysing your sleep data…';
-    if (!lastSession) return 'No sessions logged yet — start tracking to get insights.';
     const deepPct = sleepStages.deepPct;
     const remPct = sleepStages.remPct;
     const score = sleepResult.score;
@@ -97,7 +91,8 @@ export function SleepAnalysisPanel({ onStartSession }: Props) {
         'You achieved a healthy balance of REM and deep sleep.',
         'Great restorative sleep — keep your current routine.',
       ];
-      return tips[Math.floor(Math.random() * tips.length)];
+      // Deterministic pick (stays stable across re-renders for the same night).
+      return tips[sleepStages.totalMinutes % tips.length];
     }
     if (score >= 60) {
       return deepPct >= 0.2
@@ -108,9 +103,9 @@ export function SleepAnalysisPanel({ onStartSession }: Props) {
       return 'Your REM sleep was limited — this affects memory and mood. Aim for a longer, uninterrupted sleep window.';
     }
     return 'Your sleep was fragmented. Try reducing screen time 1 hour before bed for deeper rest.';
-  }, [sleepResult, lastSession, sleepStages]);
+  }, [sleepResult, sleepStages]);
 
-  const { last7Minutes, max7, avg7Min, avg30Min } = useMemo(() => {
+  const { last7Minutes, max7, avg7Min, avg30Min, daysWithData } = useMemo(() => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     // 7-day trend — total minutes slept per calendar day, oldest to newest
@@ -121,8 +116,8 @@ export function SleepAnalysisPanel({ onStartSession }: Props) {
         .filter(s => s.startTime >= dayStart && s.startTime < dayEnd)
         .reduce((sum, s) => sum + s.durationMinutes, 0);
     });
-    const daysWithData = days.filter(m => m > 0).length;
-    const avg7 = daysWithData > 0 ? Math.round(days.reduce((s, m) => s + m, 0) / daysWithData) : 0;
+    const withData = days.filter(m => m > 0).length;
+    const avg7 = withData > 0 ? Math.round(days.reduce((s, m) => s + m, 0) / withData) : 0;
 
     const cutoff30 = todayStart.getTime() - 30 * 86_400_000;
     const last30Sessions = sessions.filter(s => s.startTime >= cutoff30);
@@ -130,82 +125,142 @@ export function SleepAnalysisPanel({ onStartSession }: Props) {
       ? Math.round(last30Sessions.reduce((s, x) => s + x.durationMinutes, 0) / last30Sessions.length)
       : 0;
 
-    return { last7Minutes: days, max7: Math.max(...days, 60), avg7Min: avg7, avg30Min: avg30 };
+    return { last7Minutes: days, max7: Math.max(...days, 60), avg7Min: avg7, avg30Min: avg30, daysWithData: withData };
   }, [sessions]);
+
+  // ── Loading — show the layout settling in, not dashes/zeros ──────────
+  if (sleepResult.loading) {
+    return <AnalysisSkeleton />;
+  }
+
+  // ── Empty state — no fabricated charts, dashes, or zeros ─────────────
+  if (!hasData) {
+    return (
+      <GlassPanel style={{ paddingVertical: 14 }}>
+        <View style={{ alignItems: 'center' }}>
+          <View style={styles.emptyIcon}>
+            <MoonStar size={28} color="#a78bfa" />
+          </View>
+          <Text style={styles.emptyTitle}>No sleep tracked yet</Text>
+          <Text style={styles.emptyDesc}>
+            Start your first session tonight to see your sleep stages and trends.
+          </Text>
+          <TouchableOpacity
+            onPress={onStartSession}
+            activeOpacity={0.85}
+            style={styles.emptyBtnWrap}
+          >
+            <LinearGradient
+              colors={['#8B5CF6', '#3B82F6']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.emptyBtn}
+            >
+              <Text style={styles.emptyBtnText}>Go to Tonight</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </GlassPanel>
+    );
+  }
 
   return (
     <View style={{ gap: 20 }}>
-      {/* Premium Sleep Summary Card — replaces the legacy score ring + stat row */}
-      {sleepSummary ? (
+      {/* Premium Sleep Summary Card — real data only */}
+      {sleepSummary && (
         <SleepSummaryCard
           summary={sleepSummary}
           stages={sleepStages}
           insight={insightText}
           loading={sleepResult.loading}
         />
-      ) : (
-        <SleepSummaryCard
-          summary={{
-            durationLabel: '--',
-            bedtime: '--:--',
-            wakeTime: '--:--',
-          }}
-          stages={{ totalMinutes: 0, lightPct: 0, remPct: 0, deepPct: 0 }}
-          insight="Your sleep data will appear here after your first tracking session."
-        />
       )}
 
-      {/* Insights & Recommendations — the app's real data drives one combined,
-          rule-based/AI message rather than two separately-fabricated sections. */}
-      <View>
-        <SectionLabel>INSIGHTS & RECOMMENDATIONS</SectionLabel>
-        <GlassPanel>
-          <Text style={{ fontSize: 13, lineHeight: 20, color: 'rgba(245,247,251,0.75)' }}>
-            {rec.loading ? 'Analysing your sleep data…' : rec.message}
-          </Text>
-        </GlassPanel>
-      </View>
-
-      {/* Trends */}
+      {/* Trends — only once there's enough history to be meaningful */}
       <View>
         <SectionLabel>SLEEP TRENDS</SectionLabel>
-        <GlassPanel>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
-            <View>
-              <Text style={{ fontFamily: 'SpaceGrotesk_700Bold', fontSize: 16, color: '#f6f8fc' }}>
-                {avg7Min > 0 ? formatDuration(avg7Min) : '–'}
-              </Text>
-              <Text style={{ fontSize: 10.5, color: 'rgba(245,247,251,0.5)', marginTop: 2 }}>7-day avg</Text>
+        {daysWithData >= 3 ? (
+          <GlassPanel>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
+              <View>
+                <Text style={{ fontFamily: 'SpaceGrotesk_700Bold', fontSize: 16, color: '#f6f8fc' }}>
+                  {formatDuration(avg7Min)}
+                </Text>
+                <Text style={{ fontSize: 10.5, color: 'rgba(245,247,251,0.5)', marginTop: 2 }}>7-day avg</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ fontFamily: 'SpaceGrotesk_700Bold', fontSize: 16, color: '#f6f8fc' }}>
+                  {avg30Min > 0 ? formatDuration(avg30Min) : formatDuration(avg7Min)}
+                </Text>
+                <Text style={{ fontSize: 10.5, color: 'rgba(245,247,251,0.5)', marginTop: 2 }}>30-day avg</Text>
+              </View>
             </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ fontFamily: 'SpaceGrotesk_700Bold', fontSize: 16, color: '#f6f8fc' }}>
-                {avg30Min > 0 ? formatDuration(avg30Min) : '–'}
-              </Text>
-              <Text style={{ fontSize: 10.5, color: 'rgba(245,247,251,0.5)', marginTop: 2 }}>30-day avg</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 56 }}>
+              {last7Minutes.map((min, i) => (
+                <View
+                  key={i}
+                  style={{
+                    width: 22, height: Math.max(4, (min / max7) * 56),
+                    backgroundColor: '#a78bfa', borderRadius: 5,
+                    opacity: min > 0 ? 0.9 : 0.15,
+                  }}
+                />
+              ))}
             </View>
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 56 }}>
-            {last7Minutes.map((min, i) => (
-              <View
-                key={i}
-                style={{
-                  width: 22, height: Math.max(4, (min / max7) * 56),
-                  backgroundColor: '#a78bfa', borderRadius: 5,
-                  opacity: min > 0 ? 0.9 : 0.15,
-                }}
-              />
-            ))}
-          </View>
-        </GlassPanel>
-      </View>
-
-      {/* Quick Actions */}
-      <View>
-        <SectionLabel>QUICK ACTIONS</SectionLabel>
-        <ActionCard icon={Moon} title="Start Sleep Session" description="Track tonight's rest" accent="#a78bfa" onPress={onStartSession} />
-        <ActionCard icon={Bell} title="Tracking Settings" description="Alarm & smart wake" accent="#60a5fa" onPress={() => router.push(ROUTES.appAlarmSettings)} />
-        <ActionCard icon={FileText} title="View Full Report" description="Your sleep history" accent="#4FC3F7" onPress={() => router.push(ROUTES.appHistory as never)} />
+          </GlassPanel>
+        ) : (
+          <GlassPanel>
+            <Text style={{ fontSize: 13, lineHeight: 20, color: 'rgba(245,247,251,0.6)' }}>
+              Track 3 nights to see your sleep trends.
+            </Text>
+          </GlassPanel>
+        )}
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(167,139,250,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 18,
+    color: '#f6f8fc',
+    marginBottom: 6,
+  },
+  emptyDesc: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: 'rgba(245,247,251,0.55)',
+    textAlign: 'center',
+    paddingHorizontal: 12,
+  },
+  emptyBtnWrap: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginTop: 18,
+  },
+  emptyBtn: {
+    height: 48,
+    paddingHorizontal: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.4,
+  },
+});

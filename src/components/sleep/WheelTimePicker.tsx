@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -189,9 +190,11 @@ type Props = {
   /** "HH:MM" 24h string. */
   value: string;
   onChange: (time: string) => void;
+  /** Accent for the selection highlight and the AM/PM toggle. */
+  accent?: string;
 };
 
-export function WheelTimePicker({ value, onChange }: Props) {
+export function WheelTimePicker({ value, onChange, accent = '#8B5CF6' }: Props) {
   const [h, m] = value.split(':').map(Number);
   const hour12 = h % 12 === 0 ? 12 : h % 12;
   const hourIndex = hour12 - 1;
@@ -204,30 +207,54 @@ export function WheelTimePicker({ value, onChange }: Props) {
     onChange(`${String(hour24).padStart(2, '0')}:${String(nextMinuteIndex).padStart(2, '0')}`);
   };
 
+  const setMeridiem = (idx: number) => {
+    if (idx === meridiemIndex) return;
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    commit(hourIndex, minuteIndex, idx);
+  };
+
   return (
     <View style={styles.row}>
-      <View pointerEvents="none" style={styles.highlight} />
-      <WheelColumn
-        base={HOURS}
-        selectedIndex={hourIndex}
-        onChange={i => commit(i, minuteIndex, meridiemIndex)}
-        width={64}
-      />
-      <View style={styles.colonCell}>
-        <Animated.Text style={styles.colon}>:</Animated.Text>
+      {/* Time digits — the selection highlight wraps only these, not the toggle */}
+      <View style={styles.timeGroup}>
+        <View
+          pointerEvents="none"
+          style={[styles.highlight, { backgroundColor: accent + '1F', borderColor: accent + '4D' }]}
+        />
+        <WheelColumn
+          base={HOURS}
+          selectedIndex={hourIndex}
+          onChange={i => commit(i, minuteIndex, meridiemIndex)}
+          width={58}
+        />
+        <View style={styles.colonCell}>
+          <Animated.Text style={styles.colon}>:</Animated.Text>
+        </View>
+        <WheelColumn
+          base={MINUTES}
+          selectedIndex={minuteIndex}
+          onChange={i => commit(hourIndex, i, meridiemIndex)}
+          width={58}
+        />
       </View>
-      <WheelColumn
-        base={MINUTES}
-        selectedIndex={minuteIndex}
-        onChange={i => commit(hourIndex, i, meridiemIndex)}
-        width={64}
-      />
-      <WheelColumn
-        base={MERIDIEMS}
-        selectedIndex={meridiemIndex}
-        onChange={i => commit(hourIndex, minuteIndex, i)}
-        width={64}
-      />
+
+      {/* AM/PM — a single contained vertical segmented control */}
+      <View style={styles.meridiemToggle}>
+        {MERIDIEMS.map((label, idx) => {
+          const active = idx === meridiemIndex;
+          return (
+            <Pressable
+              key={label}
+              onPress={() => setMeridiem(idx)}
+              style={[styles.meridiemBtn, active && { backgroundColor: accent }]}
+            >
+              <Text style={[styles.meridiemText, active && styles.meridiemTextActive]}>
+                {label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -238,15 +265,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: VIEWPORT_HEIGHT,
+    gap: 14,
+  },
+  timeGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: VIEWPORT_HEIGHT,
   },
   highlight: {
     position: 'absolute',
     top: ITEM_HEIGHT,
-    left: 16,
-    right: 16,
+    left: -8,
+    right: -8,
     height: ITEM_HEIGHT,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  // Single rounded track holding the two stacked AM/PM segments.
+  meridiemToggle: {
+    padding: 3,
+    borderRadius: 13,
+    backgroundColor: 'rgba(0,0,0,0.28)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    gap: 3,
+  },
+  meridiemBtn: {
+    width: 44,
+    paddingVertical: 6,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  meridiemText: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    color: 'rgba(255,255,255,0.45)',
+  },
+  meridiemTextActive: {
+    color: '#FFFFFF',
   },
   colonCell: {
     height: ITEM_HEIGHT,

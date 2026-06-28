@@ -9,6 +9,7 @@ import {
 } from '@/services/sleepPersistence';
 import { useAuth } from './AuthContext';
 import { SleepSession } from '../utils/sleepUtils';
+import { withTimeout } from '@/utils/withTimeout';
 
 type SleepContextType = {
   sessions: SleepSession[];
@@ -41,7 +42,10 @@ export function SleepProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const snap = await getDocs(query(collection(db, 'users', user.uid, 'sleepSessions'), orderBy('startTime', 'desc')));
+      const snap = await withTimeout(
+        getDocs(query(collection(db, 'users', user.uid, 'sleepSessions'), orderBy('startTime', 'desc'))),
+        4000,
+      );
       const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() } as SleepSession));
       setSessions(loaded);
       void saveUserSessionsCache(user.uid, loaded);

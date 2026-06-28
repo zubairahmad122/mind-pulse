@@ -1,4 +1,6 @@
 import { ScreenHeader } from "@/components/layout/ScreenHeader";
+import { GlassCard } from "@/components/ui";
+import { PillarProvider } from "@/context/PillarContext";
 import { WheelTimePicker } from "@/components/sleep/WheelTimePicker";
 import { ALARM_RINGTONES, SMART_ALARM_WINDOWS } from "@/constants/alarmSounds";
 import { GLASS_CARD, PILLAR_THEME } from "@/constants/theme";
@@ -9,7 +11,9 @@ import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+  AlertTriangle,
   Bell,
+  Check,
   ChevronRight,
   Clock,
   HelpCircle,
@@ -28,6 +32,7 @@ import {
   type GestureResponderEvent,
   type LayoutChangeEvent,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, {
   Circle,
   Defs,
@@ -36,6 +41,15 @@ import Svg, {
   Stop,
   LinearGradient as SvgLinearGradient,
 } from "react-native-svg";
+
+/** Format a "HH:MM" 24h string as a "6:30 AM" label. */
+function formatTimeAmPm(time: string): string {
+  const [h, m] = time.split(":").map(Number);
+  const hh = h % 24;
+  const hour12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
+  const ampm = hh < 12 ? "AM" : "PM";
+  return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
+}
 
 /** Calculate minutes between two "HH:MM" times, wrapping overnight if needed. */
 function timeDiffMinutes(from: string, to: string): number {
@@ -50,6 +64,11 @@ function timeDiffMinutes(from: string, to: string): number {
 
 const SLEEP = PILLAR_THEME.sleep;
 const ACCENT = SLEEP.accent; // '#a78bfa'
+
+// Unified accent for every interactive control on this screen (toggles, picker,
+// duration icon) — one active color keeps the picker consistent.
+const PURPLE = "#8B5CF6";
+const BLUE = "#3B82F6";
 
 // ── Animated background elements (matching onboarding hero) ─────────────────────
 
@@ -164,76 +183,6 @@ function GlowBackdrop({ frame }: { frame: number }) {
   );
 }
 
-// ── Premium GlassCard — matching onboarding's GLASS_CARD ────────────────────────
-
-function GlassCard({
-  children,
-  style,
-  noPadding,
-}: {
-  children: React.ReactNode;
-  style?: any;
-  noPadding?: boolean;
-}) {
-  return (
-    <View
-      style={[
-        {
-          borderRadius: GLASS_CARD.borderRadius,
-          overflow: "hidden",
-          borderTopWidth: GLASS_CARD.borderTopWidth,
-          borderColor: GLASS_CARD.borderColor,
-        },
-        style,
-      ]}
-    >
-      <BlurView
-        intensity={GLASS_CARD.blurIntensity}
-        tint="dark"
-        style={StyleSheet.absoluteFill}
-      />
-      <LinearGradient colors={SLEEP.cardTint} style={StyleSheet.absoluteFill} />
-      {/* Top highlight */}
-      <LinearGradient
-        colors={GLASS_CARD.highlightColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 24,
-          right: 24,
-          height: 1.5,
-        }}
-      />
-      {/* Inner shadows */}
-      <LinearGradient
-        colors={GLASS_CARD.innerTopColors}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: GLASS_CARD.innerTopHeight,
-        }}
-        pointerEvents="none"
-      />
-      <LinearGradient
-        colors={GLASS_CARD.innerBottomColors}
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: GLASS_CARD.innerBottomHeight,
-        }}
-        pointerEvents="none"
-      />
-      <View style={noPadding ? {} : { padding: 18 }}>{children}</View>
-    </View>
-  );
-}
-
 type Tab = "bedtime" | "alarm";
 
 type Props = {
@@ -267,6 +216,7 @@ export function SleepTimePickerSheet({
   const [ringtoneSheetOpen, setRingtoneSheetOpen] = useState(false);
   const [windowSheetOpen, setWindowSheetOpen] = useState(false);
   const frame = useGlobalFrame();
+  const insets = useSafeAreaInsets();
 
   const {
     selectedRingtone,
@@ -286,6 +236,9 @@ export function SleepTimePickerSheet({
   const goalMinutes = timeDiffMinutes(bedtime, wakeTime);
   const goalHours = Math.floor(goalMinutes / 60);
   const goalRemainder = goalMinutes % 60;
+  // A plausible night is ~3–14h. Anything outside usually means the AM/PM was
+  // set wrong (e.g. an 11 AM bedtime → 19.5h), so we warn instead of asserting.
+  const durationOdd = goalMinutes < 180 || goalMinutes > 14 * 60;
 
   const ringtoneLabel =
     ALARM_RINGTONES.find((r) => r.id === selectedRingtone)?.label ?? "Default";
@@ -293,13 +246,27 @@ export function SleepTimePickerSheet({
     SMART_ALARM_WINDOWS.find((w) => w.value === smartAlarmWindow)?.label ??
     `${smartAlarmWindow} min`;
 
-  // Tab-specific accent: bedtime → blue, alarm → sleep purple
-  const tabAccent = tab === "bedtime" ? "#60a5fa" : "#a78bfa";
+  // One unified accent across the whole picker (FIX 4).
+  const tabAccent = PURPLE;
 
   const switchTab = (next: Tab) => {
     void Haptics.selectionAsync();
     setTab(next);
   };
+
+  // Times + settings already persist live as the user changes them, so the
+  // primary button just confirms and dismisses — with a brief check-mark so the
+  // tap clearly registers before the sheet closes.
+  const [justSaved, setJustSaved] = useState(false);
+  const handleSave = () => {
+    if (justSaved) return;
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setJustSaved(true);
+    setTimeout(onClose, 600);
+  };
+
+  const title = tab === "bedtime" ? "Set Bedtime" : "Set Wake Time";
+  const savedLabel = tab === "bedtime" ? "Bedtime set" : "Wake time set";
 
   return (
     <Modal
@@ -308,6 +275,7 @@ export function SleepTimePickerSheet({
       onRequestClose={onClose}
       statusBarTranslucent
     >
+      <PillarProvider pillar="sleep">
       <View style={styles.screen}>
         {/* Sleep gradient background — matching onboarding */}
         <LinearGradient
@@ -321,77 +289,61 @@ export function SleepTimePickerSheet({
         <AmbientBeams frame={frame} />
         <AmbientParticles frame={frame} />
 
-        {/* Header — shared across every stack/modal screen; tabs replace the title */}
+        {/* Header — clear screen title + Done (times auto-save) */}
         <ScreenHeader
           onBack={onClose}
           topInset={48}
-          center={
-            <View style={styles.tabRow}>
-              <TouchableOpacity
-                onPress={() => switchTab("bedtime")}
-                activeOpacity={0.7}
-                style={[
-                  styles.tabBtn,
-                  tab === "bedtime" && styles.tabBtnActive,
-                ]}
-              >
-                <Moon
-                  size={15}
-                  color={
-                    tab === "bedtime" ? "#60a5fa" : "rgba(255,255,255,0.35)"
-                  }
-                  fill={tab === "bedtime" ? "#60a5fa" : "transparent"}
-                />
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    tab === "bedtime" && styles.tabLabelActive,
-                  ]}
-                >
-                  Bedtime
-                </Text>
-                {tab === "bedtime" && (
-                  <View
-                    style={[
-                      styles.tabUnderline,
-                      { backgroundColor: "#60a5fa" },
-                    ]}
-                  />
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => switchTab("alarm")}
-                activeOpacity={0.7}
-                style={[styles.tabBtn, tab === "alarm" && styles.tabBtnActive]}
-              >
-                <Bell
-                  size={15}
-                  color={tab === "alarm" ? "#a78bfa" : "rgba(255,255,255,0.35)"}
-                  fill={tab === "alarm" ? "#a78bfa" : "transparent"}
-                />
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    tab === "alarm" && styles.tabLabelActive,
-                  ]}
-                >
-                  Alarm
-                </Text>
-                {tab === "alarm" && (
-                  <View
-                    style={[
-                      styles.tabUnderline,
-                      { backgroundColor: "#a78bfa" },
-                    ]}
-                  />
-                )}
-              </TouchableOpacity>
-            </View>
+          title={title}
+          right={
+            <TouchableOpacity
+              onPress={() => {
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onClose();
+              }}
+              activeOpacity={0.7}
+              hitSlop={10}
+              style={styles.doneBtn}
+            >
+              <Text style={styles.doneText}>Done</Text>
+            </TouchableOpacity>
           }
         />
 
+        {/* Segmented control — Bedtime / Wake Up */}
+        <View style={styles.segmentWrap}>
+          <View style={styles.segment}>
+            {(
+              [
+                { id: "bedtime", label: "Bedtime", icon: Moon },
+                { id: "alarm", label: "Wake Up", icon: Bell },
+              ] as const
+            ).map(({ id, label, icon: Icon }) => {
+              const active = tab === id;
+              return (
+                <TouchableOpacity
+                  key={id}
+                  onPress={() => switchTab(id)}
+                  activeOpacity={0.8}
+                  style={[styles.segBtn, active && styles.segBtnActive]}
+                >
+                  <Icon
+                    size={15}
+                    color={active ? "#FFFFFF" : "#9CA3AF"}
+                    fill={active ? "#FFFFFF" : "transparent"}
+                  />
+                  <Text
+                    style={[styles.segText, active && styles.segTextActive]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
         <ScrollView
+          style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
@@ -417,24 +369,40 @@ export function SleepTimePickerSheet({
                   width: 36,
                   height: 36,
                   borderRadius: 18,
-                  backgroundColor: tabAccent + "18",
+                  backgroundColor: (durationOdd ? "#F59E0B" : tabAccent) + "18",
                   alignItems: "center",
                   justifyContent: "center",
                   borderWidth: 1,
-                  borderColor: tabAccent + "30",
+                  borderColor: (durationOdd ? "#F59E0B" : tabAccent) + "30",
                 }}
               >
-                <Clock size={17} color={tabAccent} />
+                {durationOdd ? (
+                  <AlertTriangle size={17} color="#F59E0B" />
+                ) : (
+                  <Clock size={17} color={tabAccent} />
+                )}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.goalText}>
-                  Sleep goal{" "}
-                  <Text style={[styles.goalHighlight, { color: tabAccent }]}>
-                    {goalHours}h{goalRemainder > 0 ? ` ${goalRemainder}m` : ""}
-                  </Text>
+                <Text style={styles.goalText}>You&apos;ll sleep for</Text>
+                <Text
+                  style={[
+                    styles.goalHighlight,
+                    { color: durationOdd ? "#F59E0B" : tabAccent },
+                  ]}
+                >
+                  {goalHours}h{goalRemainder > 0 ? ` ${goalRemainder}m` : ""}
                 </Text>
-                <Text style={styles.goalSub}>
-                  Based on your bedtime and alarm time
+                <Text
+                  style={[
+                    styles.goalSub,
+                    durationOdd && { color: "#F59E0B" },
+                  ]}
+                >
+                  {durationOdd
+                    ? "That seems long — check your AM/PM."
+                    : tab === "bedtime"
+                      ? `Based on your ${formatTimeAmPm(wakeTime)} alarm`
+                      : `Based on your ${formatTimeAmPm(bedtime)} bedtime`}
                 </Text>
               </View>
             </View>
@@ -464,7 +432,7 @@ export function SleepTimePickerSheet({
                       schedule &&
                       void saveSchedule({ ...schedule, sleepNotesEnabled: v })
                     }
-                    footnote="Take notes of factors that may affect sleep to help better analyze your sleep."
+                    footnote="Track factors that affect your sleep quality."
                     accent={tabAccent}
                   />
                 </GlassCard>
@@ -530,9 +498,36 @@ export function SleepTimePickerSheet({
             )}
           </View>
 
-          <View style={{ height: 40 }} />
+          <View style={{ height: 24 }} />
         </ScrollView>
+
+        {/* Primary action — fixed at the bottom (FIX 6 / FIX 7) */}
+        <View
+          style={[
+            styles.footer,
+            { paddingBottom: Math.max(insets.bottom, 16) },
+          ]}
+        >
+          <TouchableOpacity
+            onPress={handleSave}
+            activeOpacity={0.85}
+            style={styles.ctaWrap}
+          >
+            <LinearGradient
+              colors={justSaved ? ["#10B981", "#059669"] : [PURPLE, BLUE]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.cta}
+            >
+              {justSaved && <Check size={18} color="#FFFFFF" />}
+              <Text style={styles.ctaText}>
+                {justSaved ? savedLabel : title}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </View>
+      </PillarProvider>
 
       <SelectSheet
         visible={ringtoneSheetOpen}
@@ -608,11 +603,13 @@ function ToggleRow({
             onChange(!value);
           }}
           activeOpacity={0.8}
-          style={[styles.switchTrack, value && { backgroundColor: accent }]}
+          style={[
+            styles.switchTrack,
+            { justifyContent: value ? "flex-end" : "flex-start" },
+            value && { backgroundColor: accent },
+          ]}
         >
-          <View
-            style={[styles.switchThumb, value && { alignSelf: "flex-end" }]}
-          />
+          <View style={styles.switchThumb} />
         </TouchableOpacity>
       </View>
       {footnote && <Text style={styles.footnote}>{footnote}</Text>}
@@ -848,58 +845,92 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#06040e",
   },
-  tabRow: {
+  doneBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  doneText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: PURPLE,
+  },
+  segmentWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 4,
+  },
+  segment: {
+    flexDirection: "row",
+    gap: 4,
+    padding: 5,
+    borderRadius: 16,
+    backgroundColor: "rgba(12,8,28,0.6)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  segBtn: {
     flex: 1,
     flexDirection: "row",
-    justifyContent: "center",
-    gap: 24,
-  },
-  tabBtn: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    justifyContent: "center",
+    gap: 7,
+    paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
   },
-  tabBtnActive: {
-    backgroundColor: "rgba(167,139,250,0.12)",
-    borderColor: "rgba(167,139,250,0.3)",
+  segBtnActive: {
+    backgroundColor: PURPLE,
   },
-  tabLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "rgba(255,255,255,0.4)",
+  segText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#9CA3AF",
   },
-  tabLabelActive: {
+  segTextActive: {
     color: "#FFFFFF",
     fontWeight: "800",
-  },
-  tabUnderline: {
-    position: "absolute",
-    bottom: -1,
-    width: 20,
-    height: 2.5,
-    borderRadius: 2,
   },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
   },
+  footer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(6,4,14,0.6)",
+  },
+  ctaWrap: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  cta: {
+    height: 52,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  ctaText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
   goalText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "rgba(255,255,255,0.6)",
+    fontSize: 12,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.55)",
   },
   goalHighlight: {
+    fontSize: 22,
     fontWeight: "800",
+    marginTop: 1,
   },
   goalSub: {
     fontSize: 11,
-    color: "rgba(255,255,255,0.3)",
+    color: "rgba(255,255,255,0.35)",
     marginTop: 2,
   },
   rows: {
@@ -936,8 +967,9 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     padding: 2,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    justifyContent: "center",
+    backgroundColor: "#252542",
+    flexDirection: "row",
+    alignItems: "center",
   },
   switchThumb: {
     width: 22,

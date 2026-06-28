@@ -6,6 +6,19 @@ import { adjustTime } from "@/utils/formatTime";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+const PURPLE = "#8B5CF6";
+
+/** Format a "HH:MM" 24h string as "12:00 AM". */
+function to12h(value: string): { time: string; period: string } {
+  const [h, m] = value.split(":").map(Number);
+  const hh = h % 24;
+  const hour12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
+  return {
+    time: `${hour12}:${String(m).padStart(2, "0")}`,
+    period: hh < 12 ? "AM" : "PM",
+  };
+}
+
 type Props = {
   label: string;
   hint?: string;
@@ -31,7 +44,7 @@ function StepButton({
       <Ionicons
         name={icon === "remove" ? "remove" : "add"}
         size={20}
-        color={colors.accent.purple}
+        color={PURPLE}
       />
       <Text style={styles.stepLabel}>{stepLabel}</Text>
     </TouchableOpacity>
@@ -52,8 +65,10 @@ export function TimePickerRow({ label, hint, value, onChange }: Props) {
           onPress={() => onChange(adjustTime(value, -15))}
         />
         <View style={styles.timeCenter}>
-          <Text style={styles.time}>{value}</Text>
-          <Text style={styles.timeFormat}>24-hour</Text>
+          <View style={styles.timeInline}>
+            <Text style={styles.time}>{to12h(value).time}</Text>
+            <Text style={styles.period}>{to12h(value).period}</Text>
+          </View>
         </View>
         <StepButton
           icon="add"
@@ -114,16 +129,21 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     ...typography.caption,
-    color: colors.accent.purple,
+    color: PURPLE,
     fontWeight: "700",
   },
   timeCenter: { alignItems: "center", gap: 2 },
+  timeInline: { flexDirection: "row", alignItems: "baseline", gap: 4 },
   time: {
     ...typography.headingLarge,
     color: colors.text.primary,
     fontVariant: ["tabular-nums"],
   },
-  timeFormat: { ...typography.caption, color: colors.text.tertiary },
+  period: {
+    ...typography.bodyLarge,
+    color: "#9CA3AF",
+    fontWeight: "700",
+  },
   quickRow: { flexDirection: "row", gap: spacing.sm },
   quickChip: {
     flex: 1,

@@ -14,6 +14,7 @@ import { ROUTES } from '@/constants';
 import { FONTS } from '@/constants/theme';
 import { usePillarTheme } from '@/context/PillarContext';
 import { useRouter } from 'expo-router';
+import { ChevronRight } from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -309,14 +310,10 @@ export function SleepSummaryCard({
       <TouchableOpacity
         onPress={handleViewReport}
         activeOpacity={0.85}
-        style={[styles.cta, { borderColor: accent + '40' }]}
+        style={styles.cta}
       >
-        <Text style={[styles.ctaText, { color: accent }]}>
-          View Full Sleep Report
-        </Text>
-        <View style={[styles.ctaArrow, { backgroundColor: accent + '20' }]}>
-          <Text style={[styles.ctaArrowText, { color: accent }]}>→</Text>
-        </View>
+        <Text style={styles.ctaText}>View Full Sleep Report</Text>
+        <ChevronRight size={18} color="rgba(245,247,251,0.6)" />
       </TouchableOpacity>
     </GlassCard>
   );
@@ -488,36 +485,25 @@ const styles = StyleSheet.create({
     color: 'rgba(245,247,251,0.75)',
   },
 
-  /* Section 4 – CTA */
+  /* Section 4 – CTA — standard outlined button (matches app language) */
   cta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginHorizontal: PADDING_H,
     marginBottom: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
 
   ctaText: {
     fontFamily: FONTS.headingSemi,
     fontSize: 14,
     letterSpacing: 0.3,
-  },
-
-  ctaArrow: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  ctaArrowText: {
-    fontSize: 15,
-    fontWeight: '700',
+    color: '#f6f8fc',
   },
 });

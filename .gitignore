@@ -48,3 +48,5 @@ example
 /ios
 android
 google-services.json
+# native module build output
+modules/*/android/build/

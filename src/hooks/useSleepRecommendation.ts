@@ -12,7 +12,6 @@ import {
   getCachedFingerprint,
   setCachedFingerprint,
 } from '@/services/sleepTipCache';
-import { circularMinuteDiff } from '@/utils/scoring';
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -45,7 +44,7 @@ function stdDev(values: number[]): number {
 
 /** Format minutes-since-midnight to 12h display like "11:00 PM". */
 function formatMinuteTo12h(minutes: number): string {
-  const h24 = Math.round(minutes / 60) % 24;
+  const h24 = Math.floor(minutes / 60) % 24;
   const m = Math.round(minutes % 60);
   const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
   const ampm = h24 < 12 ? 'AM' : 'PM';
@@ -67,7 +66,7 @@ function fallbackMessage(params: {
   const { avgBedtime, avgWakeTime, avgDurationHours, consistencyScore, avgQuality, sessionCount } = params;
 
   if (sessionCount === 0) {
-    return `Try sleeping at ${params.scheduleBedtime} and waking at ${params.scheduleWakeTime} for ${params.scheduleDuration} hours. Log your first session to get data-backed advice.`;
+    return `Try ${params.scheduleBedtime} to ${params.scheduleWakeTime} for ${params.scheduleDuration}h. Log your first session for personalized advice.`;
   }
 
   const parts: string[] = [];
@@ -167,13 +166,18 @@ export function useSleepRecommendation(): SleepRecommendation {
   const scheduleBedtimeFormatted = formatMinuteTo12h(timeToMinutes(defaultBedtime));
   const scheduleWakeFormatted = formatMinuteTo12h(timeToMinutes(defaultWake));
 
-  // Recent journal entries for Gemini context
-  const recentJournalEntries = journalEntries.slice(0, 5).map(e => ({
-    mood: e.mood,
-    triggers: e.triggers,
-    text: e.text,
-    aiInsight: e.aiInsight,
-  }));
+  // Recent journal entries for Gemini context. Memoized on the source entries
+  // so the reference stays stable across renders (it feeds geminiParams below).
+  const recentJournalEntries = useMemo(
+    () =>
+      journalEntries.slice(0, 5).map(e => ({
+        mood: e.mood,
+        triggers: e.triggers,
+        text: e.text,
+        aiInsight: e.aiInsight,
+      })),
+    [journalEntries],
+  );
 
   const currentFingerprint = buildSleepFingerprint({
     avgBedtime: avgBedtimeFormatted,

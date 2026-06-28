@@ -2,6 +2,8 @@
 // App entry point — Expo Router root layout with providers
 // ──────────────────────────────────────────────────────────────────────────────
 
+import './global.css';
+
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

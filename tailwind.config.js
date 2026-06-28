@@ -29,6 +29,12 @@ module.exports = {
         // ── Border ───────────────────────────────────────────────────────
         "border-subtle": "rgba(255,255,255,0.05)",
         "border-active": "rgba(255,255,255,0.1)",
+
+        // ── App aliases (used via app-* className tokens) ────────────────
+        "app-purple": "#8B5CF6",
+        "app-purple-light": "#A78BFA",
+        "app-gold": "#F59E0B",
+        "app-muted": "#6B7280",
       },
       fontFamily: {
         heading: ["SpaceGrotesk_700Bold"],

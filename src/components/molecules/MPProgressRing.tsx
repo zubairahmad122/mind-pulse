@@ -43,11 +43,11 @@ function isLegacy(p: Props): p is LegacyProps {
 
 export function MPProgressRing(props: Props) {
   const legacy = isLegacy(props);
-  const {
-    size: sizeProp = legacy ? 'md' : 140,
-    label,
-    sublabel,
-  } = props;
+  const sizeProp = props.size ?? (legacy ? 'md' : 140);
+  // `label`/`sublabel` only exist in the legacy API; explicit mode uses them as
+  // a value/suffix fallback (see below), so read them defensively.
+  const label = legacy ? props.label : undefined;
+  const sublabel = legacy ? props.sublabel : undefined;
 
   const dimension: number = typeof sizeProp === 'number' ? sizeProp : SIZE_MAP[sizeProp];
   const strokeWidth: number = legacy ? STROKE_WIDTH : (props.strokeWidth ?? STROKE_WIDTH);
@@ -72,10 +72,11 @@ export function MPProgressRing(props: Props) {
     </LinearGradient>
   ) : null;
 
-  const strokeColor = legacy ? `url(#${gradientId})` : (props.color ? `url(#${gradientId})` : `url(#${gradientId})`);
-  // When no explicit gradient is passed we fall back to the default purple-blue
-  // gradient and reference it by id.
-  const resolvedStroke = props.gradient || legacy ? `url(#${gradientId})` : COLORS.purple;
+  // Legacy and explicit-gradient rings reference the gradient by id; an
+  // explicit ring with only a `color` uses that solid color, falling back to
+  // the default purple.
+  const resolvedStroke =
+    legacy || props.gradient ? `url(#${gradientId})` : (props.color ?? COLORS.purple);
 
   const valueText = legacy ? label : (props.value ?? label);
   const suffix = legacy ? sublabel : (props.valueSuffix ?? sublabel);

@@ -97,13 +97,19 @@ export function AIRecommendation({ message, loading }: Props) {
   return (
     <GlassCard style={styles.card}>
       <View style={styles.badgeRow}>
-        <Sparkles size={14} color={colors.accent.purple} strokeWidth={2} />
+        <Sparkles size={14} color="#8B5CF6" strokeWidth={2} />
         <Text style={styles.badge}>
           {loading ? 'Generating your recommendation…' : 'AI Recommendation'}
         </Text>
         {loading && <PulsingDot />}
       </View>
-      {loading ? <Shimmer /> : <Text style={styles.body}>{message}</Text>}
+      {loading ? (
+        <Shimmer />
+      ) : (
+        <Text style={styles.body} numberOfLines={2}>
+          {message}
+        </Text>
+      )}
     </GlassCard>
   );
 }
@@ -111,7 +117,7 @@ export function AIRecommendation({ message, loading }: Props) {
 const styles = StyleSheet.create({
   card: { marginBottom: spacing.md, gap: spacing.sm },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  badge: { ...typography.label, color: colors.accent.purple },
+  badge: { ...typography.label, color: '#8B5CF6' },
   body: { ...typography.bodyLarge, color: colors.text.secondary, lineHeight: 22 },
   // Shimmer
   shimmerWrap: { gap: 8 },
@@ -120,7 +126,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: colors.accent.purple,
+    backgroundColor: '#8B5CF6',
     marginLeft: 'auto',
   },
 });

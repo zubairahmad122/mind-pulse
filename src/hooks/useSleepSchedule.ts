@@ -4,6 +4,7 @@ import { getFirestore, collection, doc, getDoc, setDoc } from '@react-native-fir
 const db = getFirestore();
 import { useCallback, useEffect, useState } from 'react';
 import { SleepSchedule } from '@/types/sleep.types';
+import { withTimeout } from '@/utils/withTimeout';
 
 const STORAGE_KEY = '@mindpulse/sleep-schedule';
 const FIRESTORE_DOC = 'sleepSchedule';
@@ -30,14 +31,23 @@ export function useSleepSchedule(uid?: string, isGuestMode = false) {
 
     try {
       if (uid && !isGuestMode) {
-        const snap = await getDoc(doc(db, 'users', uid, 'settings', FIRESTORE_DOC));
-        if (snap.exists()) {
-          const data = snap.data() as Omit<SleepSchedule, 'uid'>;
-          const loaded = { uid, ...data };
-          setSchedule(loaded);
-          await AsyncStorage.setItem(storageKey, JSON.stringify(loaded));
-          setLoading(false);
-          return;
+        try {
+          // Time-boxed so a hung Firestore read can't pin the screen on its
+          // loading state — falls through to the local cache / default below.
+          const snap = await withTimeout(
+            getDoc(doc(db, 'users', uid, 'settings', FIRESTORE_DOC)),
+            4000,
+          );
+          if (snap.exists()) {
+            const data = snap.data() as Omit<SleepSchedule, 'uid'>;
+            const loaded = { uid, ...data };
+            setSchedule(loaded);
+            await AsyncStorage.setItem(storageKey, JSON.stringify(loaded));
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // Remote unavailable/slow — fall through to local cache.
         }
       }
 
