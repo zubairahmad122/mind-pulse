@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getFirestore, collection, doc, getDoc, setDoc } from '@react-native-firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc } from '@react-native-firebase/firestore';
 
 const db = getFirestore();
 import { useCallback, useEffect, useState } from 'react';

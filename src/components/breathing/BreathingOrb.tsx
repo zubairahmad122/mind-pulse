@@ -2,14 +2,12 @@ import type { BreathingPattern } from '@/constants/breathingPatterns';
 import { BREATHING_PATTERNS } from '@/constants/breathingPatterns';
 import { memo, useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import Animated, {
   Easing,
   cancelAnimation,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withRepeat,
   withSequence,
   withTiming,
@@ -21,27 +19,60 @@ interface BreathingOrbProps {
   isPaused: boolean;
   size?: number;
   secondsLeft?: number;
-  phaseFill?: number; // 0-100, how far through the current phase
+  /**
+   * Current breathing phase ('inhale' | 'hold-in' | 'exhale' | 'hold-out').
+   * The orb's motion IS the instruction: it expands for exactly the inhale
+   * duration, freezes through holds, and contracts through the exhale — in
+   * sync with the session timer, not a free-running loop of its own.
+   */
+  phaseName?: string | null;
+  /** Seconds left in the current phase — the expand/contract animation length. */
+  phaseSeconds?: number;
+  /**
+   * For the 'calm' pattern: seconds per direction of the free-breathing wave.
+   * Narration sessions (Body Scan etc.) pass ~13 for a barely-there slow
+   * breath; Calm Flow keeps the default 3.
+   */
+  waveSeconds?: number;
+  accentColor?: string; // override the pattern color for a consistent feature accent
+  /**
+   * Hold the orb perfectly still. Used while the intro narration speaks — any
+   * breathing-like motion before the exercise starts misleads the user into
+   * breathing along too early.
+   */
+  still?: boolean;
 }
 
 const ORBS_SIZE = 180;
 
-function BreathingOrbInner({ pattern, isRunning, isPaused, size = ORBS_SIZE, secondsLeft, phaseFill }: BreathingOrbProps) {
+function BreathingOrbInner({ pattern, isRunning, isPaused, size = ORBS_SIZE, secondsLeft, phaseName, phaseSeconds, waveSeconds = 3, accentColor, still = false }: BreathingOrbProps) {
   const patternDef = BREATHING_PATTERNS[pattern];
+  const orbColor = accentColor ?? patternDef.color;
+  const orbGlow = accentColor ? accentColor + '33' : patternDef.glowColor;
 
   // ─── Shared values ───────────────────────────────────────────────────────
   const scale         = useSharedValue(1);
   const glowOpacity   = useSharedValue(0.2);
-  const ringScale     = useSharedValue(1);
-  const ringOpacity   = useSharedValue(0);
   const coreBright    = useSharedValue(0.5);
   const innerPulse    = useSharedValue(0.6);
-  const sparkle1      = useSharedValue(0);
-  const sparkle2      = useSharedValue(0);
-  const progressFade  = useSharedValue(0);
 
-  // ─── Animations ──────────────────────────────────────────────────────────
+  // Once the session feeds phases, THEY own the orb's size — even for the
+  // 'calm' pattern. The free-running wave is only a fallback for sessions
+  // that never produce phases (narration-style, phaseName stays null).
+  const phaseDriven = !!phaseName;
+
+  // Mode: still / idle / running ambience (glow + shimmer only — the orb's
+  // SIZE is owned by the phase effect below so it can't drift out of sync).
   useEffect(() => {
+    if (still) {
+      // Settle to a calm, motionless state (assignments cancel running repeats).
+      scale.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.ease) });
+      glowOpacity.value = withTiming(0.18, { duration: 400 });
+      coreBright.value = withTiming(0, { duration: 300 });
+      innerPulse.value = withTiming(0.4, { duration: 300 });
+      return;
+    }
+
     if (!isRunning || isPaused) {
       scale.value = withRepeat(
         withSequence(
@@ -59,36 +90,26 @@ function BreathingOrbInner({ pattern, isRunning, isPaused, size = ORBS_SIZE, sec
         -1,
         false,
       );
-      ringOpacity.value = withTiming(0);
-      progressFade.value = withTiming(0);
       coreBright.value = withTiming(0, { duration: 300 });
       innerPulse.value = withTiming(0.4, { duration: 300 });
       return;
     }
 
-    coreBright.value = 0;
-
-    const durIn  = patternDef.phases.find(p => p.name === 'inhale')?.duration  || 4000;
-    const durEx  = patternDef.phases.find(p => p.name === 'exhale')?.duration  || 4000;
-    const durHi  = patternDef.phases.find(p => p.name === 'hold-in')?.duration || 2000;
-    const durHo  = patternDef.phases.find(p => p.name === 'hold-out')?.duration || 2000;
-
-    if (pattern === 'calm') {
+    // Calm fallback (no phases feeding the orb): gentle self-paced wave.
+    if (pattern === 'calm' && !phaseDriven) {
+      const wave = Math.max(2, waveSeconds) * 1000;
       scale.value = withRepeat(
         withSequence(
-          withTiming(1.08, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.92, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1.08, { duration: wave, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.92, { duration: wave, easing: Easing.inOut(Easing.ease) }),
         ),
         -1,
         false,
       );
-    } else {
-      scale.value = withRepeat(
+      coreBright.value = withRepeat(
         withSequence(
-          withTiming(1.18, { duration: durIn * 1000,  easing: Easing.out(Easing.quad) }),
-          withTiming(1.18, { duration: durHi * 1000 }),
-          withTiming(0.78, { duration: durEx * 1000,  easing: Easing.in(Easing.quad) }),
-          withTiming(0.78, { duration: durHo * 1000 }),
+          withTiming(0.9, { duration: wave, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.3, { duration: wave, easing: Easing.inOut(Easing.ease) }),
         ),
         -1,
         false,
@@ -97,38 +118,8 @@ function BreathingOrbInner({ pattern, isRunning, isPaused, size = ORBS_SIZE, sec
 
     glowOpacity.value = withRepeat(
       withSequence(
-        withTiming(0.5, { duration: 800 }),
-        withTiming(0.15, { duration: 1000 }),
-      ),
-      -1,
-      false,
-    );
-
-    const cycleDuration = (durIn + durHi + durEx + durHo) * 1000;
-    ringOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.5, { duration: cycleDuration * 0.05 }),
-        withTiming(1,   { duration: cycleDuration * 0.1 }),
-        withTiming(0,   { duration: cycleDuration * 0.85 }),
-      ),
-      -1,
-      false,
-    );
-    ringScale.value = withRepeat(
-      withSequence(
-        withTiming(1.15, { duration: cycleDuration * 0.05 }),
-        withTiming(1.40, { duration: cycleDuration * 0.95 }),
-      ),
-      -1,
-      false,
-    );
-
-    coreBright.value = withRepeat(
-      withSequence(
-        withTiming(1,   { duration: durIn * 1000, easing: Easing.out(Easing.quad) }),
-        withTiming(1,   { duration: durHi * 1000 }),
-        withTiming(0.3, { duration: durEx * 1000, easing: Easing.in(Easing.quad) }),
-        withTiming(0.3, { duration: durHo * 1000 }),
+        withTiming(0.45, { duration: 1600 }),
+        withTiming(0.18, { duration: 1600 }),
       ),
       -1,
       false,
@@ -143,32 +134,39 @@ function BreathingOrbInner({ pattern, isRunning, isPaused, size = ORBS_SIZE, sec
       false,
     );
 
-    sparkle1.value = withRepeat(
-      withTiming(1, { duration: 4000, easing: Easing.linear }),
-      -1,
-      false,
-    );
-    sparkle2.value = withRepeat(
-      withDelay(2000, withTiming(1, { duration: 4000, easing: Easing.linear })),
-      -1,
-      false,
-    );
-
-    // Fade in progress ring
-    progressFade.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) });
-
     return () => {
       cancelAnimation(scale);
       cancelAnimation(glowOpacity);
-      cancelAnimation(ringScale);
-      cancelAnimation(ringOpacity);
       cancelAnimation(coreBright);
       cancelAnimation(innerPulse);
-      cancelAnimation(sparkle1);
-      cancelAnimation(sparkle2);
-      cancelAnimation(progressFade);
     };
-  }, [isRunning, isPaused, pattern, patternDef]);
+  }, [isRunning, isPaused, still, pattern, waveSeconds, phaseDriven]);
+
+  // Phase-driven breathing (the direction signal): expand = breathe in,
+  // freeze = hold, contract = breathe out. Runs over the phase's remaining
+  // seconds so orb, label, cues, and haptics all move together.
+  useEffect(() => {
+    if (still || !isRunning || isPaused) return;
+
+    if (!phaseName) {
+      // Calm with no phases yet: the free wave (above) owns the orb.
+      if (pattern === 'calm') return;
+      // Waiting for the first inhale: settle small, ready to expand.
+      scale.value = withTiming(0.82, { duration: 900, easing: Easing.inOut(Easing.ease) });
+      coreBright.value = withTiming(0.3, { duration: 900 });
+      return;
+    }
+
+    const dur = Math.max(700, (phaseSeconds ?? 4) * 1000);
+    if (phaseName === 'inhale') {
+      scale.value = withTiming(1.16, { duration: dur, easing: Easing.inOut(Easing.sin) });
+      coreBright.value = withTiming(1, { duration: dur });
+    } else if (phaseName === 'exhale') {
+      scale.value = withTiming(0.82, { duration: dur, easing: Easing.inOut(Easing.sin) });
+      coreBright.value = withTiming(0.3, { duration: dur });
+    }
+    // Holds: no assignment — the orb freezes exactly where the breath left it.
+  }, [phaseName, phaseSeconds, still, isRunning, isPaused, pattern]);
 
   // ─── Animated styles ─────────────────────────────────────────────────────
   const orbStyle = useAnimatedStyle(() => ({
@@ -177,11 +175,6 @@ function BreathingOrbInner({ pattern, isRunning, isPaused, size = ORBS_SIZE, sec
 
   const glowStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,
-  }));
-
-  const ringWaveStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: ringScale.value }],
-    opacity: ringOpacity.value,
   }));
 
   const innerStyle = useAnimatedStyle(() => ({
@@ -193,37 +186,8 @@ function BreathingOrbInner({ pattern, isRunning, isPaused, size = ORBS_SIZE, sec
     opacity: interpolate(innerPulse.value, [0.5, 0.9], [0.15, 0.5]),
   }));
 
-  const progressFadeStyle = useAnimatedStyle(() => ({
-    opacity: progressFade.value,
-  }));
-
-  const spark1Style = useAnimatedStyle(() => {
-    const angle = sparkle1.value * 360;
-    return {
-      transform: [
-        { rotate: `${angle}deg` },
-        { translateX: size * 0.55 },
-        { rotate: `${-angle}deg` },
-      ],
-      opacity: interpolate(Math.sin(sparkle1.value * Math.PI * 4), [-1, 1], [0, 0.8]),
-    };
-  });
-
-  const spark2Style = useAnimatedStyle(() => {
-    const angle = sparkle2.value * 360;
-    return {
-      transform: [
-        { rotate: `${angle}deg` },
-        { translateX: -size * 0.55 },
-        { rotate: `${-angle}deg` },
-      ],
-      opacity: interpolate(Math.sin(sparkle2.value * Math.PI * 4), [-1, 1], [0, 0.8]),
-    };
-  });
-
   const orbSize = size -40 ;
   const containerSize = orbSize + 80;
-  const ringSize = orbSize + 20;
 
   return (
     <View style={[styles.container, { width: containerSize, height: containerSize }]}>
@@ -235,43 +199,12 @@ function BreathingOrbInner({ pattern, isRunning, isPaused, size = ORBS_SIZE, sec
             width: orbSize + 50,
             height: orbSize + 50,
             borderRadius: (orbSize + 50) / 2,
-            backgroundColor: patternDef.glowColor,
+            backgroundColor: orbGlow,
           },
           glowStyle,
         ]}
         pointerEvents="none"
       />
-
-      {/* ── Expanding ring wave ── */}
-      <Animated.View
-        style={[
-          styles.ringWave,
-          {
-            width: orbSize + 20,
-            height: orbSize + 20,
-            borderRadius: (orbSize + 20) / 2,
-            borderColor: patternDef.color,
-          },
-          ringWaveStyle,
-        ]}
-        pointerEvents="none"
-      />
-
-      {/* ── Animated circular progress ring ── */}
-      <Animated.View style={[styles.progressRingContainer, { width: ringSize, height: ringSize, left: (containerSize - ringSize) / 2, top: (containerSize - ringSize) / 2 }, progressFadeStyle]} pointerEvents="none">
-        <AnimatedCircularProgress
-          size={ringSize}
-          width={3}
-          fill={phaseFill ?? 0}
-          tintColor={patternDef.color}
-          tintTransparency
-          backgroundColor="rgba(255,255,255,0.06)"
-          lineCap="round"
-          rotation={-90}
-          duration={800}
-          style={styles.progressRing}
-        />
-      </Animated.View>
 
       {/* ── Main orb with depth layers ── */}
       <Animated.View
@@ -281,8 +214,8 @@ function BreathingOrbInner({ pattern, isRunning, isPaused, size = ORBS_SIZE, sec
             width: orbSize,
             height: orbSize,
             borderRadius: orbSize / 2,
-            backgroundColor: patternDef.color,
-            shadowColor: patternDef.color,
+            backgroundColor: orbColor,
+            shadowColor: orbColor,
           },
           orbStyle,
         ]}
@@ -313,32 +246,6 @@ function BreathingOrbInner({ pattern, isRunning, isPaused, size = ORBS_SIZE, sec
           </Text>
         )}
       </Animated.View>
-
-      {/* ── Orbiting sparkle dots ── */}
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.sparkDot,
-          {
-            width: 6, height: 6, borderRadius: 3,
-            backgroundColor: patternDef.color,
-            shadowColor: patternDef.color,
-          },
-          spark1Style,
-        ]}
-      />
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.sparkDot,
-          {
-            width: 5, height: 5, borderRadius: 2.5,
-            backgroundColor: patternDef.color,
-            shadowColor: patternDef.color,
-          },
-          spark2Style,
-        ]}
-      />
     </View>
   );
 }
@@ -357,24 +264,6 @@ const styles = StyleSheet.create({
     shadowRadius: 30,
     shadowOpacity: 0.4,
     elevation: 10,
-  },
-  ringWave: {
-    position: 'absolute',
-    borderWidth: 1.5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 12,
-    shadowOpacity: 0.3,
-    elevation: 6,
-  },
-  progressRingContainer: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  progressRing: {
-    width: '100%',
-    height: '100%',
   },
   orb: {
     alignItems: 'center',
@@ -406,12 +295,5 @@ const styles = StyleSheet.create({
     textShadowRadius: 6,
     zIndex: 2,
     includeFontPadding: false,
-  },
-  sparkDot: {
-    position: 'absolute',
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 10,
-    shadowOpacity: 1,
-    elevation: 4,
   },
 });

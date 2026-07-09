@@ -5,7 +5,6 @@
 import React, { useCallback } from 'react';
 import { View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { MPText } from '@/components/atoms/MPText';
 import { MPButton } from '@/components/atoms/MPButton';
 import { MPCard } from '@/components/atoms/MPCard';
@@ -20,7 +19,6 @@ import { COLORS, SPACING } from '@/theme';
 
 export default function SleepTonightScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const { lightImpact } = useHaptics();
 
   const bedtime = useSleepStore((s) => s.bedtime);

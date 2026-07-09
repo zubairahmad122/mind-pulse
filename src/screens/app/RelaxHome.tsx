@@ -13,7 +13,6 @@ import {
     Leaf,
     Moon,
     Play,
-    Sparkles,
     ZapOff,
     type LucideIcon,
 } from 'lucide-react-native';
@@ -33,7 +32,9 @@ import {
     type EmotionalState,
 } from '@/constants/emotionalStates';
 import {
+    formatSessionDuration,
     getRecommendedSession,
+    getSessionRoute,
     getSessionsByCategory,
     type SessionCategory,
 } from '@/constants/relaxSessions';
@@ -41,14 +42,14 @@ import { spacing } from '@/constants/spacing';
 import { useRelaxContext } from '@/context/RelaxContext';
 import { recordLastFeature } from '@/components/home/ContinueJourney';
 
-/** Calm violet accent — the Relax pillar's signature colour. */
-const RELAX_ACCENT = '#a78bfa';
+/** Calm green accent — the Relax pillar's single signature colour. */
+const RELAX_ACCENT = '#34D399';
 
-const CATEGORIES: { id: SessionCategory; label: string; icon: LucideIcon; color: string }[] = [
-  { id: 'breathe', label: 'Breathe', icon: Flame, color: '#FF9800' },
-  { id: 'release', label: 'Release', icon: Hand, color: '#FF6B9D' },
-  { id: 'ground', label: 'Ground', icon: Compass, color: '#4CAF50' },
-  { id: 'sleep', label: 'Sleep', icon: Moon, color: '#a78bfa' },
+const CATEGORIES: { id: SessionCategory; label: string; icon: LucideIcon }[] = [
+  { id: 'breathe', label: 'Breathe', icon: Flame },
+  { id: 'release', label: 'Release', icon: Hand },
+  { id: 'ground', label: 'Ground', icon: Compass },
+  { id: 'sleep', label: 'Wind Down', icon: Moon },
 ];
 
 const EMOTION_ICONS: Record<EmotionalState, LucideIcon> = {
@@ -94,10 +95,8 @@ export default function RelaxHome() {
 
   const handleStartSession = (sessionId: string) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push({
-      pathname: '/(app)/relax/player',
-      params: { sessionId },
-    } as never);
+    // Narration sessions route to their dedicated guided screens.
+    router.push(getSessionRoute(sessionId) as never);
   };
 
   const recommendedSession = selectedEmotion ? getRecommendedSession(selectedEmotion) : null;
@@ -130,7 +129,6 @@ export default function RelaxHome() {
           {/* ── Mood hero card ─────────────────────────────────────────── */}
           <GlassCard noPadding style={styles.heroCard}>
             <View style={styles.heroHeader}>
-              <Sparkles size={13} color={RELAX_ACCENT} />
               <Text style={styles.heroEyebrow}>HOW ARE YOU FEELING?</Text>
             </View>
 
@@ -169,7 +167,7 @@ export default function RelaxHome() {
                       />
                     </View>
                     <Text
-                      numberOfLines={1}
+                      numberOfLines={2}
                       style={[
                         styles.moodLabel,
                         isSelected && { color: emotion.color, fontWeight: '800' },
@@ -182,10 +180,10 @@ export default function RelaxHome() {
               })}
             </View>
 
-            <View style={styles.divider} />
-
             {/* Recommended session — appears once a mood is picked */}
-            {recommendedSession ? (
+            {recommendedSession && (
+              <>
+              <View style={styles.divider} />
               <TouchableOpacity
                 onPress={() => handleStartSession(recommendedSession.id)}
                 activeOpacity={0.85}
@@ -228,7 +226,7 @@ export default function RelaxHome() {
                   <View style={styles.metaRow}>
                     <Clock size={12} color={colors.text.tertiary} />
                     <Text style={styles.metaText}>
-                      {Math.ceil(recommendedSession.durationSeconds / 60)} min
+                      {formatSessionDuration(recommendedSession.durationSeconds)}
                     </Text>
                     <View style={styles.metaDot} />
                     <Text style={styles.metaText}>
@@ -248,12 +246,7 @@ export default function RelaxHome() {
                   <Play size={16} color="#fff" fill="#fff" />
                 </View>
               </TouchableOpacity>
-            ) : (
-              <View style={styles.hintRow}>
-                <Text style={styles.hintText}>
-                  Pick a mood and we’ll suggest the right session for you.
-                </Text>
-              </View>
+              </>
             )}
           </GlassCard>
 
@@ -275,22 +268,19 @@ export default function RelaxHome() {
                   activeOpacity={0.85}
                   style={styles.segmentItem}
                 >
-                  {isActive ? (
-                    <LinearGradient
-                      colors={[cat.color, cat.color + 'cc']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={[styles.segmentInner, styles.segmentActive, { shadowColor: cat.color }]}
+                  <View style={[styles.segmentInner, isActive && styles.segmentActive]}>
+                    <CatIcon
+                      size={15}
+                      color={isActive ? RELAX_ACCENT : 'rgba(255,255,255,0.6)'}
+                      strokeWidth={isActive ? 2.1 : 1.9}
+                    />
+                    <Text
+                      numberOfLines={1}
+                      style={isActive ? styles.segmentLabelActive : styles.segmentLabel}
                     >
-                      <CatIcon size={15} color="#fff" strokeWidth={2.1} />
-                      <Text style={styles.segmentLabelActive}>{cat.label}</Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={styles.segmentInner}>
-                      <CatIcon size={15} color={colors.text.tertiary} strokeWidth={1.9} />
-                      <Text style={styles.segmentLabel}>{cat.label}</Text>
-                    </View>
-                  )}
+                      {cat.label}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               );
             })}
@@ -332,13 +322,13 @@ export default function RelaxHome() {
                       <Text style={styles.sessionTitle} numberOfLines={1}>
                         {session.title}
                       </Text>
-                      <Text style={styles.sessionDesc} numberOfLines={1}>
+                      <Text style={styles.sessionDesc} numberOfLines={2}>
                         {session.description}
                       </Text>
                       <View style={styles.metaRow}>
                         <Clock size={11} color={colors.text.tertiary} />
                         <Text style={styles.metaText}>
-                          {Math.ceil(session.durationSeconds / 60)} min
+                          {formatSessionDuration(session.durationSeconds)}
                         </Text>
                         <View style={styles.metaDot} />
                         <Text style={[styles.metaText, styles.capitalize]}>
@@ -346,8 +336,8 @@ export default function RelaxHome() {
                         </Text>
                       </View>
                     </View>
-                    <View style={[styles.sessionArrow, { backgroundColor: session.color + '18', borderColor: session.color + '30' }]}>
-                      <ChevronRight size={17} color={session.color} strokeWidth={2.3} />
+                    <View style={styles.sessionArrow}>
+                      <ChevronRight size={17} color="rgba(255,255,255,0.4)" strokeWidth={2.3} />
                     </View>
                   </View>
                 </GlassCard>
@@ -390,7 +380,8 @@ export default function RelaxHome() {
             </>
           )}
 
-          <View style={{ height: spacing.lg }} />
+          {/* Bottom runway so the last card scrolls clear of the floating tab bar */}
+          <View style={{ height: 64 }} />
         </View>
       </ScreenTransition>
     </ScreenShell>
@@ -477,9 +468,9 @@ const styles = StyleSheet.create({
   moodCell: {
     flex: 1,
     alignItems: 'center',
-    gap: 7,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 3,
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.08)',
@@ -497,25 +488,17 @@ const styles = StyleSheet.create({
   },
   moodLabel: {
     fontSize: 9.5,
+    lineHeight: 13,
     fontWeight: '600',
     color: colors.text.tertiary,
     textAlign: 'center',
+    // Reserve two lines so single- and two-line labels stay vertically aligned.
+    height: 26,
   },
 
   divider: {
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-
-  hintRow: {
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-  },
-  hintText: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: 'rgba(245,247,251,0.5)',
-    fontWeight: '500',
   },
 
   recommendRow: {
@@ -610,22 +593,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 5,
     paddingVertical: 11,
+    paddingHorizontal: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
   segmentActive: {
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 6,
+    backgroundColor: 'rgba(52,211,153,0.16)',
+    borderColor: 'rgba(52,211,153,0.4)',
   },
   segmentLabel: {
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: '700',
-    color: 'rgba(255,255,255,0.45)',
+    color: '#9CA3AF',
   },
   segmentLabelActive: {
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#34D399',
     letterSpacing: 0.2,
   },
 
@@ -680,6 +666,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     flexShrink: 0,
   },
 

@@ -7,7 +7,7 @@ import { View, TouchableOpacity } from 'react-native';
 import { Lightbulb } from 'lucide-react-native';
 import { MPCard } from '@/components/atoms/MPCard';
 import { MPText } from '@/components/atoms/MPText';
-import { COLORS, SPACING } from '@/theme';
+import { COLORS } from '@/theme';
 
 type Props = {
   tip: string;

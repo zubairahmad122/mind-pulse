@@ -54,10 +54,6 @@ function touchToAngle(touchX: number, touchY: number, centerX: number, centerY: 
   return angle;
 }
 
-/** Clamp a value between min and max. */
-function clamp(val: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, val));
-}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

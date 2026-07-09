@@ -21,13 +21,24 @@ import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { useLanguage } from '@/context/LanguageContext';
 import { useBreathingMusic } from '@/hooks/useBreathingMusic';
-import { useVoiceGuide } from '@/hooks/useVoiceGuide';
+import { useAudioGuide } from '@/hooks/useAudioGuide';
+import type { AudioClipId } from '@/constants/audioGuide';
 
 // ─── Phase definitions ────────────────────────────────────────────────────────
 type Phase = 'inhale' | 'hold-in' | 'exhale' | 'hold-out';
 
+type PhaseLabelKey = 'breatheIn' | 'holdBreath' | 'breatheOut' | 'holdEmpty';
+
+// Maps each box-breathing phase to its pre-recorded voice clip.
+const LABEL_CLIP: Record<PhaseLabelKey, AudioClipId> = {
+  breatheIn:  'breathing/breathe-in',
+  holdBreath: 'breathing/hold',
+  breatheOut: 'breathing/breathe-out',
+  holdEmpty:  'breathing/hold-empty',
+};
+
 interface PhaseConfig {
-  labelKey:    'breatheIn' | 'holdBreath' | 'breatheOut' | 'holdEmpty';
+  labelKey:    PhaseLabelKey;
   sub:         string;   // kept in EN — motivational, short
   seconds:     number;
   color:       string;
@@ -84,7 +95,7 @@ const CIRCLE = 220;
 
 export default function BoxBreathingScreen() {
   const router = useRouter();
-  const { guide, stop, scripts } = useVoiceGuide();
+  const { play, stop } = useAudioGuide();
   const { langCode, setLang }    = useLanguage();
 
   const [running, setRunning]   = useState(false);
@@ -135,7 +146,7 @@ export default function BoxBreathingScreen() {
     const cfg = PHASES[p];
     setPhase(p);
     setCountdown(cfg.seconds);
-    guide(scripts[cfg.labelKey]);   // ← localized voice cue
+    play(LABEL_CLIP[cfg.labelKey]);   // ← pre-recorded voice cue
     animateCircle(p);
 
     let secs = cfg.seconds;
@@ -150,7 +161,6 @@ export default function BoxBreathingScreen() {
       if (nextIdx === 0) {
         cyclesRef.current += 1;
         setCycles(cyclesRef.current);
-        if (cyclesRef.current === 3) guide(scripts.wellDone, 200);
       }
       startPhase(nextIdx);
     }, cfg.seconds * 1000);
@@ -163,7 +173,6 @@ export default function BoxBreathingScreen() {
     setElapsedSec(0);
     setRunning(true);
     setSettling(true);
-    guide(scripts.boxBreathIntro, 300);
     elapsedRef.current = setInterval(() => setElapsedSec(s => s + 1), 1000);
     phaseTimerRef.current = setTimeout(() => {
       setSettling(false);

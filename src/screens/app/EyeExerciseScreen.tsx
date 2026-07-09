@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -60,12 +60,9 @@ export default function EyeExerciseScreen() {
     );
   }
 
-  const router = useRouter();
   const activeExercise = exercise;
   const isDone = secondsLeft === 0;
 
-  const handleStart = () => setRunning(true);
-  const handlePause = () => setRunning(false);
   const handleRestart = () => {
     setSecondsLeft(activeExercise.durationSeconds);
     justCompletedRef.current = false;

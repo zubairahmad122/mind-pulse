@@ -10,6 +10,7 @@ import {
 import { useAuth } from './AuthContext';
 import { SleepSession } from '../utils/sleepUtils';
 import { withTimeout } from '@/utils/withTimeout';
+import { reportError } from '@/utils/errorLogger';
 
 type SleepContextType = {
   sessions: SleepSession[];

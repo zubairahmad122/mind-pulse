@@ -7,7 +7,7 @@ import { View, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import { MPText } from '@/components/atoms/MPText';
 import { MPButton } from '@/components/atoms/MPButton';
 import { MPOnboardingSlide } from '@/components/organisms/MPOnboardingSlide';
-import { COLORS, SPACING, RADIUS } from '@/theme';
+import { COLORS, SPACING } from '@/theme';
 import type { ImageSourcePropType } from 'react-native';
 
 export interface OnboardingPage {

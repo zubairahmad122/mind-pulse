@@ -78,7 +78,6 @@ const HEADING_FONT = 'SpaceGrotesk_700Bold';
 const HEADING_SEMI_FONT = 'SpaceGrotesk_600SemiBold';
 const BODY_FONT = 'Inter_400Regular';
 const BODY_SEMI_FONT = 'Inter_600SemiBold';
-const BODY_BOLD_FONT = 'Inter_700Bold';
 
 export const TYPOGRAPHY: Record<TypographyVariant, TypographyToken> = {
   h1: {

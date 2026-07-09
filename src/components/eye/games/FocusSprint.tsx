@@ -346,7 +346,7 @@ export function FocusSprint({ running, onSession, onGameEnd }: Props) {
   const [sessionDone, setSessionDone] = useState(false);
   const [missFlash, setMissFlash]    = useState(false);
   const [rushMode, setRushMode]      = useState(false);
-  const [streakGlow, setStreakGlow]  = useState(false);
+  const [, setStreakGlow] = useState(false);
 
   // Particles
   const [ripples, setRipples] = useState<RippleData[]>([]);

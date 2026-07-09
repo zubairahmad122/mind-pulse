@@ -20,7 +20,7 @@ import { useGreeting } from '@/hooks/useGreeting';
 import { useHomeInsight } from '@/hooks/useHomeInsight';
 import { useMindScore } from '@/hooks/useMindScore';
 import { useSleepScore } from '@/hooks/useSleepScore';
-import { getYesterdayScore, saveDailyScore } from '@/services/dailyScorePersistence';
+import { saveDailyScore } from '@/services/dailyScorePersistence';
 import {
     calculateMindPulseScore,
     getFocusArea,
@@ -101,17 +101,6 @@ export default function HomeDashboardScreen() {
     });
   }, [anyLoading, user?.uid, mindPulseScore, eyes, sleepScore, mind]);
 
-  const [yesterdayScore, setYesterdayScore] = useState<number | null>(null);
-  useEffect(() => {
-    if (!user?.uid) return;
-    let cancelled = false;
-    void getYesterdayScore(user.uid).then((data) => {
-      if (!cancelled) setYesterdayScore(data?.mindPulseScore ?? null);
-    });
-    return () => { cancelled = true; };
-  }, [user?.uid]);
-
-  const scoreDelta = !anyLoading && yesterdayScore !== null ? mindPulseScore - yesterdayScore : null;
 
   const streak = calculateStreak(sessions);
   const [showOnboardingPaywall, setShowOnboardingPaywall] = useState(false);
@@ -364,6 +353,9 @@ export default function HomeDashboardScreen() {
           <DailyTip tip={dailyTip} focusArea={focusArea} />
         </View>
       </StaggerItem>
+
+      {/* Bottom runway so the tip card clears the floating tab bar */}
+      <View style={{ height: 32 }} />
 
       <SoftPaywallModal
         visible={showOnboardingPaywall}

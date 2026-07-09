@@ -19,7 +19,6 @@ import { SaccadeGuide } from '@/components/eye/animations/SaccadeGuide';
 import { StepCountdownRing } from '@/components/eye/animations/StepCountdownRing';
 import { useAuth } from '@/context/AuthContext';
 import { useEyeProgress } from '@/hooks/useEyeProgress';
-import { speak, speakIfSilent, stopSpeaking } from '@/services/voiceGuide';
 
 const C = {
   bg1: '#0a0818', bg2: '#0e0b1e', card: '#1a1535',
@@ -83,42 +82,13 @@ export default function CVSProtocolScreen() {
   const [secondsLeft, setSecondsLeft] = useState(STEPS[0].durationSeconds);
   const [paused, setPaused] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastSpokenStepRef = useRef<number | null>(null);
-  const playedCuesRef = useRef<Set<string>>(new Set());
   const contentOpacity = useSharedValue(1);
   const completionScale = useSharedValue(0.85);
   const completionOpacity = useSharedValue(0);
 
   const step = STEPS[stepIndex];
-  const elapsedInStep = step.durationSeconds - secondsLeft;
-
-  useEffect(() => {
-    if (isMuted) { stopSpeaking(); return; }
-    if (phase === 'active' && !paused) {
-      if (lastSpokenStepRef.current !== stepIndex) {
-        lastSpokenStepRef.current = stepIndex;
-        playedCuesRef.current = new Set();
-        speak(stepIndex === 0 ? `Welcome to your Eye Reset. ${step.intro}` : step.intro);
-      }
-    } else if (phase === 'done') {
-      if (lastSpokenStepRef.current !== -2) { lastSpokenStepRef.current = -2; speak('Session complete.'); }
-    } else if (phase === 'idle') { lastSpokenStepRef.current = null; playedCuesRef.current = new Set(); stopSpeaking(); }
-    else if (paused) stopSpeaking();
-  }, [phase, stepIndex, paused, isMuted, step.intro]);
-
-  useEffect(() => {
-    if (phase !== 'active' || paused || isMuted) return;
-    for (const cue of step.cues) {
-      const key = `${stepIndex}-${cue.atSec}`;
-      if (elapsedInStep >= cue.atSec && !playedCuesRef.current.has(key)) {
-        playedCuesRef.current.add(key);
-        void speakIfSilent(cue.text);
-      }
-    }
-  }, [elapsedInStep, phase, paused, isMuted, stepIndex, step.cues]);
 
   // 🔧 Use Date.now() delta so background/resume doesn't skip seconds
   const lastTickRef = useRef(Date.now());
@@ -141,7 +111,7 @@ export default function CVSProtocolScreen() {
     return clearTimer;
   }, [phase, paused, secondsLeft]);
 
-  useEffect(() => () => { clearTimer(); stopSpeaking(); }, []);
+  useEffect(() => () => { clearTimer(); }, []);
 
   const elapsedBefore = STEPS.slice(0, stepIndex).reduce((s, x) => s + x.durationSeconds, 0);
   const elapsed = elapsedBefore + (step.durationSeconds - secondsLeft);
@@ -198,9 +168,7 @@ export default function CVSProtocolScreen() {
           ) : (
             <View style={styles.headerTitle}><Text style={styles.headerTitleText}>Eye Reset</Text></View>
           )}
-          <TouchableOpacity style={styles.iconBtn} onPress={() => setIsMuted(m => !m)} hitSlop={10}>
-            <Ionicons name={isMuted ? 'volume-mute' : 'volume-high'} size={18} color={isMuted ? C.muted : C.purple} />
-          </TouchableOpacity>
+          <View style={styles.iconBtn} />
         </View>
 
         {/* IDLE */}

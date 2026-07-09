@@ -7,7 +7,7 @@ import { View, TouchableOpacity, Animated } from 'react-native';
 import { MPIcon } from '@/components/atoms/MPIcon';
 import { MPText } from '@/components/atoms/MPText';
 import { MPBadge } from '@/components/atoms/MPBadge';
-import { COLORS, RADIUS, SPACING } from '@/theme';
+import { COLORS, RADIUS } from '@/theme';
 
 const DOT_SIZE = 5;
 const TOTAL_DOTS = 4;

@@ -1,4 +1,5 @@
 import Svg, { Circle, Ellipse, Line, Path } from 'react-native-svg';
+import { CometTraceIcon } from '@/components/eye/games/icons/GameIcons';
 
 interface IconProps {
   size?: number;
@@ -88,7 +89,7 @@ export function RecoverySessionIcon({ sessionId, size = 36 }: RecoveryIconProps)
     case 'quick-relief':
       return <QuickReliefIcon size={size} color={color} />;
     case 'comet-trace':
-      return <QuickReliefIcon size={size} color={color} />;
+      return <CometTraceIcon size={size} color={color} />;
     case 'cvs-protocol':
     default:
       return <DailyRecoveryIcon size={size} color={color} />;

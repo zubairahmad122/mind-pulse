@@ -5,11 +5,9 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { MPText } from '@/components/atoms/MPText';
 import { MPFeatureCard } from '@/components/molecules/MPFeatureCard';
 import { MPSectionHeader } from '@/components/molecules/MPSectionHeader';
-import { MPEmptyState } from '@/components/molecules/MPEmptyState';
 import { COLORS, SPACING } from '@/theme';
 
 const CATEGORIES = [

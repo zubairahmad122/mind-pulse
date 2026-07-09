@@ -11,7 +11,6 @@ export interface BreathingPatternDef {
   id: BreathingPattern;
   title: string;
   description: string;
-  durationSeconds: number;
   cycles: number;
   phases: BreathingPhase[];
   color: string;
@@ -19,20 +18,35 @@ export interface BreathingPatternDef {
   emoji: string;
 }
 
+/**
+ * SINGLE SOURCE OF TRUTH for breathing-session timing.
+ *
+ * A session's length IS `cycles × cycle length` — there is no separately
+ * stored duration anywhere. relaxSessions.ts derives its durationSeconds
+ * from these helpers and the player runs the timer on that exact value,
+ * so the card, the timer, and the real end always agree and every session
+ * ends exactly on the last cycle's final exhale/hold.
+ */
+export function patternCycleSeconds(def: BreathingPatternDef): number {
+  return def.phases.reduce((sum, p) => sum + p.duration, 0);
+}
+
+export function patternDurationSeconds(def: BreathingPatternDef): number {
+  return def.cycles * patternCycleSeconds(def);
+}
+
 export const BREATHING_PATTERNS: Record<BreathingPattern, BreathingPatternDef> = {
   calm: {
     id: 'calm',
     title: 'Calm Flow',
-    description: 'No rhythm to follow. Let your breathing find its pace.',
-    durationSeconds: 533,
-    cycles: -1, // Infinite (user-paced)
+    description: 'Gentle five-second waves. Breathe with the circle.',
+    cycles: 54, // 54 × 10s = 540s = exactly 9:00
+    // Coherent breathing: even 5-in / 5-out, no holds — the softest
+    // guided rhythm. The orb expands and contracts with these phases
+    // just like Box Breathing / Reset Wave.
     phases: [
-      {
-        name: 'inhale',
-        duration: 0, // User paced
-        label: 'Breathe In',
-        color: '#4FC3F7',
-      },
+      { name: 'inhale', duration: 5, label: 'Breathe In', color: '#4FC3F7' },
+      { name: 'exhale', duration: 5, label: 'Breathe Out', color: '#4FC3F7' },
     ],
     color: '#4FC3F7',
     glowColor: 'rgba(79,195,247,0.25)',
@@ -43,8 +57,7 @@ export const BREATHING_PATTERNS: Record<BreathingPattern, BreathingPatternDef> =
     id: 'box',
     title: 'Box Breathing',
     description: 'Instant calm. Structure you can follow.',
-    durationSeconds: 320,
-    cycles: 20,
+    cycles: 20, // 20 × 16s = 320s = 5:20
     phases: [
       { name: 'inhale', duration: 4, label: 'Inhale', color: '#4FC3F7' },
       { name: 'hold-in', duration: 4, label: 'Hold', color: '#B39DDB' },
@@ -60,8 +73,7 @@ export const BREATHING_PATTERNS: Record<BreathingPattern, BreathingPatternDef> =
     id: 'wave',
     title: 'Reset Wave',
     description: 'Wake up your senses and restore energy.',
-    durationSeconds: 375,
-    cycles: 27,
+    cycles: 27, // 27 × 14s = 378s = 6:18
     phases: [
       { name: 'inhale', duration: 4, label: 'Inhale', color: '#FF9800' },
       { name: 'hold-in', duration: 2, label: 'Hold', color: '#FFC107' },
@@ -77,8 +89,7 @@ export const BREATHING_PATTERNS: Record<BreathingPattern, BreathingPatternDef> =
     id: 'drop',
     title: 'Sleep Drop',
     description: 'Slow everything down. Drift into rest.',
-    durationSeconds: 648,
-    cycles: 50,
+    cycles: 30, // 30 × 21s = 630s = 10:30 (50 was a 17.5-min lie)
     phases: [
       { name: 'inhale', duration: 4, label: 'Inhale', color: '#a78bfa' },
       { name: 'hold-in', duration: 4, label: 'Hold', color: '#8b6fd6' },

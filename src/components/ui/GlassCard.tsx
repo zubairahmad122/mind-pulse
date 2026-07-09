@@ -41,16 +41,19 @@ interface GlassCardProps {
 // wrapper only ever has one non-absolute child, so those props have no visible
 // effect there, and content falls back to the default column with no gap.
 const CHILD_LAYOUT_KEYS = [
-  'flexDirection',
-  'alignItems',
-  'justifyContent',
-  'flexWrap',
-  'gap',
-  'rowGap',
-  'columnGap',
+  "flexDirection",
+  "alignItems",
+  "justifyContent",
+  "flexWrap",
+  "gap",
+  "rowGap",
+  "columnGap",
 ] as const;
 
-function splitCardStyle(style: StyleProp<ViewStyle>): { outer: ViewStyle; inner: ViewStyle } {
+function splitCardStyle(style: StyleProp<ViewStyle>): {
+  outer: ViewStyle;
+  inner: ViewStyle;
+} {
   const flat = (StyleSheet.flatten(style) ?? {}) as ViewStyle;
   const outer: ViewStyle = {};
   const inner: ViewStyle = {};
@@ -107,7 +110,9 @@ export function GlassCard({
         style={baseStyles.bottomShade}
         pointerEvents="none"
       />
-      <View style={[noPadding ? undefined : baseStyles.padding, inner]}>{children}</View>
+      <View style={[noPadding ? undefined : baseStyles.padding, inner]}>
+        {children}
+      </View>
     </View>
   );
 }
@@ -125,7 +130,6 @@ const baseStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 24,
-    elevation: 6,
   },
   topSheen: {
     position: "absolute",

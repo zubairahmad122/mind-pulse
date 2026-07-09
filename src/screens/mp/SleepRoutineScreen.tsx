@@ -6,7 +6,6 @@ import React from 'react';
 import { View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { MPText } from '@/components/atoms/MPText';
 import { MPCard } from '@/components/atoms/MPCard';
 import { MPListItem } from '@/components/molecules/MPListItem';
 import { MPGoalChip } from '@/components/molecules/MPGoalChip';

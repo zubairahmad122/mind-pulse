@@ -23,7 +23,7 @@ import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { useLanguage } from '@/context/LanguageContext';
 import { useBreathingMusic } from '@/hooks/useBreathingMusic';
-import { useVoiceGuide } from '@/hooks/useVoiceGuide';
+import { useAudioGuide } from '@/hooks/useAudioGuide';
 
 // ─── Calm Wave pattern: 4 in / 2 hold / 6 out ────────────────────────────────
 type CWPhase = 'inhale' | 'hold' | 'exhale';
@@ -48,7 +48,7 @@ const CIRCLE = 220;
 
 export default function CalmWaveScreen() {
   const router = useRouter();
-  const { guide, stop, scripts } = useVoiceGuide();
+  const { play, stop } = useAudioGuide();
   const { langCode, setLang }    = useLanguage();
 
   const [running, setRunning]       = useState(false);
@@ -136,10 +136,10 @@ export default function CalmWaveScreen() {
     setCountdown(secCount);
     animatePhase(p);
 
-    // Voice cue (localized)
-    if (p === 'inhale') guide(scripts.breatheIn);
-    else if (p === 'hold') guide(scripts.holdBreath);
-    else guide(scripts.breatheOut);
+    // Voice cue (pre-recorded clip)
+    if (p === 'inhale') play('breathing/breathe-in');
+    else if (p === 'hold') play('breathing/hold');
+    else play('breathing/breathe-out');
 
     let secs = secCount;
     countTimer.current = setInterval(() => {
@@ -153,7 +153,6 @@ export default function CalmWaveScreen() {
       if (nextIdx === 0) {
         cyclesRef.current += 1;
         setCycles(cyclesRef.current);
-        if (cyclesRef.current === 3) guide(scripts.wellDone, 200);
       }
       startPhase(nextIdx);
     }, dur);
@@ -167,7 +166,6 @@ export default function CalmWaveScreen() {
     runRef.current = true;
     setRunning(true);
     setSettling(true);
-    guide(scripts.boxBreathIntro.replace('box', 'calm wave').replace('बॉक्स', 'कैल्म वेव'), 300);
     elapsedRef.current = setInterval(() => setElapsedSec(s => s + 1), 1000);
     phaseTimer.current = setTimeout(() => {
       setSettling(false);

@@ -11,6 +11,8 @@ import { ScreenTransition } from '@/components/ui/ScreenTransition';
 import { PaywallGate } from '@/components/paywall/PaywallGate';
 import { colors } from '@/constants/colors';
 import {
+  formatSessionDuration,
+  getSessionRoute,
   getSessionsByCategory,
   type SessionCategory,
   RELAX_SESSIONS,
@@ -33,10 +35,8 @@ export default function RelaxLibrary() {
 
   const handleStartSession = (sessionId: string) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push({
-      pathname: '/(app)/relax/player',
-      params: { sessionId },
-    } as never);
+    // Narration sessions route to their dedicated guided screens.
+    router.push(getSessionRoute(sessionId) as never);
   };
 
   return (
@@ -98,7 +98,7 @@ export default function RelaxLibrary() {
                         <View style={styles.metaRow}>
                           <Clock size={11} color={colors.text.tertiary} strokeWidth={2} />
                           <Text style={styles.metaText}>
-                            {Math.ceil(session.durationSeconds / 60)} min
+                            {formatSessionDuration(session.durationSeconds)}
                           </Text>
                           <View style={styles.metaDot} />
                           <Text style={[styles.metaText, styles.capitalize]}>{session.difficulty}</Text>

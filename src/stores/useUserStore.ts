@@ -13,7 +13,7 @@ interface UserState {
   streak: number;
   lastSessionDate: string | null;
   streakFreezeUsed: boolean;
-  language: 'en' | 'hi' | 'ur' | 'ps';
+  language: 'en' | 'ur';
 
   // Actions
   completeOnboarding: () => void;
@@ -21,7 +21,7 @@ interface UserState {
   resetStreak: () => void;
   useStreakFreeze: () => void;
   upgradeToPro: () => void;
-  setLanguage: (lang: 'en' | 'hi' | 'ur' | 'ps') => void;
+  setLanguage: (lang: 'en' | 'ur') => void;
 }
 
 export const useUserStore = create<UserState>()(

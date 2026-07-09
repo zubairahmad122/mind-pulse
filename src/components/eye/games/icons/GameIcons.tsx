@@ -51,17 +51,19 @@ export function FocusSprintIcon({ size = 40, color = '#6ee7b7' }: IconProps) {
   );
 }
 
-// ─── Comet Trace — Solid blue disc + simple trail ────────────────────────────
+// ─── Comet Trace — Target / following dot ──────────────────────────────────
 export function CometTraceIcon({ size = 40, color = '#60a5fa' }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 40 40">
-      {/* Trail — fading circles trailing up-left from the core */}
-      <Circle cx="13" cy="10" r="1.6" fill={color} opacity={0.18} />
-      <Circle cx="17" cy="13" r="2.4" fill={color} opacity={0.32} />
-      <Circle cx="22" cy="16" r="3.4" fill={color} opacity={0.5}  />
-      {/* Solid core + small white highlight */}
-      <Circle cx="29" cy="20" r="6"   fill={color} />
-      <Circle cx="29" cy="20" r="2"   fill="#ffffff" opacity={0.9} />
+      {/* Outer ring */}
+      <Circle cx="20" cy="20" r="16" stroke={color} strokeWidth="1.2" fill="none" opacity={0.35} />
+      {/* Mid ring */}
+      <Circle cx="20" cy="20" r="10" stroke={color} strokeWidth="1.5" fill="none" opacity={0.55} />
+      {/* Inner ring */}
+      <Circle cx="20" cy="20" r="5" stroke={color} strokeWidth="1.8" fill="none" opacity={0.8} />
+      {/* Center dot — the thing you follow */}
+      <Circle cx="20" cy="20" r="3" fill={color} />
+      <Circle cx="20" cy="20" r="1.2" fill="#ffffff" opacity={0.9} />
     </Svg>
   );
 }
@@ -95,20 +97,20 @@ export function SpiralIcon({ size = 40, color = '#a78bfa' }: IconProps) {
   );
 }
 
-// ─── Dichoptic Reaction — Dual overlapping color circles ──────────────────────
+// ─── Dichoptic Reaction — Two distinct eyes side-by-side ─────────────────
 export function DichopticReactionIcon({ size = 40 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 40 40">
-      {/* Red circle (left eye) */}
-      <Circle cx="16" cy="20" r="12" fill="#FF3366" opacity={0.6} />
-      {/* Cyan circle (right eye) — overlaps to show anaglyph */}
-      <Circle cx="24" cy="20" r="12" fill="#00D4FF" opacity={0.6} />
-      {/* Glasses icon */}
-      <Circle cx="20" cy="20" r="6" fill="none" stroke="#fff" strokeWidth="1.5" />
-      <Line x1="14" y1="20" x2="20" y2="20" stroke="#fff" strokeWidth="0.8" strokeDasharray="2,1" />
-      {/* Bridge */}
-      <Line x1="14" y1="18" x2="18" y2="18" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" />
-      <Line x1="22" y1="18" x2="26" y2="18" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" />
+      {/* Left eye — almond shape + iris + pupil */}
+      <Path d="M 5 20 Q 12 10 20 20 Q 12 30 5 20 Z" fill="#FF3366" opacity={0.6} />
+      <Circle cx="12" cy="20" r="4.5" fill="#FF3366" opacity={0.8} />
+      <Circle cx="12" cy="20" r="2" fill="#0a0818" />
+      <Circle cx="12" cy="19" r="0.8" fill="#fff" opacity={0.9} />
+      {/* Right eye — almond shape + iris + pupil */}
+      <Path d="M 20 20 Q 28 10 35 20 Q 28 30 20 20 Z" fill="#00D4FF" opacity={0.6} />
+      <Circle cx="28" cy="20" r="4.5" fill="#00D4FF" opacity={0.8} />
+      <Circle cx="28" cy="20" r="2" fill="#0a0818" />
+      <Circle cx="28" cy="19" r="0.8" fill="#fff" opacity={0.9} />
     </Svg>
   );
 }

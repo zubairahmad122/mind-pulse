@@ -19,6 +19,15 @@ import { typography } from '@/constants/typography';
 
 const INTENSITY_LABELS = ['Softest', 'Gentle', 'Active'];
 
+// Breathe modes play in the Relax player (professionally recorded voice
+// guidance) — the old TTS-based session screen was removed.
+const MODE_TO_RELAX_SESSION: Record<string, string> = {
+  'calm-flow': 'calm-flow',
+  'box-release': 'box-breathing',
+  'sleep-drop': 'sleep-drop',
+  'reset-wave': 'reset-wave',
+};
+
 function ModeCard({ mode, index, onPress }: { mode: BreathMode; index: number; onPress: () => void }) {
   const opacity = useSharedValue(0);
   const transY  = useSharedValue(28);
@@ -136,8 +145,8 @@ export default function BreatheSelectScreen() {
             index={i}
             onPress={() =>
               router.push({
-                pathname: '/(app)/stress/breathe-session',
-                params: { modeId: mode.id },
+                pathname: '/(app)/relax/player',
+                params: { sessionId: MODE_TO_RELAX_SESSION[mode.id] ?? 'calm-flow' },
               } as never)
             }
           />

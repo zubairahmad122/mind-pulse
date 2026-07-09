@@ -3,7 +3,6 @@
 // Use react-native-reanimated for ALL animations. No LayoutAnimation.
 // ──────────────────────────────────────────────────────────────────────────────
 
-import type { EasingFunction } from 'react-native-reanimated';
 import { Easing } from 'react-native-reanimated';
 
 // ── TIMING TOKENS ────────────────────────────────────────────────────────────

@@ -1,8 +1,25 @@
 import { Wind, Box, Waves, Moon, Heart, Zap, Globe, type LucideIcon } from 'lucide-react-native';
 import type { FeatureId } from './entitlements';
 import type { BreathingMusicId } from './breathingMusic';
-import type { BreathingPattern } from './breathingPatterns';
+import { BREATHING_PATTERNS, patternDurationSeconds, type BreathingPattern } from './breathingPatterns';
 import type { EmotionalState } from './emotionalStates';
+
+// Breathing sessions take their EXACT length from the pattern (cycles ×
+// cycle seconds) so the card, the player timer, and the last cycle always
+// agree. Narration sessions keep hand-set estimates.
+const PATTERN_SECONDS = {
+  calm: patternDurationSeconds(BREATHING_PATTERNS.calm),
+  box: patternDurationSeconds(BREATHING_PATTERNS.box),
+  wave: patternDurationSeconds(BREATHING_PATTERNS.wave),
+  drop: patternDurationSeconds(BREATHING_PATTERNS.drop),
+} as const;
+
+/** "540 → 9 min", "320 → 5:20 min" — one formatter for every duration label. */
+export function formatSessionDuration(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return s === 0 ? `${m} min` : `${m}:${String(s).padStart(2, '0')} min`;
+}
 
 export type SessionCategory = 'breathe' | 'release' | 'ground' | 'sleep';
 
@@ -39,8 +56,8 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     id: 'calm-flow',
     title: 'Calm Flow',
     category: 'breathe',
-    durationSeconds: 533,
-    description: 'No rhythm to follow. Let your breathing find its pace.',
+    durationSeconds: PATTERN_SECONDS.calm,
+    description: 'Gentle five-second waves. Breathe with the circle.',
     emoji: '🫁',
     icon: Wind,
     color: '#4FC3F7',
@@ -57,7 +74,7 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     id: 'box-breathing',
     title: 'Box Breathing',
     category: 'breathe',
-    durationSeconds: 320,
+    durationSeconds: PATTERN_SECONDS.box,
     description: 'Calm your nervous system. Structure you can follow.',
     emoji: '📦',
     icon: Box,
@@ -75,7 +92,7 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     id: 'reset-wave',
     title: 'Reset Wave',
     category: 'breathe',
-    durationSeconds: 375,
+    durationSeconds: PATTERN_SECONDS.wave,
     description: 'Wake up your senses. Restore your energy.',
     emoji: '🌊',
     icon: Waves,
@@ -92,9 +109,9 @@ export const RELAX_SESSIONS: RelaxSession[] = [
 
   {
     id: 'sleep-drop',
-    title: 'Sleep Drop',
+    title: 'Bedtime Relaxation',
     category: 'sleep',
-    durationSeconds: 648,
+    durationSeconds: PATTERN_SECONDS.drop,
     description: 'Slow everything down. Drift into rest.',
     emoji: '😴',
     icon: Moon,
@@ -132,7 +149,9 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     id: 'muscle-release',
     title: 'Muscle Release',
     category: 'release',
-    durationSeconds: 345,
+    // Estimate between the languages: EN zones run ~4 min, HI ~6 min
+    // (per-zone waits differ — see tension-release PHASE_SECONDS).
+    durationSeconds: 300,
     description: 'Squeeze everything tight. Then let it all collapse.',
     emoji: '💪',
     icon: Zap,
@@ -168,6 +187,25 @@ export const RELAX_SESSIONS: RelaxSession[] = [
 
 export function getSessionById(id: string): RelaxSession | null {
   return RELAX_SESSIONS.find(s => s.id === id) || null;
+}
+
+/**
+ * Where a session actually plays. Narration sessions (Body Scan, Muscle
+ * Release, Grounding) have DEDICATED fully-voice-guided screens — sending them
+ * to the generic breathing player would leave the user with an intro and then
+ * silence. Everything else uses the breathing player.
+ */
+export function getSessionRoute(sessionId: string): { pathname: string; params?: { sessionId: string } } {
+  switch (sessionId) {
+    case 'body-scan':
+      return { pathname: '/(app)/stress/body-scan' };
+    case 'muscle-release':
+      return { pathname: '/(app)/stress/tension-release' };
+    case '5-4-3-2-1':
+      return { pathname: '/(app)/stress/grounding' };
+    default:
+      return { pathname: '/(app)/relax/player', params: { sessionId } };
+  }
 }
 
 export function getSessionsByCategory(category: SessionCategory): RelaxSession[] {

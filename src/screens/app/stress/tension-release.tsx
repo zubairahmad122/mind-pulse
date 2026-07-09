@@ -1,8 +1,19 @@
 import * as Haptics from 'expo-haptics';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Dumbbell,
+  Footprints,
+  Grip,
+  Hand,
+  Leaf,
+  PersonStanding,
+  Play,
+  Smile,
+  Wind,
+  X,
+} from 'lucide-react-native';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -14,57 +25,61 @@ import Animated, {
 import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { PrimaryButton } from '@/components/ui/PrimaryButton';
-import { TENSION_SCRIPTS, type SessionLang } from '@/constants/sessionScripts';
-import { LANGUAGES } from '@/constants/languages';
+import { GradientCTA } from '@/components/ui/GradientCTA';
+import { TENSION_SCRIPTS } from '@/constants/sessionScripts';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+import { resolveGuideLang, type AudioClipId } from '@/constants/audioGuide';
 import { useLanguage } from '@/context/LanguageContext';
-import { useVoiceGuide } from '@/hooks/useVoiceGuide';
+import { useAudioGuide } from '@/hooks/useAudioGuide';
 
-// Zone icons (no emoji)
-const ZONE_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
-  'hand-left-outline',
-  'body-outline',
-  'happy-outline',
-  'fitness-outline',
-  'walk-outline',
-  'footsteps-outline',
+// One accent across the whole Relax feature — matches RelaxSessionPlayer.
+const ACCENT = '#34D399';
+
+// Zone icons (lucide, matching the app's icon set)
+const ZONE_ICONS = [Hand, PersonStanding, Smile, Wind, Footprints, Grip] as const;
+
+// Pre-recorded voice clip per zone (order matches TENSION_SCRIPTS zones).
+const ZONE_CLIPS: AudioClipId[] = [
+  'tension/fists',
+  'tension/shoulders',
+  'tension/jaw',
+  'tension/stomach',
+  'tension/legs',
+  'tension/toes',
 ];
 
-const ZONE_COLORS = ['#90CAF9', '#CE93D8', '#FFE082', '#A5D6A7', '#4FC3F7', '#80CBC4'];
+const ZONE_COUNT = ZONE_CLIPS.length;
 
-const SQUEEZE_SECONDS = 5;
-const RELEASE_SECONDS = 4;
-
-const RELAX_LANGS = LANGUAGES.filter(l => l.code !== 'ps');
-
-function toSessLang(code: string): SessionLang {
-  return (code === 'ps' ? 'ur' : code) as SessionLang;
-}
+// Phase lengths fit the narration + a real hold/rest. Hindi clips run longer
+// than English, so the timing adapts to the recorded guide language.
+const PHASE_SECONDS = {
+  en: { squeeze: 18, release: 18 },
+  hi: { squeeze: 28, release: 26 },
+} as const;
 
 export default function TensionReleaseScreen() {
   const router = useRouter();
-  const { guide, stop } = useVoiceGuide();
-  const { langCode, setLang } = useLanguage();
+  const { play, stop } = useAudioGuide();
+  const { langCode, scripts } = useLanguage();
+  const phaseSeconds = PHASE_SECONDS[resolveGuideLang(langCode)];
 
-  const [phase, setPhase]      = useState<'idle' | 'running' | 'done'>('idle');
+  const [phase, setPhase]      = useState<'idle' | 'intro' | 'running' | 'done'>('idle');
   const [zoneIdx, setZoneIdx]  = useState(0);
   const [sub, setSub]          = useState<'squeeze' | 'release'>('squeeze');
-  const [secondsLeft, setSecs] = useState(SQUEEZE_SECONDS);
+  const [secondsLeft, setSecs] = useState<number>(phaseSeconds.squeeze);
 
   const progressAnim = useSharedValue(0);
   const ringScale    = useSharedValue(1);
   const ringOpacity  = useSharedValue(0.5);
-  const timerRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef      = useRef<ReturnType<typeof setInterval> | null>(null);
+  const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const zonesStartedRef = useRef(false);
 
-  const sessLang = toSessLang(langCode);
-  const en       = TENSION_SCRIPTS.en;
-  const zoneEn   = en.zones[zoneIdx];
-  const color    = ZONE_COLORS[zoneIdx];
-
-  const langOpt = RELAX_LANGS.find(l => l.code === langCode) ?? RELAX_LANGS[0];
+  const en     = TENSION_SCRIPTS.en;
+  const zoneEn = en.zones[zoneIdx];
+  const ZoneIcon = ZONE_ICONS[zoneIdx];
 
   function clearTimer() {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -76,8 +91,7 @@ export default function TensionReleaseScreen() {
   }
 
   function runPhase(idx: number, nextSub: 'squeeze' | 'release') {
-    const dur   = nextSub === 'squeeze' ? SQUEEZE_SECONDS : RELEASE_SECONDS;
-    const voice = TENSION_SCRIPTS[sessLang];
+    const dur = nextSub === 'squeeze' ? phaseSeconds.squeeze : phaseSeconds.release;
 
     setZoneIdx(idx);
     setSub(nextSub);
@@ -89,10 +103,10 @@ export default function TensionReleaseScreen() {
     if (nextSub === 'squeeze') {
       triggerPulse();
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      guide(voice.zones[idx].cue, 200);
+      play(ZONE_CLIPS[idx], 200);
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      guide(voice.releaseCue, 200);
+      play('tension/release', 200);
     }
 
     clearTimer();
@@ -106,9 +120,9 @@ export default function TensionReleaseScreen() {
           runPhase(idx, 'release');
         } else {
           const next = idx + 1;
-          if (next >= ZONE_COLORS.length) {
+          if (next >= ZONE_COUNT) {
             cancelAnimation(progressAnim);
-            guide(TENSION_SCRIPTS[sessLang].complete, 200);
+            play('tension/complete', 400);
             setPhase('done');
           } else {
             runPhase(next, 'squeeze');
@@ -119,16 +133,29 @@ export default function TensionReleaseScreen() {
   }
 
   function begin() {
-    setPhase('running');
-    runPhase(0, 'squeeze');
+    setPhase('intro');
+    zonesStartedRef.current = false;
+    const startZones = () => {
+      if (zonesStartedRef.current) return;
+      zonesStartedRef.current = true;
+      setPhase('running');
+      runPhase(0, 'squeeze');
+    };
+    // No dedicated tension intro was recorded, so the settle-in guide opens the
+    // session ("Find a comfortable position…"). Fallback keeps things moving.
+    play('breathing/settle-in', 300, 1, {
+      protect: true,
+      onDone: () => setTimeout(startZones, 800),
+    });
+    introTimerRef.current = setTimeout(startZones, 30000);
   }
 
   function skipNext() {
     clearTimer();
     cancelAnimation(progressAnim);
     const next = zoneIdx + 1;
-    if (next >= ZONE_COLORS.length) {
-      guide(TENSION_SCRIPTS[sessLang].complete, 200);
+    if (next >= ZONE_COUNT) {
+      play('tension/complete', 400);
       setPhase('done');
     } else {
       runPhase(next, 'squeeze');
@@ -136,23 +163,23 @@ export default function TensionReleaseScreen() {
   }
 
   function reset() {
+    if (introTimerRef.current) clearTimeout(introTimerRef.current);
+    zonesStartedRef.current = true;
     clearTimer();
     stop();
     cancelAnimation(progressAnim);
     setPhase('idle');
     setZoneIdx(0);
     setSub('squeeze');
-    setSecs(SQUEEZE_SECONDS);
+    setSecs(phaseSeconds.squeeze);
     progressAnim.value = 0;
   }
 
-  function cycleLang() {
-    const idx  = RELAX_LANGS.findIndex(l => l.code === langCode);
-    const next = RELAX_LANGS[(idx + 1) % RELAX_LANGS.length];
-    setLang(next.code);
-  }
-
-  useEffect(() => () => { clearTimer(); stop(); }, []);
+  useEffect(() => () => {
+    if (introTimerRef.current) clearTimeout(introTimerRef.current);
+    clearTimer();
+    stop();
+  }, []);
 
   const progressStyle = useAnimatedStyle(() => ({
     width: `${Math.round(progressAnim.value * 100)}%` as `${number}%`,
@@ -164,44 +191,55 @@ export default function TensionReleaseScreen() {
 
   return (
     <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
-      {/* Custom header with language switcher */}
+      {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => { reset(); router.back(); }} style={styles.closeBtn}>
-          <Ionicons name="close" size={18} color={colors.text.secondary} />
+          <X size={18} color={colors.text.secondary} strokeWidth={2.2} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Muscle Release</Text>
-          {phase === 'running' && (
-            <Text style={styles.headerSub}>Zone {zoneIdx + 1} / {ZONE_COLORS.length}</Text>
-          )}
+          <Text style={styles.headerSub}>Squeeze, then let go</Text>
         </View>
-        <TouchableOpacity onPress={cycleLang} style={styles.langBtn} disabled={phase === 'running'}>
-          <Text style={styles.langFlag}>{langOpt.flag}</Text>
-          <Text style={[styles.langCode, phase === 'running' && { opacity: 0.4 }]}>
-            {langOpt.code.toUpperCase()}
-          </Text>
-        </TouchableOpacity>
+        {phase === 'running' ? (
+          <View style={[styles.counterPill, { borderColor: ACCENT + '30' }]}>
+            <Text style={[styles.counterText, { color: ACCENT }]}>
+              {zoneIdx + 1}/{ZONE_COUNT}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.headerSpacer} />
+        )}
       </View>
 
       <View style={styles.center}>
         {/* ── Idle ── */}
         {phase === 'idle' && (
           <View style={styles.introWrap}>
-            <Ionicons name="barbell-outline" size={64} color={colors.accent.purple} />
+            <Dumbbell size={56} color={ACCENT} strokeWidth={1.4} />
             <Text style={styles.introTitle}>Muscle Release</Text>
             <Text style={styles.introSub}>
               Squeeze each muscle group tight, then let it go completely.{'\n'}
               A guided pace through 6 zones — no taps needed, just follow along.
             </Text>
-            <View style={styles.zoneList}>
-              {en.zones.map((z, i) => (
-                <View key={z.label} style={styles.zoneRow}>
-                  <Ionicons name={ZONE_ICONS[i]} size={20} color={ZONE_COLORS[i]} style={styles.zoneRowIcon} />
-                  <Text style={styles.zoneRowLabel}>{z.label}</Text>
-                </View>
-              ))}
-            </View>
-            <PrimaryButton label="Begin Muscle Release" onPress={begin} style={styles.startBtn} />
+            <GlassCard style={styles.zoneList}>
+              {en.zones.map((z, i) => {
+                const RowIcon = ZONE_ICONS[i];
+                return (
+                  <View key={z.label} style={styles.zoneRow}>
+                    <RowIcon size={18} color={ACCENT} strokeWidth={1.8} style={styles.zoneRowIcon} />
+                    <Text style={styles.zoneRowLabel}>{z.label}</Text>
+                  </View>
+                );
+              })}
+            </GlassCard>
+          </View>
+        )}
+
+        {/* ── Intro (voice settling the user in) ── */}
+        {phase === 'intro' && (
+          <View style={styles.introWrap}>
+            <Dumbbell size={56} color={ACCENT} strokeWidth={1.4} />
+            <Text style={styles.settleText}>{scripts.breatheSettleIntro}</Text>
           </View>
         )}
 
@@ -209,19 +247,22 @@ export default function TensionReleaseScreen() {
         {phase === 'running' && (
           <>
             <View style={styles.iconWrap}>
-              <Animated.View style={[styles.iconRing, { borderColor: color }, ringStyle]} />
-              <Ionicons name={ZONE_ICONS[zoneIdx]} size={60} color={color} />
+              <Animated.View style={[styles.iconRing, { borderColor: ACCENT }, ringStyle]} />
+              <ZoneIcon size={56} color={ACCENT} strokeWidth={1.5} />
             </View>
 
-            <Text style={[styles.zoneName, { color }]}>{zoneEn.label.toUpperCase()}</Text>
+            <Text style={[styles.zoneName, { color: ACCENT }]}>{zoneEn.label.toUpperCase()}</Text>
 
             <View style={styles.dots}>
-              {ZONE_COLORS.map((c, i) => (
+              {ZONE_CLIPS.map((_, i) => (
                 <View
                   key={i}
                   style={[
                     styles.dot,
-                    { backgroundColor: i < zoneIdx ? c : i === zoneIdx ? c : 'rgba(255,255,255,0.1)' },
+                    {
+                      backgroundColor:
+                        i <= zoneIdx ? ACCENT : 'rgba(255,255,255,0.12)',
+                    },
                     i === zoneIdx && styles.dotActive,
                   ]}
                 />
@@ -229,7 +270,7 @@ export default function TensionReleaseScreen() {
             </View>
 
             <GlassCard style={styles.cueCard}>
-              <Text style={[styles.phaseLabel, { color: sub === 'squeeze' ? colors.status.warning : '#80CBC4' }]}>
+              <Text style={[styles.phaseLabel, { color: sub === 'squeeze' ? '#FBBF24' : ACCENT }]}>
                 {sub === 'squeeze' ? en.squeeze : en.release}
               </Text>
               <Text style={styles.cue}>
@@ -237,9 +278,9 @@ export default function TensionReleaseScreen() {
               </Text>
 
               <View style={styles.timerBar}>
-                <Animated.View style={[styles.timerFill, { backgroundColor: color }, progressStyle]} />
+                <Animated.View style={[styles.timerFill, { backgroundColor: ACCENT }, progressStyle]} />
               </View>
-              <Text style={[styles.timerSecs, { color }]}>{secondsLeft}s</Text>
+              <Text style={[styles.timerSecs, { color: ACCENT }]}>{secondsLeft}s</Text>
             </GlassCard>
           </>
         )}
@@ -247,7 +288,7 @@ export default function TensionReleaseScreen() {
         {/* ── Done ── */}
         {phase === 'done' && (
           <GlassCard style={styles.done}>
-            <Ionicons name="sparkles-outline" size={52} color="#80CBC4" />
+            <Leaf size={48} color={ACCENT} strokeWidth={1.5} />
             <Text style={styles.doneText}>{en.complete}</Text>
           </GlassCard>
         )}
@@ -255,10 +296,21 @@ export default function TensionReleaseScreen() {
 
       {/* ── Buttons ── */}
       <View style={styles.btnArea}>
+        {phase === 'idle' && (
+          <GradientCTA
+            label="BEGIN MUSCLE RELEASE"
+            icon={<Play size={16} color="#fff" />}
+            onPress={begin}
+            colors={[ACCENT, ACCENT + 'cc']}
+            glowColor={ACCENT + '88'}
+            letterSpacing={1.2}
+            style={styles.btn}
+          />
+        )}
         {phase === 'running' && (
           <View style={styles.runningBtns}>
-            <TouchableOpacity style={styles.skipBtn} onPress={skipNext} activeOpacity={0.8}>
-              <Text style={styles.skipBtnText}>Skip →</Text>
+            <TouchableOpacity style={[styles.skipBtn, { borderColor: ACCENT }]} onPress={skipNext} activeOpacity={0.8}>
+              <Text style={[styles.skipBtnText, { color: ACCENT }]}>Skip →</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.stopBtn} onPress={reset} activeOpacity={0.8}>
               <Text style={styles.stopBtnText}>Stop</Text>
@@ -266,7 +318,14 @@ export default function TensionReleaseScreen() {
           </View>
         )}
         {phase === 'done' && (
-          <PrimaryButton label="Done" onPress={() => { reset(); router.back(); }} style={styles.btn} />
+          <GradientCTA
+            label="DONE"
+            onPress={() => { reset(); router.back(); }}
+            colors={[ACCENT, ACCENT + 'cc']}
+            glowColor={ACCENT + '88'}
+            letterSpacing={1.2}
+            style={styles.btn}
+          />
         )}
       </View>
     </ScreenShell>
@@ -284,30 +343,34 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center', justifyContent: 'center',
   },
+  headerSpacer: { width: 36 },
   headerCenter: { alignItems: 'center', gap: 2 },
   headerTitle:  { ...typography.headingSmall, color: colors.text.primary },
   headerSub:    { ...typography.caption, color: colors.text.secondary },
-  langBtn:      { alignItems: 'center', gap: 2 },
-  langFlag:     { fontSize: 18 },
-  langCode:     { fontSize: 10, fontWeight: '700', color: colors.text.tertiary, letterSpacing: 0.5 },
+  counterPill: {
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 14, borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  counterText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, paddingHorizontal: spacing.lg },
 
-  // Idle
+  // Idle + intro
   introWrap:    { alignItems: 'center', gap: spacing.lg, width: '100%' },
   introTitle:   { ...typography.headingMedium, color: colors.text.primary },
   introSub:     { ...typography.body, color: colors.text.secondary, textAlign: 'center', lineHeight: 22 },
-  zoneList:     {
-    width: '100%', backgroundColor: colors.background.secondary,
-    borderRadius: 16, padding: spacing.md, gap: spacing.sm,
+  settleText:   {
+    ...typography.bodyLarge, color: 'rgba(255,255,255,0.75)',
+    textAlign: 'center', lineHeight: 26, paddingHorizontal: spacing.md,
   },
+  zoneList:     { width: '100%', gap: spacing.sm },
   zoneRow:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  zoneRowIcon:  { width: 28 },
+  zoneRowIcon:  { width: 26 },
   zoneRowLabel: { ...typography.body, color: colors.text.primary, flex: 1 },
-  startBtn:     { width: '100%' },
 
   // Icon with ring
   iconWrap: { alignItems: 'center', justifyContent: 'center', width: 120, height: 120 },
@@ -321,7 +384,7 @@ const styles = StyleSheet.create({
 
   // Dots
   dots: { flexDirection: 'row', gap: 8 },
-  dot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.1)' },
+  dot:  { width: 8, height: 8, borderRadius: 4 },
   dotActive: { width: 20 },
 
   // Cue card
@@ -336,14 +399,14 @@ const styles = StyleSheet.create({
   timerSecs: { fontSize: 11, fontWeight: '700', letterSpacing: 1 },
 
   // Buttons
-  btnArea:     { paddingBottom: spacing.xl, alignItems: 'center', width: '100%' },
+  btnArea:     { paddingBottom: spacing.xl, paddingHorizontal: spacing.lg, alignItems: 'center', width: '100%' },
   btn:         { width: '100%' },
   runningBtns: { flexDirection: 'row', gap: spacing.md, justifyContent: 'center' },
   skipBtn: {
     paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
-    borderRadius: 100, borderWidth: 1.5, borderColor: colors.accent.purple,
+    borderRadius: 100, borderWidth: 1.5,
   },
-  skipBtnText: { ...typography.bodyLarge, color: colors.accent.purple, fontWeight: '600' },
+  skipBtnText: { ...typography.bodyLarge, fontWeight: '600' },
   stopBtn: {
     paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
     borderRadius: 100, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.15)',

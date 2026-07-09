@@ -113,7 +113,7 @@ export function DichopticReaction({ running, colors, onGameEnd, onReplay }: Prop
   const [activeColor, setActiveColor] = useState<TargetColor>('left');
   const [floats, setFloats] = useState<{ id: number; x: number; y: number; text: string; color: string }[]>([]);
   const [combo, setCombo] = useState(0);
-  const [bestCombo, setBestCombo] = useState(0);
+  const [, setBestCombo] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [difficulty, setDifficulty] = useState(1); // 1=easy, 2=medium, 3=hard
   const [startDifficulty, setStartDifficulty] = useState(1); // user's chosen starting level

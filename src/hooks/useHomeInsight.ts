@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from 'react';
 import { generateHomeInsight, generateTagline } from '@/services/gemini';
-import { getHomeInsight, getInsightMessage, type FocusArea, type ScoreResult } from '@/utils/scoring';
+import { getHomeInsight, type FocusArea, type ScoreResult } from '@/utils/scoring';
 
 const CACHE_KEY_INSIGHT = '@mindpulse/home-insight-cache';
 const CACHE_KEY_TAGLINE = '@mindpulse/home-tagline-cache';

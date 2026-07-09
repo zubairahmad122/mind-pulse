@@ -37,6 +37,7 @@ interface RelaxContextType {
   stopSession: () => void;
   updateElapsed: (seconds: number) => void;
   completeSession: (emotionAfter: EmotionalState | null, rating?: number) => void;
+  updateLastCompletion: (emotionAfter: EmotionalState | null, rating?: number) => void;
 
   setVoiceVolume: (volume: number) => void;
   setAmbientVolume: (volume: number) => void;
@@ -174,6 +175,24 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
     setSessionPaused(false);
   }, [currentSessionId, lastEmotion, selectedSound, user?.uid]);
 
+  // Attach the post-session mood/rating to the record completeSession created.
+  const handleUpdateLastCompletion = useCallback(
+    (emotionAfter: EmotionalState | null, rating = 0) => {
+      setCompletedSessions(prev => {
+        if (prev.length === 0) return prev;
+        const next = [...prev];
+        next[next.length - 1] = {
+          ...next[next.length - 1],
+          emotionAfter,
+          rating: rating > 0 ? rating : null,
+        };
+        persistSessions(next);
+        return next;
+      });
+    },
+    [],
+  );
+
   const handleSetVoiceVolume = useCallback((volume: number) => {
     setVoiceVolume(Math.max(0, Math.min(1, volume)));
   }, []);
@@ -198,6 +217,7 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
     stopSession: handleStopSession,
     updateElapsed: handleUpdateElapsed,
     completeSession: handleCompleteSession,
+    updateLastCompletion: handleUpdateLastCompletion,
 
     setVoiceVolume: handleSetVoiceVolume,
     setAmbientVolume: handleSetAmbientVolume,

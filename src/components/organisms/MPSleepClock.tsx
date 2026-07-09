@@ -8,7 +8,7 @@ import { View, useWindowDimensions } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop, Path, Text as SvgText, ForeignObject } from 'react-native-svg';
 import { MPIcon } from '@/components/atoms/MPIcon';
 import { MPText } from '@/components/atoms/MPText';
-import { COLORS, SIZES } from '@/theme';
+import { COLORS } from '@/theme';
 
 interface Props {
   bedtime: string;

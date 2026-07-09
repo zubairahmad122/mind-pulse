@@ -1696,8 +1696,8 @@ export default function SleepScreen() {
                         >
                           {insightExpanded
                             ? planInsight.text
-                            : truncateAtWord(planInsight.text, 100)}
-                          {planInsight.text.length > 100 && (
+                            : truncateAtWord(planInsight.text, 64)}
+                          {planInsight.text.length > 64 && (
                             <Text
                               onPress={() => {
                                 LayoutAnimation.configureNext(

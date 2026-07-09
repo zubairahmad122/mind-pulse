@@ -1,9 +1,19 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { AmbientBackground } from '@/components/ui';
 import { PillarProvider } from '@/context/PillarContext';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Brain,
+  Footprints,
+  Hand,
+  Heart,
+  Leaf,
+  PersonStanding,
+  Play,
+  Wind,
+  X,
+} from 'lucide-react-native';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -12,48 +22,40 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BODY_SCAN_SCRIPTS, type SessionLang } from '@/constants/sessionScripts';
-import { LANGUAGES } from '@/constants/languages';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { GradientCTA } from '@/components/ui/GradientCTA';
+import { BODY_SCAN_SCRIPTS } from '@/constants/sessionScripts';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
-import { useLanguage } from '@/context/LanguageContext';
-import { useVoiceGuide } from '@/hooks/useVoiceGuide';
+import type { AudioClipId } from '@/constants/audioGuide';
+import { useAudioGuide } from '@/hooks/useAudioGuide';
 
-// ─── Zone icons (Ionicons — no emoji) ─────────────────────────────────────────
-const ZONE_ICONS = [
-  'happy-outline',
-  'body-outline',
-  'heart-outline',
-  'hand-left-outline',
-  'fitness-outline',
-  'walk-outline',
-] as const;
+// One accent across the whole Relax feature — matches RelaxSessionPlayer.
+const ACCENT = '#34D399';
 
-const ZONE_COLORS = [
-  '#CE93D8',
-  '#90CAF9',
-  '#4FC3F7',
-  '#A5D6A7',
-  '#FFE082',
-  '#80CBC4',
+// Zone icons (lucide, matching the app's icon set)
+const ZONE_ICONS = [Brain, PersonStanding, Heart, Hand, Wind, Footprints] as const;
+
+// Recorded zone narration is 17–28s; each zone then rests in silence
+// (~60s of quiet awareness) before the next area — spa-session pacing.
+const ZONE_DURATIONS = [80, 80, 80, 80, 80, 80];
+
+// Pre-recorded voice clip per zone (order matches BODY_SCAN_SCRIPTS zones).
+const ZONE_CLIPS: AudioClipId[] = [
+  'bodyscan/head',
+  'bodyscan/neck',
+  'bodyscan/chest',
+  'bodyscan/arms',
+  'bodyscan/stomach',
+  'bodyscan/legs',
 ];
-
-const ZONE_DURATIONS = [18, 18, 18, 15, 18, 18];
-
-// EN/HI/UR only — Pashto users fall back to Urdu
-const RELAX_LANGS = LANGUAGES.filter(l => l.code !== 'ps');
-
-function toSessionLang(code: string): SessionLang {
-  return (code === 'ps' ? 'ur' : code) as SessionLang;
-}
 
 export default function BodyScanScreen() {
   const router = useRouter();
-  const { guide, stop } = useVoiceGuide();
-  const { langCode, setLang } = useLanguage();
+  const { play, stop } = useAudioGuide();
 
-  const [phase, setPhase]       = useState<'idle' | 'running' | 'done'>('idle');
+  const [phase, setPhase]       = useState<'idle' | 'intro' | 'running' | 'done'>('idle');
   const [zoneIdx, setZoneIdx]   = useState(0);
   const [secondsLeft, setSecs]  = useState(ZONE_DURATIONS[0]);
 
@@ -62,16 +64,16 @@ export default function BodyScanScreen() {
   const cardScale    = useSharedValue(1);
   const timerRef     = useRef<ReturnType<typeof setInterval> | null>(null);
   const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const zonesStartedRef = useRef(false);
 
   function clearTimer() {
     if (timerRef.current) clearInterval(timerRef.current);
   }
 
   function startZone(idx: number) {
-    const lang  = toSessionLang(langCode);
-    const zData = BODY_SCAN_SCRIPTS[lang].zones[idx];
-    const dur   = ZONE_DURATIONS[idx];
+    const dur = ZONE_DURATIONS[idx];
 
+    setPhase('running');
     setZoneIdx(idx);
     setSecs(dur);
 
@@ -83,7 +85,7 @@ export default function BodyScanScreen() {
     progressAnim.value = 0;
     progressAnim.value = withTiming(1, { duration: dur * 1000 });
 
-    guide(zData.script, 300);
+    play(ZONE_CLIPS[idx], 300);
 
     clearTimer();
     let secs = dur;
@@ -95,7 +97,7 @@ export default function BodyScanScreen() {
         const next = idx + 1;
         if (next >= ZONE_DURATIONS.length) {
           cancelAnimation(progressAnim);
-          guide(BODY_SCAN_SCRIPTS[toSessionLang(langCode)].complete, 200);
+          play('bodyscan/complete', 400);
           setPhase('done');
         } else {
           startZone(next);
@@ -105,17 +107,36 @@ export default function BodyScanScreen() {
   }
 
   function begin() {
-    setPhase('running');
-    guide(BODY_SCAN_SCRIPTS[toSessionLang(langCode)].intro, 200);
-    introTimerRef.current = setTimeout(() => startZone(0), 2200);
+    setPhase('intro');
+    zonesStartedRef.current = false;
+    const startFirstZone = () => {
+      if (zonesStartedRef.current) return;
+      zonesStartedRef.current = true;
+      startZone(0);
+    };
+    // Intro narration (~30s) plays in full; first zone follows a beat after it
+    // ends. Fallback timer keeps the session moving if audio can't play.
+    play('bodyscan/intro', 200, 1, {
+      protect: true,
+      onDone: () => setTimeout(startFirstZone, 1200),
+    });
+    introTimerRef.current = setTimeout(startFirstZone, 45000);
+  }
+
+  function skipIntro() {
+    if (introTimerRef.current) clearTimeout(introTimerRef.current);
+    if (zonesStartedRef.current) return;
+    zonesStartedRef.current = true;
+    startZone(0);
   }
 
   function skipNext() {
     clearTimer();
     cancelAnimation(progressAnim);
+    zonesStartedRef.current = true;
     const next = zoneIdx + 1;
     if (next >= ZONE_DURATIONS.length) {
-      guide(BODY_SCAN_SCRIPTS[toSessionLang(langCode)].complete, 200);
+      play('bodyscan/complete', 400);
       setPhase('done');
     } else {
       startZone(next);
@@ -123,6 +144,8 @@ export default function BodyScanScreen() {
   }
 
   function reset() {
+    if (introTimerRef.current) clearTimeout(introTimerRef.current);
+    zonesStartedRef.current = true;
     clearTimer();
     stop();
     cancelAnimation(progressAnim);
@@ -130,12 +153,6 @@ export default function BodyScanScreen() {
     setZoneIdx(0);
     setSecs(ZONE_DURATIONS[0]);
     progressAnim.value = 0;
-  }
-
-  function cycleLang() {
-    const idx  = RELAX_LANGS.findIndex(l => l.code === langCode);
-    const next = RELAX_LANGS[(idx + 1) % RELAX_LANGS.length];
-    setLang(next.code);
   }
 
   useEffect(() => {
@@ -146,11 +163,9 @@ export default function BodyScanScreen() {
     };
   }, []);
 
-  const langOpt      = RELAX_LANGS.find(l => l.code === langCode) ?? RELAX_LANGS[0];
-  const en           = BODY_SCAN_SCRIPTS.en;
-  const zoneData     = en.zones[zoneIdx];
-  const zoneColor    = ZONE_COLORS[zoneIdx];
-  const zoneIcon     = ZONE_ICONS[zoneIdx];
+  const en        = BODY_SCAN_SCRIPTS.en;
+  const zoneData  = en.zones[zoneIdx];
+  const ZoneIcon  = ZONE_ICONS[zoneIdx];
 
   const progressStyle = useAnimatedStyle(() => ({
     width: `${Math.round(progressAnim.value * 100)}%` as `${number}%`,
@@ -169,40 +184,37 @@ export default function BodyScanScreen() {
           onPress={() => { reset(); router.back(); }}
           style={styles.closeBtn}
         >
-          <Ionicons name="close" size={18} color={colors.text.secondary} />
+          <X size={18} color={colors.text.secondary} strokeWidth={2.2} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
           <Text style={styles.title}>Body Scan</Text>
-          {phase === 'running' && (
-            <Text style={styles.zoneCount}>{zoneIdx + 1} / {ZONE_DURATIONS.length}</Text>
-          )}
+          <Text style={styles.headerSub}>Release tension, zone by zone</Text>
         </View>
 
-        <TouchableOpacity
-          onPress={cycleLang}
-          style={styles.langBtn}
-          disabled={phase === 'running'}
-        >
-          <Text style={styles.langFlag}>{langOpt.flag}</Text>
-          <Text style={[styles.langCode, phase === 'running' && { opacity: 0.4 }]}>
-            {langOpt.code.toUpperCase()}
-          </Text>
-        </TouchableOpacity>
+        {phase === 'running' ? (
+          <View style={[styles.counterPill, { borderColor: ACCENT + '30' }]}>
+            <Text style={[styles.counterText, { color: ACCENT }]}>
+              {zoneIdx + 1}/{ZONE_DURATIONS.length}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.headerSpacer} />
+        )}
       </View>
 
       {/* ── Zone progress strip ── */}
       {phase === 'running' && (
         <View style={styles.zoneStrip}>
-          {ZONE_COLORS.map((c, i) => (
+          {ZONE_DURATIONS.map((_, i) => (
             <View
               key={i}
               style={[
                 styles.zoneChip,
                 {
                   backgroundColor:
-                    i < zoneIdx ? c : i === zoneIdx ? c + '44' : 'rgba(255,255,255,0.06)',
-                  borderColor: i === zoneIdx ? c : 'transparent',
+                    i < zoneIdx ? ACCENT : i === zoneIdx ? ACCENT + '44' : 'rgba(255,255,255,0.06)',
+                  borderColor: i === zoneIdx ? ACCENT : 'transparent',
                 },
               ]}
             />
@@ -214,67 +226,88 @@ export default function BodyScanScreen() {
         {/* ── Idle ── */}
         {phase === 'idle' && (
           <View style={styles.idleWrap}>
-            <Ionicons name="body-outline" size={64} color={colors.accent.purple} />
+            <PersonStanding size={56} color={ACCENT} strokeWidth={1.4} />
             <Text style={styles.idleTitle}>Body Scan Meditation</Text>
             <Text style={styles.idleSub}>
               A guided journey through 6 body zones.{'\n'}
               Voice guide leads you to release tension zone by zone.{'\n'}
               Find a quiet place and get comfortable.
             </Text>
-            <View style={styles.zoneList}>
-              {en.zones.map((z, i) => (
-                <View key={z.label} style={styles.zoneRow}>
-                  <Ionicons name={ZONE_ICONS[i]} size={20} color={ZONE_COLORS[i]} style={styles.zoneRowIcon} />
-                  <Text style={styles.zoneRowLabel}>{z.label}</Text>
-                  <Text style={styles.zoneRowDur}>{ZONE_DURATIONS[i]}s</Text>
-                </View>
-              ))}
-            </View>
+            <GlassCard style={styles.zoneList}>
+              {en.zones.map((z, i) => {
+                const RowIcon = ZONE_ICONS[i];
+                return (
+                  <View key={z.label} style={styles.zoneRow}>
+                    <RowIcon size={18} color={ACCENT} strokeWidth={1.8} style={styles.zoneRowIcon} />
+                    <Text style={styles.zoneRowLabel}>{z.label}</Text>
+                    <Text style={styles.zoneRowDur}>{ZONE_DURATIONS[i]}s</Text>
+                  </View>
+                );
+              })}
+            </GlassCard>
+          </View>
+        )}
+
+        {/* ── Intro narration ── */}
+        {phase === 'intro' && (
+          <View style={styles.idleWrap}>
+            <PersonStanding size={56} color={ACCENT} strokeWidth={1.4} />
+            <Text style={styles.settleText}>{en.intro}</Text>
+            <TouchableOpacity style={[styles.ghostBtn, { borderColor: ACCENT }]} onPress={skipIntro} activeOpacity={0.8}>
+              <Text style={[styles.ghostBtnText, { color: ACCENT }]}>Skip intro →</Text>
+            </TouchableOpacity>
           </View>
         )}
 
         {/* ── Running ── */}
         {phase === 'running' && (
-          <Animated.View style={[styles.zoneCard, { borderColor: zoneColor + '55' }, cardStyle]}>
-            <Ionicons name={zoneIcon} size={56} color={zoneColor} />
-            <Text style={[styles.zoneLabel, { color: zoneColor }]}>
-              {zoneData.label.toUpperCase()}
-            </Text>
-            <Text style={styles.zoneScript}>{zoneData.script}</Text>
+          <Animated.View style={cardStyle}>
+            <GlassCard style={styles.zoneCard}>
+              <ZoneIcon size={52} color={ACCENT} strokeWidth={1.5} />
+              <Text style={[styles.zoneLabel, { color: ACCENT }]}>
+                {zoneData.label.toUpperCase()}
+              </Text>
+              <Text style={styles.zoneScript}>{zoneData.script}</Text>
 
-            <View style={styles.timerBar}>
-              <Animated.View
-                style={[styles.timerFill, { backgroundColor: zoneColor }, progressStyle]}
-              />
-            </View>
-            <Text style={[styles.timerSecs, { color: zoneColor }]}>{secondsLeft}s</Text>
+              <View style={styles.timerBar}>
+                <Animated.View
+                  style={[styles.timerFill, { backgroundColor: ACCENT }, progressStyle]}
+                />
+              </View>
+              <Text style={[styles.timerSecs, { color: ACCENT }]}>{secondsLeft}s</Text>
+            </GlassCard>
           </Animated.View>
         )}
 
         {/* ── Done ── */}
         {phase === 'done' && (
-          <View style={styles.doneWrap}>
-            <Ionicons name="leaf-outline" size={64} color="#80CBC4" />
+          <GlassCard style={styles.doneWrap}>
+            <Leaf size={52} color={ACCENT} strokeWidth={1.5} />
             <Text style={styles.doneTitle}>You are here, now.</Text>
             <Text style={styles.doneSub}>
               Your body has been heard. Notice how much lighter and quieter you feel.
             </Text>
-          </View>
+          </GlassCard>
         )}
       </View>
 
       {/* ── Buttons ── */}
       <View style={styles.btnArea}>
         {phase === 'idle' && (
-          <TouchableOpacity style={styles.primaryBtn} onPress={begin} activeOpacity={0.85}>
-            <Ionicons name="play" size={16} color="#FFF" style={{ marginRight: 8 }} />
-            <Text style={styles.primaryBtnText}>Begin Body Scan</Text>
-          </TouchableOpacity>
+          <GradientCTA
+            label="BEGIN BODY SCAN"
+            icon={<Play size={16} color="#fff" />}
+            onPress={begin}
+            colors={[ACCENT, ACCENT + 'cc']}
+            glowColor={ACCENT + '88'}
+            letterSpacing={1.2}
+            style={styles.btn}
+          />
         )}
         {phase === 'running' && (
           <View style={styles.runningBtns}>
-            <TouchableOpacity style={styles.skipBtn} onPress={skipNext} activeOpacity={0.8}>
-              <Text style={styles.skipBtnText}>Skip →</Text>
+            <TouchableOpacity style={[styles.skipBtn, { borderColor: ACCENT }]} onPress={skipNext} activeOpacity={0.8}>
+              <Text style={[styles.skipBtnText, { color: ACCENT }]}>Skip →</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.stopBtn} onPress={reset} activeOpacity={0.8}>
               <Text style={styles.stopBtnText}>Stop</Text>
@@ -282,13 +315,14 @@ export default function BodyScanScreen() {
           </View>
         )}
         {phase === 'done' && (
-          <TouchableOpacity
-            style={styles.primaryBtn}
+          <GradientCTA
+            label="DONE"
             onPress={() => { reset(); router.back(); }}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.primaryBtnText}>Done</Text>
-          </TouchableOpacity>
+            colors={[ACCENT, ACCENT + 'cc']}
+            glowColor={ACCENT + '88'}
+            letterSpacing={1.2}
+            style={styles.btn}
+          />
         )}
       </View>
     </SafeAreaView>
@@ -309,15 +343,19 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center', justifyContent: 'center',
   },
+  headerSpacer: { width: 36 },
   headerCenter: { alignItems: 'center', gap: 2 },
   title:        { ...typography.headingSmall, color: colors.text.primary },
-  zoneCount:    { ...typography.caption, color: colors.text.secondary },
-  langBtn:      { alignItems: 'center', gap: 2 },
-  langFlag:     { fontSize: 18 },
-  langCode:     { fontSize: 10, fontWeight: '700', color: colors.text.tertiary, letterSpacing: 0.5 },
+  headerSub:    { ...typography.caption, color: colors.text.secondary },
+  counterPill: {
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 14, borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  counterText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
 
   // Zone strip
   zoneStrip: {
@@ -328,23 +366,29 @@ const styles = StyleSheet.create({
   // Content
   content: { flex: 1, justifyContent: 'center' },
 
-  // Idle
+  // Idle + intro
   idleWrap:     { alignItems: 'center', gap: spacing.lg },
   idleTitle:    { ...typography.headingMedium, color: colors.text.primary },
   idleSub:      { ...typography.body, color: colors.text.secondary, textAlign: 'center', lineHeight: 22 },
-  zoneList:     {
-    alignSelf: 'stretch', backgroundColor: colors.background.secondary,
-    borderRadius: 16, padding: spacing.md, gap: spacing.sm,
+  settleText:   {
+    ...typography.bodyLarge, color: 'rgba(255,255,255,0.75)',
+    textAlign: 'center', lineHeight: 26, paddingHorizontal: spacing.md,
   },
+  zoneList:     { alignSelf: 'stretch', gap: spacing.sm },
   zoneRow:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  zoneRowIcon:  { width: 28 },
+  zoneRowIcon:  { width: 26 },
   zoneRowLabel: { ...typography.body, color: colors.text.primary, flex: 1 },
   zoneRowDur:   { ...typography.caption, color: colors.text.secondary },
 
+  // Ghost (skip intro)
+  ghostBtn: {
+    paddingHorizontal: spacing.xl, paddingVertical: spacing.sm + 2,
+    borderRadius: 100, borderWidth: 1.5,
+  },
+  ghostBtnText: { ...typography.body, fontWeight: '600' },
+
   // Running card
   zoneCard: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: 24, borderWidth: 1, padding: spacing.xl,
     alignItems: 'center', gap: spacing.md,
   },
   zoneLabel:  { fontSize: 12, fontWeight: '800', letterSpacing: 3 },
@@ -357,24 +401,19 @@ const styles = StyleSheet.create({
   timerSecs:  { fontSize: 11, fontWeight: '700', letterSpacing: 1 },
 
   // Done
-  doneWrap:  { alignItems: 'center', gap: spacing.lg },
+  doneWrap:  { alignItems: 'center', gap: spacing.md },
   doneTitle: { ...typography.headingMedium, color: colors.text.primary },
   doneSub:   { ...typography.body, color: colors.text.secondary, textAlign: 'center', lineHeight: 22 },
 
   // Buttons
   btnArea: { paddingBottom: spacing.xl, alignItems: 'center' },
-  primaryBtn: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.accent.purple,
-    paddingHorizontal: spacing.xl * 1.5, paddingVertical: spacing.md, borderRadius: 100,
-  },
-  primaryBtnText: { ...typography.bodyLarge, color: '#FFF', fontWeight: '700' },
-  runningBtns:    { flexDirection: 'row', gap: spacing.md },
+  btn:     { alignSelf: 'stretch' },
+  runningBtns: { flexDirection: 'row', gap: spacing.md },
   skipBtn: {
     paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
-    borderRadius: 100, borderWidth: 1.5, borderColor: colors.accent.purple,
+    borderRadius: 100, borderWidth: 1.5,
   },
-  skipBtnText: { ...typography.bodyLarge, color: colors.accent.purple, fontWeight: '600' },
+  skipBtnText: { ...typography.bodyLarge, fontWeight: '600' },
   stopBtn: {
     paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
     borderRadius: 100, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.15)',

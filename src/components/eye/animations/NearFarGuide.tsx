@@ -107,7 +107,6 @@ export function NearFarGuide({ active }: Props) {
   const farStyle = useAnimatedStyle(() => {
     'worklet';
     const f = 1 - focus.value;
-    const p = farPulse.value;
     return { transform: [{ scale: 0.5 + f * 0.6 }, { translateY: (1 - f) * 6 }], opacity: 0.1 + f * 0.9 };
   });
 

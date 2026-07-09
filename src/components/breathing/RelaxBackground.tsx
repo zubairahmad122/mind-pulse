@@ -79,11 +79,12 @@ function FloatingOrb({ config, gradId, color, floatT }: {
 interface RelaxBackgroundProps {
   pattern: BreathingPattern;
   isActive: boolean;
+  accentColor?: string;
 }
 
-export function RelaxBackground({ pattern, isActive }: RelaxBackgroundProps) {
+export function RelaxBackground({ pattern, isActive, accentColor }: RelaxBackgroundProps) {
   const patternDef = BREATHING_PATTERNS[pattern];
-  const color = patternDef.color;
+  const color = accentColor ?? patternDef.color;
 
   // Shared values
   const floatT  = useSharedValue(0);

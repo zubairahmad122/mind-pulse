@@ -7,7 +7,7 @@ import { View, TouchableOpacity, ScrollView, Modal, type ScrollViewProps } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MPIcon } from '@/components/atoms/MPIcon';
 import { MPText } from '@/components/atoms/MPText';
-import { COLORS, RADIUS, SPACING, SIZES } from '@/theme';
+import { COLORS, SPACING, SIZES } from '@/theme';
 
 interface Props {
   visible: boolean;

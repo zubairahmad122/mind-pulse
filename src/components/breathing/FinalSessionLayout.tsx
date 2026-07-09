@@ -8,11 +8,10 @@
 
 import type { BreathingMusicId } from '@/constants/breathingMusic';
 import { BREATHING_MUSIC } from '@/constants/breathingMusic';
-import { Ionicons } from '@expo/vector-icons';
+import { Mic, MicOff, Music, Pause, Play, VolumeX } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { memo, useRef } from 'react';
 import {
-  Dimensions,
   PanResponder,
   ScrollView,
   StyleSheet,
@@ -26,7 +25,13 @@ interface FinalSessionLayoutProps {
   ambientVolume: number;
   onVoiceVolumeChange: (v: number) => void;
   onAmbientVolumeChange: (v: number) => void;
+  voiceMuted: boolean;
+  musicMuted: boolean;
+  onToggleVoiceMute: () => void;
+  onToggleMusicMute: () => void;
   onStop: () => void;
+  isPaused: boolean;
+  onTogglePause: () => void;
   selectedId: BreathingMusicId;
   onSelect: (id: BreathingMusicId) => void;
   accentColor: string;
@@ -34,7 +39,8 @@ interface FinalSessionLayoutProps {
   sessionDuration: number;
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+// Everything on a muted channel (icon, slider, value) drops to this grey.
+const MUTED_COLOR = 'rgba(255,255,255,0.35)';
 
 // ─── Volume Slider ───────────────────────────────────────
 function VolumeSlider({
@@ -83,7 +89,12 @@ export const FinalSessionLayout = memo(function FinalSessionLayout({
   ambientVolume,
   onVoiceVolumeChange,
   onAmbientVolumeChange,
-  onStop,
+  voiceMuted,
+  musicMuted,
+  onToggleVoiceMute,
+  onToggleMusicMute,
+  isPaused,
+  onTogglePause,
   selectedId,
   onSelect,
   accentColor,
@@ -97,7 +108,8 @@ export const FinalSessionLayout = memo(function FinalSessionLayout({
       {/* ─── TOP: Pause Button + Timer ─────────────── */}
       <View style={styles.topBar}>
         <TouchableOpacity
-          onPress={onStop}
+          onPress={onTogglePause}
+          accessibilityLabel={isPaused ? 'Resume session' : 'Pause session'}
           style={[
             styles.pauseButton,
             {
@@ -106,7 +118,11 @@ export const FinalSessionLayout = memo(function FinalSessionLayout({
             },
           ]}
         >
-          <View style={[styles.pauseIcon, { backgroundColor: accentColor }]} />
+          {isPaused ? (
+            <Play size={18} color={accentColor} fill={accentColor} />
+          ) : (
+            <Pause size={18} color={accentColor} fill={accentColor} />
+          )}
         </TouchableOpacity>
 
         <Text style={[styles.timer, { color: accentColor }]}>
@@ -124,32 +140,54 @@ export const FinalSessionLayout = memo(function FinalSessionLayout({
 
       {/* ─── MIDDLE: Voice Slider | Orb Space | Music Slider ─── */}
       <View style={styles.middleRow}>
-        {/* Voice Slider */}
+        {/* Voice Slider — tap the mic to mute/unmute the guide voice */}
         <View style={styles.sliderColumn}>
-          <Text style={[styles.label, { color: accentColor }]}>VOICE</Text>
+          <TouchableOpacity
+            onPress={onToggleVoiceMute}
+            accessibilityLabel={voiceMuted ? 'Unmute voice' : 'Mute voice'}
+            hitSlop={{ top: 10, bottom: 10, left: 14, right: 14 }}
+            style={styles.muteBtn}
+          >
+            {voiceMuted ? (
+              <MicOff size={16} color={MUTED_COLOR} strokeWidth={2} />
+            ) : (
+              <Mic size={16} color={accentColor} strokeWidth={2} />
+            )}
+          </TouchableOpacity>
           <VolumeSlider
-            value={voiceVolume}
+            value={voiceMuted ? 0 : voiceVolume}
             onChange={onVoiceVolumeChange}
-            color={accentColor}
+            color={voiceMuted ? MUTED_COLOR : accentColor}
           />
-          <Text style={[styles.value, { color: accentColor }]}>
-            {Math.round(voiceVolume * 100)}
+          <Text style={[styles.value, { color: voiceMuted ? MUTED_COLOR : accentColor }]}>
+            {voiceMuted ? 0 : Math.round(voiceVolume * 100)}
           </Text>
         </View>
 
         {/* Orb Space (220px) */}
         <View style={styles.orbSpace} />
 
-        {/* Music Slider */}
+        {/* Music Slider — tap the note to mute/unmute the ambient music */}
         <View style={styles.sliderColumn}>
-          <Text style={[styles.label, { color: '#4FC3F7' }]}>MUSIC</Text>
+          <TouchableOpacity
+            onPress={onToggleMusicMute}
+            accessibilityLabel={musicMuted ? 'Unmute music' : 'Mute music'}
+            hitSlop={{ top: 10, bottom: 10, left: 14, right: 14 }}
+            style={styles.muteBtn}
+          >
+            {musicMuted ? (
+              <VolumeX size={16} color={MUTED_COLOR} strokeWidth={2} />
+            ) : (
+              <Music size={16} color={accentColor} strokeWidth={2} />
+            )}
+          </TouchableOpacity>
           <VolumeSlider
-            value={ambientVolume}
+            value={musicMuted ? 0 : ambientVolume}
             onChange={onAmbientVolumeChange}
-            color="#4FC3F7"
+            color={musicMuted ? MUTED_COLOR : accentColor}
           />
-          <Text style={[styles.value, { color: '#4FC3F7' }]}>
-            {Math.round(ambientVolume * 100)}
+          <Text style={[styles.value, { color: musicMuted ? MUTED_COLOR : accentColor }]}>
+            {musicMuted ? 0 : Math.round(ambientVolume * 100)}
           </Text>
         </View>
       </View>
@@ -166,6 +204,7 @@ export const FinalSessionLayout = memo(function FinalSessionLayout({
         >
           {BREATHING_MUSIC.map((music) => {
             const isSelected = selectedId === music.id;
+            const SoundIcon = music.icon;
 
             return (
               <TouchableOpacity
@@ -184,12 +223,11 @@ export const FinalSessionLayout = memo(function FinalSessionLayout({
                 ]}
                 activeOpacity={0.7}
               >
-                {/* Ionicons name prop expects a specific icon name type, but our
-                    music config uses string constants that are known-safe at runtime. */}
-                <Ionicons
-                  name={music.icon as any}
-                  size={isSelected ? 16 : 13}
-                  color={isSelected ? music.color : 'rgba(255,255,255,0.35)'}
+                {/* music.icon is a lucide component — render it directly. */}
+                <SoundIcon
+                  size={isSelected ? 17 : 15}
+                  color={isSelected ? music.color : 'rgba(255,255,255,0.45)'}
+                  strokeWidth={2}
                 />
                 <Text
                   style={[
@@ -272,6 +310,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
     flex: 0,
+  },
+
+  muteBtn: {
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   label: {

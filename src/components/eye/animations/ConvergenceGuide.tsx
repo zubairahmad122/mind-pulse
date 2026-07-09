@@ -76,9 +76,6 @@ export function ConvergenceGuide({ active }: Props) {
     return () => clearInterval(id);
   }, [active, depth, pulseGlow]);
 
-  const orbY = FAR_Y + (NEAR_Y - FAR_Y) * depth.value;
-  const orbScale = 0.6 + depth.value * 1.4;
-
   const orbStyle = useAnimatedStyle(() => {
     'worklet';
     const y = FAR_Y + depth.value * (NEAR_Y - FAR_Y);

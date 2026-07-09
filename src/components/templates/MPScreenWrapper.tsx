@@ -7,7 +7,7 @@ import { View, ScrollView, TouchableOpacity, type ScrollViewProps } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MPIcon } from '@/components/atoms/MPIcon';
 import { MPText } from '@/components/atoms/MPText';
-import { COLORS, SPACING, TYPOGRAPHY } from '@/theme';
+import { COLORS, SPACING } from '@/theme';
 import { useRouter } from 'expo-router';
 
 interface Props {

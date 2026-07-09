@@ -23,7 +23,6 @@ const SPEED_STEP = 0.2;
 const MAX_SPEED = 3.0;
 
 interface Pos { x: number; y: number }
-function p(x: number, y: number): Pos { return { x, y }; }
 const SQ = Math.SQRT1_2;
 
 // 8 cardinal + diagonal positions — same pool as 9-point gaze (minus center)

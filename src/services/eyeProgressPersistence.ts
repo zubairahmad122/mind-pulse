@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from '@react-native-firebase/firestore';
+import { withTimeout } from '@/utils/withTimeout';
 
 const db = getFirestore();
 
@@ -66,7 +67,7 @@ export async function recordEyeCompletion(
   // Firestore (cloud backup) — only for logged-in users
   if (uid) {
     try {
-      await addDoc(eyeSessionsRef(uid), record);
+      await withTimeout(addDoc(eyeSessionsRef(uid), record), 8000);
     } catch {
       // offline — local cache is sufficient
     }
@@ -90,7 +91,10 @@ export async function loadEyeSessions(uid?: string): Promise<EyeSessionRecord[]>
   // For logged-in users: try Firestore first for cross-device sync
   if (uid) {
     try {
-      const snap = await getDocs(query(eyeSessionsRef(uid), orderBy('completedAt', 'desc'), limit(300)));
+      const snap = await withTimeout(
+        getDocs(query(eyeSessionsRef(uid), orderBy('completedAt', 'desc'), limit(300))),
+        8000,
+      );
       const cloud = snap.docs.map(d => d.data() as EyeSessionRecord);
       if (cloud.length > 0) {
         // Merge in any local sessions that haven't synced to Firestore yet,

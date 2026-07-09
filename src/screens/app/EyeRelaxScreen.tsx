@@ -1,74 +1,41 @@
-import { Check, ChevronRight, Timer, Eye, CheckCircle, AlertCircle, Flame } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-} from 'react-native-reanimated';
-import { EyeRelaxIcon, eyeRelaxIconBg } from '@/components/eye/icons/EyeRelaxIcon';
-import { ScreenShell } from '@/components/layout/ScreenShell';
-import { AmbientBackground } from '@/components/ui/AmbientBackground';
-import { EyeScoreCard } from '@/components/eye/EyeScoreCard';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { ScoreBreakdownCard } from '@/components/ui/ScoreBreakdownCard';
-import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { SectionLabel } from '@/components/ui/SectionLabel';
-import { EYE_GAMES, RECOVERY_SESSIONS, ROUTES } from '@/constants';
-import { colors } from '@/constants/colors';
-import { spacing } from '@/constants/spacing';
-import { typography } from '@/constants/typography';
-import type { EyeActivity } from '@/constants/eyeRelax';
-import { useAuth } from '@/context/AuthContext';
-import { useEyeBreakEnforcer } from '@/hooks/useEyeBreakEnforcer';
-import { useEyeProgress } from '@/hooks/useEyeProgress';
-import { useEyeScore } from '@/hooks/useEyeScore';
-import { useGameRecord } from '@/hooks/useGameRecord';
-import { useDailyEyeGoals } from '@/hooks/useDailyEyeGoals';
-import { useLastBreakTime } from '@/hooks/useLastBreakTime';
-import { ScreenTransition } from '@/components/ui/ScreenTransition';
-import { recordLastFeature } from '@/components/home/ContinueJourney';
+import { EyeScoreCard } from "@/components/eye/EyeScoreCard";
+import {
+  EyeRelaxIcon,
+  eyeRelaxIconBg,
+} from "@/components/eye/icons/EyeRelaxIcon";
+import { recordLastFeature } from "@/components/home/ContinueJourney";
+import { ScreenShell } from "@/components/layout/ScreenShell";
+import { AmbientBackground } from "@/components/ui/AmbientBackground";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { ScoreBreakdownCard } from "@/components/ui/ScoreBreakdownCard";
+import { ScreenHeader } from "@/components/ui/ScreenHeader";
+import { ScreenTransition } from "@/components/ui/ScreenTransition";
+import { SectionLabel } from "@/components/ui/SectionLabel";
+import { EYE_GAMES, RECOVERY_SESSIONS, ROUTES } from "@/constants";
+import { colors } from "@/constants/colors";
+import type { EyeActivity } from "@/constants/eyeRelax";
+import { spacing } from "@/constants/spacing";
+import { useAuth } from "@/context/AuthContext";
+import { useEyeBreakEnforcer } from "@/hooks/useEyeBreakEnforcer";
+import { useEyeScore } from "@/hooks/useEyeScore";
+import { useGameRecord } from "@/hooks/useGameRecord";
+import { useEyeProgress } from "@/hooks/useEyeProgress";
+import { useLastBreakTime } from "@/hooks/useLastBreakTime";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import {
+  AlertCircle,
+  CheckCircle,
+  ChevronRight,
+  Eye,
+  Timer,
+  Zap,
+  Check,
+} from "lucide-react-native";
+import { useEffect } from "react";
+import { StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 
-const WEEK_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-function recoveryColor(pct: number): string {
-  if (pct === 100) return '#6ee7b7';
-  if (pct >= 67) return '#f97316';
-  return '#f59e0b';
-}
-
-function GoalRow({ label, done }: { label: string; done: boolean }) {
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    if (done) {
-      scale.value = withSequence(
-        withSpring(1.15, { damping: 10 }),
-        withSpring(1.0, { damping: 12 }),
-      );
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  }, [done]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  return (
-    <Animated.View style={[styles.goalRow, animStyle]}>
-      <View style={[styles.goalCircle, done && styles.goalCircleDone]}>
-        {done && <Check size={12} color="#0a0720" strokeWidth={3} />}
-      </View>
-      <Text style={[styles.goalLabel, done && styles.goalLabelDone]}>{label}</Text>
-    </Animated.View>
-  );
-}
-
-const EYE_ACCENT = '#22d3ee';
+const EYE_ACCENT = "#22d3ee";
 
 function ActivityCard({
   id,
@@ -77,7 +44,9 @@ function ActivityCard({
   onPress,
   badge,
   badgeColor = EYE_ACCENT,
+  isPrimary,
   pb,
+  completed,
 }: {
   id: string;
   title: string;
@@ -85,33 +54,81 @@ function ActivityCard({
   onPress: () => void;
   badge?: string;
   badgeColor?: string;
+  isPrimary?: boolean;
   pb?: string | null;
+  completed?: boolean;
 }) {
   const iconBg = eyeRelaxIconBg(id);
   return (
     <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
-      <GlassCard simple noPadding style={[styles.activityCard, { borderColor: EYE_ACCENT + '22' }]}>
+      <GlassCard
+        simple
+        noPadding
+        style={[
+          styles.activityCard,
+          { borderColor: isPrimary ? "#F59E0B55" : EYE_ACCENT + "22" },
+          isPrimary && styles.activityCardGold,
+        ]}
+      >
         <LinearGradient
-          colors={[EYE_ACCENT + '0E', 'transparent']}
+          colors={
+            isPrimary
+              ? ["#F59E0B0E", "transparent"]
+              : [EYE_ACCENT + "0E", "transparent"]
+          }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={StyleSheet.absoluteFill}
         />
         <View style={styles.activityRow}>
-          <View style={[styles.iconWrap, { backgroundColor: iconBg, borderColor: 'rgba(255,255,255,0.12)' }]}>
+          <View
+            style={[
+              styles.iconWrap,
+              {
+                backgroundColor: iconBg,
+                borderColor: "rgba(255,255,255,0.12)",
+              },
+            ]}
+          >
             <EyeRelaxIcon id={id} size={26} />
           </View>
           <View style={styles.cardInfo}>
-            <Text style={styles.cardTitle} numberOfLines={1}>{title}</Text>
-            <Text style={styles.cardSub} numberOfLines={1}>{subtitle}</Text>
+            <Text style={styles.cardTitle} numberOfLines={1}>
+              {title}
+            </Text>
+            <Text style={styles.cardSub} numberOfLines={1}>
+              {subtitle}
+            </Text>
           </View>
           <View style={styles.cardMeta}>
-            {badge ? (
-              <View style={[styles.badgePill, { backgroundColor: badgeColor + '1f', borderColor: badgeColor + '40' }]}>
-                <Text style={[styles.badgePillText, { color: badgeColor }]}>{badge}</Text>
+            {completed ? (
+              <View style={styles.checkDot}>
+                <Check size={14} color="#22c55e" strokeWidth={3} />
+              </View>
+            ) : badge ? (
+              <View
+                style={[
+                  styles.badgePill,
+                  {
+                    backgroundColor: badgeColor + "1f",
+                    borderColor: badgeColor + "40",
+                  },
+                ]}
+              >
+                <Text style={[styles.badgePillText, { color: badgeColor }]}>
+                  {badge}
+                </Text>
               </View>
             ) : (
-              <View style={[styles.arrowBtn, { backgroundColor: EYE_ACCENT + '18', borderColor: EYE_ACCENT + '30' }]}>
+              <View
+                style={[
+                  styles.arrowBtn,
+                  {
+                    backgroundColor: EYE_ACCENT + "18",
+                    borderColor: EYE_ACCENT + "30",
+                  },
+                ]}
+              >
                 <ChevronRight size={17} color={EYE_ACCENT} strokeWidth={2.3} />
               </View>
             )}
@@ -128,23 +145,30 @@ export default function EyeRelaxScreen() {
   const { user } = useAuth();
 
   // Record this feature for ContinueYourJourney on Home
-  useEffect(() => { void recordLastFeature('eye-exercise'); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    void recordLastFeature("eye-exercise");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { todayDone, streak, weekDots, loading: progressLoading } = useEyeProgress(user?.uid);
-  const { enabled: breakEnabled, loading: breakLoading, toggle: toggleBreak } = useEyeBreakEnforcer(user?.uid);
+  const {
+    enabled: breakEnabled,
+    loading: breakLoading,
+    toggle: toggleBreak,
+  } = useEyeBreakEnforcer(user?.uid);
   const eyeScore = useEyeScore(user?.uid);
-  const goals = useDailyEyeGoals(user?.uid ?? undefined);
+  const hasAnySessions = eyeScore.hasAnySessions ?? false;
+  const completedToday = eyeScore.completedToday ?? [];
   const { minutesAgo } = useLastBreakTime(user?.uid ?? undefined);
+  const { streak: eyeStreak } = useEyeProgress(user?.uid);
 
-  const { record: saccadeRecord } = useGameRecord(user?.uid, 'saccade-sniper');
-  const { record: focusRecord } = useGameRecord(user?.uid, 'focus-sprint');
+  const { record: saccadeRecord } = useGameRecord(user?.uid, "saccade-sniper");
+  const { record: focusRecord } = useGameRecord(user?.uid, "focus-sprint");
 
   function openActivity(item: EyeActivity) {
-    if (item.id === 'dichoptic-reaction') {
+    if (item.id === "dichoptic-reaction") {
       router.push(ROUTES.appDichopticScreen as never);
       return;
     }
-    if (item.kind === 'game') {
+    if (item.kind === "game") {
       router.push(ROUTES.appEyeGame(item.id) as never);
     } else {
       router.push(ROUTES.appEyeExercise(item.id) as never);
@@ -152,281 +176,407 @@ export default function EyeRelaxScreen() {
   }
 
   function getGamePB(id: string): string | null {
-    if (id === 'saccade-sniper' && saccadeRecord) return `PB ${saccadeRecord.value}ms`;
-    if (id === 'focus-sprint' && focusRecord) return `PB ${focusRecord.value}%`;
+    if (id === "saccade-sniper" && saccadeRecord)
+      return `PB ${saccadeRecord.value}ms`;
+    if (id === "focus-sprint" && focusRecord) return `PB ${focusRecord.value}%`;
     return null;
   }
 
-  const recoveryPct = goals.loading ? 0 : goals.recoveryPct;
-  const recoveryDisplayColor = goals.loading ? colors.text.tertiary : recoveryColor(recoveryPct);
-
   return (
-    <ScreenShell pillar="eyes" ambient={<AmbientBackground subtle />}>
+    <ScreenShell
+      pillar="eyes"
+      ambient={<AmbientBackground subtle />}
+      contentStyle={{ paddingBottom: 120 }}
+    >
       <ScreenTransition>
-      <ScreenHeader title="Eye Training" subtitle="Recover · train · protect" />
-
-      {/* 1. Eye Score */}
-      <EyeScoreCard result={eyeScore} loading={eyeScore.loading} />
-      {!eyeScore.loading && (
-        <ScoreBreakdownCard
-          title="WHY THIS SCORE?"
-          score={eyeScore.score}
-          theme={eyeScore.theme}
-          breakdown={eyeScore.breakdown}
-          hideScoreHeader
+        <ScreenHeader
+          title="Eye Training"
+          subtitle="3 ways to care for your eyes"
         />
-      )}
 
-      {/* 2. Today's Progress + Goals */}
-      <GlassCard style={styles.goalsCard}>
-        <View style={styles.goalsHeader}>
-          <Text style={styles.goalsTitle}>Today's Progress</Text>
-          <Text style={[styles.recoveryPct, { color: recoveryDisplayColor }]}>
-            {goals.loading ? '–' : `${recoveryPct}%`}
-          </Text>
-        </View>
-
-        <GoalRow label="Complete a recovery session" done={goals.protocolDone} />
-        <GoalRow label="Take 3 eye breaks (20-20-20)" done={goals.breaksTaken >= 3} />
-        <GoalRow label="Play an eye game" done={goals.gamePlayed} />
-
-        {goals.breaksTaken > 0 && goals.breaksTaken < 3 && (
-          <Text style={styles.breaksProgress}>{goals.breaksTaken}/3 breaks</Text>
+        {/* 1. Eye Score */}
+        <EyeScoreCard
+          result={eyeScore}
+          loading={eyeScore.loading}
+          hasAnySessions={hasAnySessions}
+          streak={eyeStreak}
+        />
+        {!eyeScore.loading && hasAnySessions && (
+          <ScoreBreakdownCard
+            title="WHY THIS SCORE?"
+            score={eyeScore.score}
+            theme={eyeScore.theme}
+            breakdown={eyeScore.breakdown}
+            hideScoreHeader
+          />
         )}
 
-        {/* Streak + week dots */}
-        <View style={styles.streakRow}>
-          <View style={styles.streakLeft}>
-            <Text style={styles.streakValue}>{progressLoading ? '–' : streak}</Text>
-            <Flame size={14} color="#f97316" strokeWidth={2.5} />
-            <Text style={styles.streakLabel}>day streak</Text>
-          </View>
-          <View style={styles.weekRow}>
-            {WEEK_LABELS.map((label, i) => (
-              <View key={i} style={styles.dotCol}>
-                <View style={[styles.dot, weekDots[i] && styles.dotFilled]} />
-                <Text style={styles.dotLabel}>{label}</Text>
+        {/* Hero card — full card for new users, compact banner for returning users */}
+        {!eyeScore.loading && !hasAnySessions && (
+          <GlassCard style={styles.heroCard}>
+            <LinearGradient
+              colors={[EYE_ACCENT + "12", "transparent"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.heroContent}>
+              <View style={styles.heroIconWrap}>
+                <Eye size={28} color={EYE_ACCENT} strokeWidth={2} />
               </View>
-            ))}
-          </View>
-          <Text style={[styles.todayBadge, todayDone && styles.todayBadgeDone]}>
-            {todayDone ? '✓ Done' : '–'}
-          </Text>
-        </View>
-      </GlassCard>
+              <Text style={styles.heroTitle}>Welcome to Eye Training</Text>
+              <Text style={styles.heroSubtitle}>
+                Reduce strain and build healthier screen habits with guided
+                exercises.
+              </Text>
+              <TouchableOpacity
+                style={styles.heroButton}
+                activeOpacity={0.85}
+                onPress={() => router.push(ROUTES.appCvsProtocol as never)}
+              >
+                <LinearGradient
+                  colors={['#06B6D4', '#3B82F6']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <Zap size={16} color="#ffffff" strokeWidth={2.5} />
+                <Text style={styles.heroButtonText}>Start First Exercise</Text>
+                <ChevronRight size={16} color="#ffffff" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
+          </GlassCard>
+        )}
+        {/* Returning users: compact welcome-back banner */}
+        {!eyeScore.loading && hasAnySessions && (
+          <TouchableOpacity
+            style={styles.welcomeBackBanner}
+            activeOpacity={0.8}
+            onPress={() => router.push(ROUTES.appCvsProtocol as never)}
+          >
+            <Eye size={16} color={EYE_ACCENT} strokeWidth={2} />
+            <Text style={styles.welcomeBackText}>Start your daily eye exercise</Text>
+            <ChevronRight size={14} color={EYE_ACCENT} strokeWidth={2.5} />
+          </TouchableOpacity>
+        )}
 
-      {/* 3. Break Enforcer + Quick Break */}
-      <View style={styles.quickActionRow}>
-        <GlassCard style={styles.enforcerCard}>
-          <View style={styles.enforcerInfo}>
-            <Timer size={18} color={colors.text.secondary} strokeWidth={2} />
-            <Text style={styles.enforcerTitle}>20-20-20 breaks</Text>
+        {/* 2. Break Enforcer + Quick Break — merged into one card */}
+        <GlassCard style={styles.breakCard}>
+          <View style={styles.breakTopRow}>
+            <View style={styles.enforcerInfo}>
+              <Timer
+                size={18}
+                color={breakEnabled ? EYE_ACCENT : colors.text.secondary}
+                strokeWidth={2}
+              />
+              <View style={styles.enforcerTextCol}>
+                <Text style={styles.enforcerTitle}>
+                  Break reminders: {breakEnabled ? "On" : "Off"}
+                </Text>
+                <Text style={styles.enforcerSub}>
+                  Get nudges to rest your eyes
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={breakEnabled}
+              onValueChange={toggleBreak}
+              disabled={breakLoading}
+              trackColor={{
+                false: '#252542',
+                true: EYE_ACCENT,
+              }}
+              thumbColor={breakEnabled ? "#FFFFFF" : colors.text.secondary}
+            />
           </View>
-          <Switch
-            value={breakEnabled}
-            onValueChange={toggleBreak}
-            disabled={breakLoading}
-            trackColor={{ false: colors.background.secondary, true: EYE_ACCENT }}
-            thumbColor={breakEnabled ? '#FFFFFF' : colors.text.secondary}
-          />
+          <TouchableOpacity
+            style={styles.quickBreakInline}
+            onPress={() => router.push(ROUTES.appEyeBreak as never)}
+            activeOpacity={0.75}
+          >
+            <Eye size={16} color={EYE_ACCENT} strokeWidth={2} />
+            <Text style={styles.quickBreakInlineLabel}>
+              Take a Quick Eye Break
+            </Text>
+            <ChevronRight size={14} color={EYE_ACCENT} strokeWidth={2.5} style={{ marginRight: 16 }} />
+          </TouchableOpacity>
         </GlassCard>
 
-        <TouchableOpacity
-          style={styles.quickBreakBtn}
-          onPress={() => router.push(ROUTES.appEyeBreak as never)}
-          activeOpacity={0.85}
-        >
-          <Eye size={20} color={EYE_ACCENT} strokeWidth={2} />
-          <Text style={styles.quickBreakLabel}>Eye Break</Text>
-        </TouchableOpacity>
-      </View>
+        {/* 3. Break reminder chip */}
+        {minutesAgo !== null && (
+          <View
+            style={[
+              styles.breakChip,
+              { borderColor: minutesAgo < 20 ? "#6ee7b766" : "#f59e0b66" },
+            ]}
+          >
+            {minutesAgo < 20 ? (
+              <CheckCircle size={12} color="#6ee7b7" strokeWidth={2.5} />
+            ) : (
+              <AlertCircle size={12} color="#f59e0b" strokeWidth={2.5} />
+            )}
+            <Text
+              style={[
+                styles.breakChipText,
+                { color: minutesAgo < 20 ? "#6ee7b7" : "#f59e0b" },
+              ]}
+            >
+              {minutesAgo < 20
+                ? `Last eye break ${minutesAgo}m ago — eyes resting ✓`
+                : `Last break ${minutesAgo}m ago — break due soon`}
+            </Text>
+          </View>
+        )}
 
-      {/* Break reminder chip */}
-      {minutesAgo !== null && (
-        <View style={[styles.breakChip, { borderColor: minutesAgo < 20 ? '#6ee7b766' : '#f59e0b66' }]}>
-          {minutesAgo < 20 ? (
-            <CheckCircle size={12} color="#6ee7b7" strokeWidth={2.5} />
-          ) : (
-            <AlertCircle size={12} color="#f59e0b" strokeWidth={2.5} />
-          )}
-          <Text style={[styles.breakChipText, { color: minutesAgo < 20 ? '#6ee7b7' : '#f59e0b' }]}>
-            {minutesAgo < 20
-              ? `Last eye break ${minutesAgo}m ago — eyes resting ✓`
-              : `Last break ${minutesAgo}m ago — break due soon`}
-          </Text>
-        </View>
-      )}
+        {/* 4. Recovery Sessions */}
+        <SectionLabel>RECOVERY SESSIONS</SectionLabel>
+        {(() => {
+          // Dynamic gold border: first uncompleted recovery session gets "Start Here".
+          let goldAssigned = false;
+          return RECOVERY_SESSIONS.map((s) => {
+            const route =
+              s.id === "comet-trace"
+                ? ROUTES.appEyeGame("comet-trace")
+                : ROUTES.appCvsProtocol;
+            const isCompleted = completedToday.includes(s.id);
+            const isPrimary = !isCompleted && !goldAssigned;
+            if (isPrimary) goldAssigned = true;
+            return (
+              <ActivityCard
+                key={s.id}
+                id={s.id}
+                title={s.title}
+                subtitle={s.subtitle}
+                onPress={() => router.push(route as never)}
+                badge={isCompleted ? undefined : isPrimary ? "Start Here" : "Exercise"}
+                badgeColor={isPrimary ? "#F59E0B" : EYE_ACCENT}
+                isPrimary={isPrimary}
+                completed={isCompleted}
+              />
+            );
+          });
+        })()}
 
-      {/* 4. Recovery Sessions */}
-      <SectionLabel>RECOVERY SESSIONS</SectionLabel>
-      {RECOVERY_SESSIONS.map(s => {
-        const route = s.id === 'comet-trace'
-          ? ROUTES.appEyeGame('comet-trace')
-          : ROUTES.appCvsProtocol;
-        const isPrimary = s.id === 'cvs-protocol';
-        return (
-          <ActivityCard
-            key={s.id}
-            id={s.id}
-            title={s.title}
-            subtitle={s.subtitle}
-            onPress={() => router.push(route as never)}
-            badge={isPrimary ? 'RECOMMENDED' : undefined}
-            badgeColor="#6ee7b7"
-          />
-        );
-      })}
-
-      {/* 5. Eye Games */}
-      <SectionLabel>EYE GAMES</SectionLabel>
-      {EYE_GAMES.map(item => (
-        <ActivityCard
-          key={item.id}
-          id={item.id}
-          title={item.title}
-          subtitle={item.subtitle}
-          onPress={() => openActivity(item)}
-          badge="GAME"
-          badgeColor="#06B6D4"
-          pb={getGamePB(item.id)}
-        />
-      ))}
+        {/* 5. Eye Games */}
+        <SectionLabel>EYE GAMES</SectionLabel>
+        {(() => {
+          // Gold border moves to first Eye Game only when ALL recovery sessions
+          // are completed today (or user is brand-new with no sessions at all).
+          const allRecoveryDone = hasAnySessions &&
+            RECOVERY_SESSIONS.every(s => completedToday.includes(s.id));
+          return EYE_GAMES.map((item, idx) => (
+            <ActivityCard
+              key={item.id}
+              id={item.id}
+              title={item.title}
+              subtitle={item.subtitle}
+              onPress={() => openActivity(item)}
+              badge={(allRecoveryDone && idx === 0) ? "Start Here" : "Game"}
+              badgeColor={(allRecoveryDone && idx === 0) ? "#F59E0B" : "#A78BFA"}
+              isPrimary={allRecoveryDone && idx === 0}
+              pb={getGamePB(item.id)}
+            />
+          ));
+        })()}
       </ScreenTransition>
     </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  /* Goals Card */
-  goalsCard: { marginBottom: spacing.md, gap: spacing.sm },
-  goalsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs,
+  /* Hero Card */
+  heroCard: {
+    marginBottom: spacing.md,
+    overflow: "hidden",
   },
-  goalsTitle: { ...typography.label, color: colors.text.secondary },
-  recoveryPct: { fontSize: 13, fontWeight: '800' },
-  goalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  heroContent: {
+    alignItems: "center",
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
     gap: spacing.sm,
-    paddingVertical: 4,
   },
-  goalCircle: {
-    width: 22, height: 22, borderRadius: 11,
-    borderWidth: 1.5, borderColor: EYE_ACCENT + '55',
-    alignItems: 'center', justifyContent: 'center',
+  heroIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: EYE_ACCENT + "18",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: EYE_ACCENT + "30",
   },
-  goalCircleDone: { backgroundColor: '#6ee7b7', borderColor: '#6ee7b7' },
-  goalLabel: { ...typography.body, color: colors.text.secondary },
-  goalLabelDone: { color: colors.text.tertiary, textDecorationLine: 'line-through' },
-  breaksProgress: { ...typography.caption, color: colors.text.tertiary, paddingLeft: 30 },
+  heroTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#f6f8fc",
+    letterSpacing: 0.2,
+    textAlign: "center",
+  },
+  heroSubtitle: {
+    fontSize: 13.5,
+    color: "rgba(245,247,251,0.55)",
+    textAlign: "center",
+    lineHeight: 19,
+    paddingHorizontal: spacing.sm,
+  },
+  heroButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: spacing.xs,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    borderRadius: 24,
+    overflow: "hidden",
+  },
+  heroButtonText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#ffffff",
+    letterSpacing: 0.2,
+  },
 
-  streakRow: {
-    flexDirection: 'row', alignItems: 'center',
-    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)',
-    paddingTop: spacing.sm, marginTop: spacing.xs, gap: spacing.sm,
+  /* Welcome-back compact banner */
+  welcomeBackBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: spacing.md,
+    backgroundColor: EYE_ACCENT + "12",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: EYE_ACCENT + "30",
+    paddingHorizontal: 14,
+    paddingVertical: 11,
   },
-  streakLeft: { flexDirection: 'row', alignItems: 'center', gap: 3, minWidth: 80 },
-  streakValue: { ...typography.headingSmall, color: EYE_ACCENT },
-  streakLabel: { ...typography.caption, color: colors.text.secondary },
-  weekRow: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
-  dotCol: { alignItems: 'center', gap: 3 },
-  dot: {
-    width: 14, height: 14, borderRadius: 7,
-    borderWidth: 1.5, borderColor: EYE_ACCENT + '55',
+  welcomeBackText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "700",
+    color: EYE_ACCENT,
   },
-  dotFilled: { backgroundColor: EYE_ACCENT, borderColor: EYE_ACCENT },
-  dotLabel: { fontSize: 8, color: colors.text.secondary, fontWeight: '600' },
-  todayBadge: {
-    ...typography.caption, color: colors.text.secondary,
-    paddingHorizontal: spacing.sm, paddingVertical: 3,
-    borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.04)', overflow: 'hidden',
-  },
-  todayBadgeDone: { color: '#4CAF50', backgroundColor: 'rgba(76,175,80,0.1)' },
 
-  /* Quick Actions */
-  quickActionRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  /* Merged Break Card */
+  breakCard: {
     marginBottom: spacing.md,
   },
-  enforcerCard: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+  breakTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   enforcerInfo: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  enforcerTitle: { ...typography.bodyLarge, color: colors.text.primary, fontWeight: '600' },
-
-  quickBreakBtn: {
-    width: 90,
-    height: 76,
-    borderRadius: 16,
-    backgroundColor: colors.background.card,
-    borderWidth: 1,
-    borderColor: EYE_ACCENT + '55',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
+  enforcerTextCol: {
+    flex: 1,
   },
-  quickBreakLabel: { fontSize: 10, fontWeight: '800', color: EYE_ACCENT, letterSpacing: 0.3 },
+  enforcerTitle: {
+    fontSize: 13,
+    color: colors.text.primary,
+    fontWeight: "600",
+  },
+  enforcerSub: { fontSize: 11, color: colors.text.secondary, marginTop: 1 },
+  quickBreakInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
+  },
+  quickBreakInlineLabel: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "700",
+    color: EYE_ACCENT,
+  },
 
   /* Break Chip */
   breakChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     borderRadius: 20,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 5,
     marginBottom: spacing.md,
   },
-  breakChipText: { fontSize: 12, fontWeight: '600' },
+  breakChipText: { fontSize: 12, fontWeight: "600" },
 
   /* Activity Cards */
   activityCard: {
     marginBottom: 10,
     borderWidth: 1,
   },
+  activityCardGold: {
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 12,
+    shadowOpacity: 0.18,
+  },
   activityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 14,
     paddingVertical: 13,
     paddingHorizontal: 14,
     minHeight: 74,
   },
   iconWrap: {
-    width: 52, height: 52, borderRadius: 15,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    width: 52,
+    height: 52,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
     borderWidth: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   cardInfo: { flex: 1, gap: 3, minWidth: 0 },
-  cardTitle: { fontSize: 16, color: '#f6f8fc', fontWeight: '700', letterSpacing: 0.15 },
-  cardSub: { fontSize: 12.5, color: 'rgba(245,247,251,0.5)' },
-  cardMeta: { alignItems: 'flex-end', gap: 6, minWidth: 36, justifyContent: 'center' },
+  cardTitle: {
+    fontSize: 16,
+    color: "#f6f8fc",
+    fontWeight: "700",
+    letterSpacing: 0.15,
+  },
+  cardSub: { fontSize: 12.5, color: "rgba(245,247,251,0.5)" },
+  cardMeta: {
+    alignItems: "flex-end",
+    gap: 6,
+    minWidth: 36,
+    justifyContent: "center",
+  },
   badgePill: {
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 20,
     borderWidth: 1,
   },
-  badgePillText: { fontSize: 8.5, fontWeight: '800', letterSpacing: 0.6 },
+  badgePillText: { fontSize: 8.5, fontWeight: "800", letterSpacing: 0.6 },
   arrowBtn: {
-    width: 34, height: 34, borderRadius: 17,
-    alignItems: 'center', justifyContent: 'center',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
   },
-  pbText: { fontSize: 10, color: '#FFD700', fontWeight: '700' },
+  checkDot: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#22c55e22",
+    borderWidth: 1.5,
+    borderColor: "#22c55e44",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pbText: { fontSize: 10, color: "#FFD700", fontWeight: "700" },
 });

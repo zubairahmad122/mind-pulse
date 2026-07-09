@@ -2,6 +2,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+import { Flame } from 'lucide-react-native';
 import { ScoreResult } from '@/utils/scoring';
 import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -18,11 +19,13 @@ import Animated, {
 interface Props {
   result: ScoreResult;
   loading: boolean;
+  hasAnySessions?: boolean;
+  streak?: number;
 }
 
 const SEGMENT_MARKS = [25, 50, 75];
 
-export function EyeScoreCard({ result, loading }: Props) {
+export function EyeScoreCard({ result, loading, hasAnySessions = true, streak = 0 }: Props) {
   const { score, theme } = result;
 
   const scoreScale   = useSharedValue(0.6);
@@ -61,11 +64,16 @@ export function EyeScoreCard({ result, loading }: Props) {
       {/* Label row */}
       <View style={styles.labelRow}>
         <Text style={styles.cardLabel}>EYE SCORE</Text>
-        {!loading && (
+        {!loading && hasAnySessions && (
           <View style={[styles.statusPill, { backgroundColor: theme.color + '22', borderColor: theme.color + '55' }]}>
             <Text style={[styles.statusPillText, { color: theme.color }]}>
-              {theme.emoji}  {theme.label}
+              {theme.emoji ? `${theme.emoji}  ` : ''}{theme.label}
             </Text>
+          </View>
+        )}
+        {!loading && !hasAnySessions && (
+          <View style={[styles.statusPill, { backgroundColor: '#06B6D4' + '22', borderColor: '#06B6D4' + '55' }]}>
+            <Text style={[styles.statusPillText, { color: '#06B6D4' }]}>Start your eye care journey</Text>
           </View>
         )}
       </View>
@@ -75,10 +83,10 @@ export function EyeScoreCard({ result, loading }: Props) {
         <Animated.View style={pulseAnim}>
           <Animated.View style={[styles.scoreGlow, { backgroundColor: theme.color }, glowAnim]} />
           <Animated.View style={[styles.scoreCircle, { borderColor: theme.color, backgroundColor: colors.background.secondary + 'cc' }, scoreAnim]}>
-            <Text style={[styles.scoreNumber, { color: theme.color }]}>
-              {loading ? '–' : score}
+            <Text style={[styles.scoreNumber, { color: hasAnySessions ? theme.color : colors.text.tertiary }]}>
+              {loading ? '–' : hasAnySessions ? score : '—'}
             </Text>
-            <Text style={styles.scoreMax}>/100</Text>
+            {hasAnySessions && <Text style={styles.scoreMax}>/100</Text>}
           </Animated.View>
         </Animated.View>
 
@@ -87,30 +95,36 @@ export function EyeScoreCard({ result, loading }: Props) {
             {loading
               ? 'Loading today’s score…'
               : score >= 75
-                ? 'Resets every morning. Keep up the breaks and recovery sessions.'
-                : 'Resets every morning — a break or recovery session below raises it today.'}
+                ? 'Keep up the breaks and recovery sessions.'
+                : 'Complete a session to raise your score.'}
           </Text>
+          {!loading && hasAnySessions && streak >= 2 && (
+            <View style={styles.streakBadge}>
+              <Flame size={12} color="#F59E0B" fill="#F59E0B" />
+              <Text style={styles.streakText}>{streak}-day streak</Text>
+            </View>
+          )}
         </View>
       </View>
 
-      {/* Score bar with segment markers */}
-      <View style={styles.barSection}>
-        <View style={styles.barTrack}>
-          <Animated.View
-            style={[styles.barFill, { width: `${barWidth}%`, backgroundColor: theme.color }]}
-          />
-          {/* NativeWind/RN style accepts a number for `left`, but the slider
-              mark uses a percentage string so `as any` is required here. */}
-          {SEGMENT_MARKS.map(mark => (
-            <View key={mark} style={[styles.segmentMark, { left: `${mark}%` as any }]} />
-          ))}
+      {/* Score bar with segment markers — hidden for first-time users */}
+      {hasAnySessions && (
+        <View style={styles.barSection}>
+          <View style={styles.barTrack}>
+            <Animated.View
+              style={[styles.barFill, { width: `${barWidth}%`, backgroundColor: theme.color }]}
+            />
+            {SEGMENT_MARKS.map(mark => (
+              <View key={mark} style={[styles.segmentMark, { left: `${mark}%` as any }]} />
+            ))}
+          </View>
+          <View style={styles.barLabels}>
+            <Text style={styles.barLabelText}>Building habits</Text>
+            <Text style={styles.barLabelText}>Balanced</Text>
+            <Text style={styles.barLabelText}>Feeling Fresh</Text>
+          </View>
         </View>
-        <View style={styles.barLabels}>
-          <Text style={styles.barLabelText}>Needs Recovery</Text>
-          <Text style={styles.barLabelText}>Balanced</Text>
-          <Text style={styles.barLabelText}>Feeling Fresh</Text>
-        </View>
-      </View>
+      )}
       </View>
     </GlassCard>
   );
@@ -185,6 +199,24 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.text.secondary,
     lineHeight: 17,
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F59E0B18',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F59E0B33',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    alignSelf: 'flex-start',
+  },
+  streakText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#F59E0B',
+    letterSpacing: 0.3,
   },
 
   /* Bar */

@@ -222,7 +222,6 @@ function ParticleFieldInner({ config }: { config: ParticleTypeConfig }) {
 
   // Start all animations
   useEffect(() => {
-    const screenW = SCREEN_W;
     const screenH = SCREEN_H;
 
     particles.forEach(p => {

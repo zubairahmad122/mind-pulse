@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AmbientBackground } from '@/components/ui';
@@ -17,16 +17,33 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { EMOTIONAL_STATES, type EmotionalState } from '@/constants/emotionalStates';
-import { getSessionById, getRecommendedSession } from '@/constants/relaxSessions';
+import { getSessionById, getRecommendedSession, getSessionRoute } from '@/constants/relaxSessions';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { useRelaxContext } from '@/context/RelaxContext';
+import { useAudioGuide } from '@/hooks/useAudioGuide';
+
+// Same accent as the Relax tab / session player — one color for the feature.
+const RELAX_ACCENT = '#34D399';
+
+// Emotion grid: 3 columns. Card widths are computed in pixels from the
+// measured grid width — percentage widths + gap wrapped to a broken
+// 2-column layout on narrow screens.
+const EMOTION_GAP = 10;
+const EMOTION_COLUMNS = 3;
 
 export default function RelaxCompletion() {
   const router = useRouter();
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const [selectedEmotion, setSelectedEmotion] = useState<EmotionalState | null>(null);
   const [rated, setRated] = useState(false);
+  const [gridWidth, setGridWidth] = useState(0);
+  // The closing narration from the session is still playing when we arrive —
+  // let it finish here, and stop it only when the user leaves this screen.
+  const { stop: stopVoice } = useAudioGuide();
+  useEffect(() => {
+    return () => stopVoice();
+  }, [stopVoice]);
 
   // Celebration animations
   const heroScale = useSharedValue(0.5);
@@ -58,7 +75,16 @@ export default function RelaxCompletion() {
   }, [heroScale, heroOpacity, statsSlide, statsOpacity, emotionSlide, emotionOpacity]);
 
   const session = getSessionById(sessionId || '');
-  const { completedSessions, completeSession } = useRelaxContext();
+  const { completedSessions, completeSession, updateLastCompletion } = useRelaxContext();
+
+  // Record the completion as soon as this screen opens, so the stats above are
+  // correct immediately. Mood + rating get attached to this record afterwards.
+  const recordedRef = useRef(false);
+  useEffect(() => {
+    if (recordedRef.current) return;
+    recordedRef.current = true;
+    completeSession(null);
+  }, [completeSession]);
 
   if (!session) {
     return (
@@ -78,7 +104,7 @@ export default function RelaxCompletion() {
   const handleRate = (rating: number) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setRated(true);
-    completeSession(selectedEmotion, rating);
+    updateLastCompletion(selectedEmotion, rating);
   };
 
   const handleHome = () => {
@@ -110,50 +136,50 @@ export default function RelaxCompletion() {
       <View style={styles.page}>
         {/* ─── Celebration Hero Section ─────────────────────── */}
         <Animated.View style={[styles.heroSection, heroAnimStyle]}>
-          <View style={[styles.celebrationGlow, { backgroundColor: session.color + '20' }]} />
+          <View style={[styles.celebrationGlow, { backgroundColor: RELAX_ACCENT + '20' }]} />
 
-          <View style={[styles.heroIcon, { borderColor: session.color + '40', shadowColor: session.color }]}>
+          <View style={[styles.heroIcon, { borderColor: RELAX_ACCENT + '40', shadowColor: RELAX_ACCENT }]}>
             <LinearGradient
-              colors={[session.color + '30', session.color + '10']}
+              colors={[RELAX_ACCENT + '30', RELAX_ACCENT + '10']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
-            <CheckCircle2 size={52} color={session.color} strokeWidth={1.8} />
+            <CheckCircle2 size={52} color={RELAX_ACCENT} strokeWidth={1.8} />
           </View>
 
           <Text style={styles.celebrationText}>Well Done!</Text>
-          <Text style={[styles.sessionTitle, { color: session.color }]}>{session.title}</Text>
+          <Text style={[styles.sessionTitle, { color: RELAX_ACCENT }]}>{session.title}</Text>
           <Text style={styles.sessionDuration}>
-            {Math.ceil(session.durationSeconds / 60)} minutes of peace
+            {Math.round(session.durationSeconds / 60)} minutes of peace
           </Text>
         </Animated.View>
 
         {/* ─── Progress Stats ──────────────────────────────── */}
         <Animated.View style={[styles.statsSection, statsAnimStyle]}>
           <GlassCard style={styles.statCell}>
-            <View style={[styles.statIcon, { borderColor: session.color + '38' }]}>
+            <View style={[styles.statIcon, { borderColor: RELAX_ACCENT + '38' }]}>
               <LinearGradient
-                colors={[session.color + '28', session.color + '10']}
+                colors={[RELAX_ACCENT + '28', RELAX_ACCENT + '10']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
               />
-              <CheckCheck size={18} color={session.color} />
+              <CheckCheck size={18} color={RELAX_ACCENT} />
             </View>
             <Text style={styles.statNumber}>{thisWeekSessions}</Text>
             <Text style={styles.statLabel}>This week</Text>
           </GlassCard>
 
           <GlassCard style={styles.statCell}>
-            <View style={[styles.statIcon, { borderColor: '#4FC3F738' }]}>
+            <View style={[styles.statIcon, { borderColor: RELAX_ACCENT + '38' }]}>
               <LinearGradient
-                colors={['#4FC3F728', '#4FC3F710']}
+                colors={[RELAX_ACCENT + '28', RELAX_ACCENT + '10']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
               />
-              <Flame size={18} color="#4FC3F7" />
+              <Flame size={18} color={RELAX_ACCENT} />
             </View>
             <Text style={styles.statNumber}>{completedSessions.length}</Text>
             <Text style={styles.statLabel}>Total sessions</Text>
@@ -164,15 +190,22 @@ export default function RelaxCompletion() {
         <Animated.View style={[styles.feedbackSection, emotionAnimStyle]}>
           <Text style={styles.sectionTitle}>How are you feeling now?</Text>
 
-          <View style={styles.emotionGrid}>
+          <View
+            style={styles.emotionGrid}
+            onLayout={e => setGridWidth(e.nativeEvent.layout.width)}
+          >
             {EMOTIONAL_STATES.map(emotion => {
               const isSelected = selectedEmotion === emotion.state;
+              const cardWidth = gridWidth
+                ? Math.floor((gridWidth - EMOTION_GAP * (EMOTION_COLUMNS - 1)) / EMOTION_COLUMNS)
+                : undefined;
               return (
                 <TouchableOpacity
                   key={emotion.state}
                   onPress={() => handleSelectEmotion(emotion.state)}
                   style={[
                     styles.emotionCard,
+                    cardWidth != null && { width: cardWidth },
                     isSelected && {
                       backgroundColor: emotion.color + '1f',
                       borderColor: emotion.color,
@@ -228,10 +261,7 @@ export default function RelaxCompletion() {
 
             <TouchableOpacity
               onPress={() => {
-                router.push({
-                  pathname: '/(app)/relax/player',
-                  params: { sessionId: nextSession.id },
-                } as never);
+                router.push(getSessionRoute(nextSession.id) as never);
               }}
               activeOpacity={0.85}
             >
@@ -282,8 +312,8 @@ export default function RelaxCompletion() {
             label="BACK TO HOME"
             icon={<Home size={18} color="#fff" />}
             onPress={handleHome}
-            colors={['#3b82f6', '#7c3aed', '#c026d3']}
-            glowColor="rgba(124,58,237,0.5)"
+            colors={[RELAX_ACCENT, RELAX_ACCENT + 'cc']}
+            glowColor={RELAX_ACCENT + '88'}
             letterSpacing={1.5}
           />
         </View>
@@ -407,20 +437,24 @@ const styles = StyleSheet.create({
   emotionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    justifyContent: 'space-between',
+    gap: EMOTION_GAP,
+    // Full rows fill edge-to-edge; the 2-card last row sits centered.
+    justifyContent: 'center',
   },
 
   emotionCard: {
-    width: '31.5%',
-    aspectRatio: 1,
+    width: '30%', // pre-measure fallback; replaced by the computed pixel width
     borderRadius: 18,
     backgroundColor: 'rgba(255,255,255,0.035)',
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    // Content-sized with even padding — the old square aspectRatio left the
+    // label pressed against the bottom edge with dead space above the emoji.
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    gap: 8,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0,
     shadowRadius: 10,

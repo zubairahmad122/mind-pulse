@@ -5,7 +5,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Crown } from 'lucide-react-native';
-import { COLORS, RADIUS, SIZES, SPACING, TYPOGRAPHY } from '@/theme';
+import { COLORS, RADIUS, SIZES, TYPOGRAPHY } from '@/theme';
 
 type BadgeVariant = 'default' | 'success' | 'warning' | 'premium' | 'info';
 

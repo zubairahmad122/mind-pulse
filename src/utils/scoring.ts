@@ -119,10 +119,9 @@ function circularMinuteDiff(a: number, b: number): number {
 // ──────────────────────────────────────────────
 
 export function eyeScoreTheme(score: number): ScoreTheme {
-  if (score < 25) return { label: 'Eyes Need Recovery', emoji: '🌧️', color: '#f97316' };
-  if (score < 50) return { label: 'Screen Time Adding Up', emoji: '☁️', color: '#f59e0b' };
-  if (score < 75) return { label: 'Balanced Eye Day', emoji: '🙂', color: '#8BC34A' };
-  return { label: 'Eyes Feeling Fresh', emoji: '🌿', color: '#6ee7b7' };
+  if (score < 50) return { label: 'Building habits', emoji: '', color: '#f59e0b' };
+  if (score < 80) return { label: 'Balanced', emoji: '', color: '#8BC34A' };
+  return { label: 'Feeling Fresh', emoji: '', color: '#6ee7b7' };
 }
 
 export function sleepScoreTheme(score: number): ScoreTheme {
@@ -204,8 +203,8 @@ export function calculateEyeScore({
       'reminders',
       'Break Reminders',
       breakEnforcerEnabled
-        ? 'Break reminders are turned on'
-        : 'Break reminders are turned off — turn them on for steady protection',
+        ? 'Break reminders are on — eyes get regular rest'
+        : 'Break reminders are off — get nudges to rest your eyes',
       enforcerSub,
       15,
     ),

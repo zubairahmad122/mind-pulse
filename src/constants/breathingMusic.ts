@@ -12,7 +12,7 @@ export const BREATHING_MUSIC: {
 }[] = [
   {
     id:    'none',
-    label: 'Silent',
+    label: 'No Sound',
     icon:  VolumeX,
     color: '#6b7280',
     url:   '',

@@ -7,7 +7,7 @@ import { View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MPIcon } from '@/components/atoms/MPIcon';
 import { MPText } from '@/components/atoms/MPText';
-import { COLORS, RADIUS, SPACING } from '@/theme';
+import { RADIUS, SPACING } from '@/theme';
 
 type Props = {
   streak: number;

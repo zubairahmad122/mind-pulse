@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSleep } from '@/context/SleepContext';
 import { useSleepSchedule } from '@/hooks/useSleepSchedule';
@@ -9,7 +8,6 @@ import {
   getCachedSleepTip,
   setCachedSleepTip,
   buildSleepFingerprint,
-  getCachedFingerprint,
   setCachedFingerprint,
 } from '@/services/sleepTipCache';
 

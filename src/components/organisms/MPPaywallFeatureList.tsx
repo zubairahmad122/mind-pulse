@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MPIcon } from '@/components/atoms/MPIcon';
 import { MPText } from '@/components/atoms/MPText';
-import { COLORS, SIZES, SPACING } from '@/theme';
+import { COLORS } from '@/theme';
 
 interface Feature {
   label: string;

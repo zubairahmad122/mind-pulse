@@ -5,7 +5,6 @@ import { TRANSLATIONS, type Translations } from '@/constants/translations';
 
 interface LanguageCtx {
   langCode: LangCode;
-  ttsLang: string;
   rtl: boolean;
   scripts: VoiceScript;
   t: Translations;
@@ -16,7 +15,6 @@ const STORAGE_KEY = '@mindpulse/language';
 
 export const LanguageContext = createContext<LanguageCtx>({
   langCode: 'en',
-  ttsLang: 'en-US',
   rtl: false,
   scripts: VOICE_SCRIPTS['en'],
   t: TRANSLATIONS['en'],
@@ -28,8 +26,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then(v => {
-      if (v && ['en', 'hi', 'ur', 'ps'].includes(v)) {
-        setLangCode(v as LangCode);
+      if (v === 'en' || v === 'ur') {
+        setLangCode(v);
+      } else if (v === 'hi' || v === 'ps') {
+        // Removed languages: migrate a previously saved Hindi/Pashto to Urdu.
+        setLangCode('ur');
+        void AsyncStorage.setItem(STORAGE_KEY, 'ur');
       }
     });
   }, []);
@@ -43,12 +45,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(() => ({
     langCode,
-    ttsLang: lang.ttsLang,
     rtl: lang.rtl,
     scripts: VOICE_SCRIPTS[langCode],
     t: TRANSLATIONS[langCode],
     setLang,
-  }), [langCode, lang.ttsLang, lang.rtl, setLang]);
+  }), [langCode, lang.rtl, setLang]);
 
   return (
     <LanguageContext.Provider value={value}>

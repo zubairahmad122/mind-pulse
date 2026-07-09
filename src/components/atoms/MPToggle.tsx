@@ -4,9 +4,8 @@
 
 import React from 'react';
 import { Switch, type SwitchProps } from 'react-native';
-import { COLORS, SIZES } from '@/theme';
+import { COLORS } from '@/theme';
 import * as Haptics from 'expo-haptics';
-import { HAPTICS } from '@/theme';
 
 interface MPToggleProps extends Omit<SwitchProps, 'value' | 'onValueChange'> {
   value: boolean;

@@ -25,7 +25,6 @@ import { ActiveSleepRecord } from '@/types/activeSleep.types';
 import { handleAlarmSupport, scheduleWakeAlarmWithFeedback } from '@/utils/alarmFeedback';
 
 const SNOOZE_MS = 10 * 60 * 1000; // 10 minutes
-const MAX_SNOOZES = 3;
 
 const DEFAULT_PRESET_ID = 'night-7.5';
 

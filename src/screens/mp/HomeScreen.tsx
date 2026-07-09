@@ -6,11 +6,9 @@
 
 import React, { useMemo } from 'react';
 import { View, TouchableOpacity } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MPText } from '@/components/atoms/MPText';
 import { MPCard } from '@/components/atoms/MPCard';
-import { MPIcon } from '@/components/atoms/MPIcon';
 import { MPProgressRing } from '@/components/molecules/MPProgressRing';
 import { MPFeatureCard } from '@/components/molecules/MPFeatureCard';
 import { MPSectionHeader } from '@/components/molecules/MPSectionHeader';
