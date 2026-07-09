@@ -19,6 +19,7 @@ import Animated, {
 import { EMOTIONAL_STATES, type EmotionalState } from '@/constants/emotionalStates';
 import { getSessionById, getRecommendedSession, getSessionRoute } from '@/constants/relaxSessions';
 import { colors } from '@/constants/colors';
+import { ROUTES } from '@/constants/routes';
 import { spacing } from '@/constants/spacing';
 import { useRelaxContext } from '@/context/RelaxContext';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
@@ -108,7 +109,10 @@ export default function RelaxCompletion() {
   };
 
   const handleHome = () => {
-    router.back();
+    // Pop back to where the session was launched from; if there's nothing
+    // beneath (deep link), honor the button's label and go Home.
+    if (router.canGoBack()) router.back();
+    else router.replace(ROUTES.appHome as never);
   };
 
   const nextSession = selectedEmotion ? getRecommendedSession(selectedEmotion) : null;
@@ -261,7 +265,9 @@ export default function RelaxCompletion() {
 
             <TouchableOpacity
               onPress={() => {
-                router.push(getSessionRoute(nextSession.id) as never);
+                // replace, not push: ending the next session must not land
+                // back on this stale "Well Done" screen.
+                router.replace(getSessionRoute(nextSession.id) as never);
               }}
               activeOpacity={0.85}
             >

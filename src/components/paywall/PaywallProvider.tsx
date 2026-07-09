@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { PaywallContext } from '@/hooks/usePaywall';
+import { trackPaywallShown } from '@/services/analytics';
 import { PaywallModal } from './PaywallModal';
 
 /**
@@ -13,6 +14,7 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
   const showPaywall = useCallback((id: string) => {
     setFeatureId(id);
     setIsVisible(true);
+    trackPaywallShown(id);
   }, []);
 
   const hidePaywall = useCallback(() => {

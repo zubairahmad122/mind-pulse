@@ -22,13 +22,24 @@ import {
   SpaceGrotesk_600SemiBold,
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
+import * as Sentry from '@sentry/react-native';
 
 import { COLORS, ROUTES } from '@/constants';
+import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { SubscriptionProvider } from '@/context/SubscriptionContext';
 import { RelaxProvider } from '@/context/RelaxContext';
 import { PaywallProvider } from '@/components/paywall/PaywallProvider';
+
+Sentry.init({
+  dsn: 'https://4d1abf4f165aaf226f6a58a70cdf65d7@o4511705450414080.ingest.de.sentry.io/4511705459261520',
+  // Dev crashes show up in Metro already — only report from real builds.
+  // (Connection verified 2026-07-09 with a temporary test event.)
+  enabled: !__DEV__,
+  // 10% performance traces: enough signal without burning the free quota.
+  tracesSampleRate: 0.1,
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -89,11 +100,12 @@ function RootLayoutNav() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <StatusBar style="light" />
+        <AppErrorBoundary>
         <LanguageProvider>
           <AuthProvider>
             <SubscriptionProvider>
@@ -105,10 +117,13 @@ export default function RootLayout() {
             </SubscriptionProvider>
           </AuthProvider>
         </LanguageProvider>
+        </AppErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
+
+export default Sentry.wrap(RootLayout);
 
 const styles = StyleSheet.create({
   root: { flex: 1 },

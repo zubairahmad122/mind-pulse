@@ -15,7 +15,9 @@ export const ROUTES = {
   appEditProfile: '/(app)/edit-profile',
   appPremium: '/(app)/premium',
   appAudioPlayer: '/(app)/audio-player',
-  appBoxBreathing: '/(app)/stress/box-breathing',
+  // Breathing entry points open the Relax player (the one real breathing
+  // engine) — the old standalone Box Breathing / Calm Wave screens are gone.
+  appBoxBreathing: '/(app)/relax/player?sessionId=box-breathing',
   appBodyScan: '/(app)/stress/body-scan',
   appJournal: '/(app)/stress/journal',
   appEyeExercise: (id: string) => `/(app)/eye-exercise/${id}` as const,
@@ -24,7 +26,7 @@ export const ROUTES = {
   appDichopticScreen: '/(app)/dichoptic-screen',
   appEyeBreak: '/(app)/eye-break',
   appGrounding: '/(app)/stress/grounding',
-  appCalmWave: '/(app)/stress/calm-wave',
+  appCalmWave: '/(app)/relax/player?sessionId=calm-flow',
   appTensionRelease: '/(app)/stress/tension-release',
   appBreathe:        '/(app)/stress/breathe',
   appAlarmSettings:  '/(app)/alarm-settings',

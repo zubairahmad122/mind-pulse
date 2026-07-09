@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react-native';
+import { ROUTES } from './routes';
 import { Moon, Music, Eye, Heart } from 'lucide-react-native';
 
 export type QuickAction = {
@@ -14,7 +15,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   { id: 'audio', label: 'Start Relax Session', description: 'Guided audio to unwind', accent: '#4FC3F7', icon: Music, route: '/(app)/(tabs)/relax' },
   { id: 'sleep', label: 'Sleep Analysis', description: 'Plan tonight & review rest', accent: '#a78bfa', icon: Moon, route: '/(app)/(tabs)/sleep?tab=tonight' },
   { id: 'eye', label: 'Eye Exercise', description: 'Reduce strain & refocus', accent: '#6ee7b7', icon: Eye, route: '/(app)/(tabs)/eye-relax' },
-  { id: 'stress', label: 'Breathing Exercise', description: 'Calm your nervous system', accent: '#FF6B9D', icon: Heart, route: '/(app)/stress/box-breathing' },
+  { id: 'stress', label: 'Breathing Exercise', description: 'Calm your nervous system', accent: '#FF6B9D', icon: Heart, route: ROUTES.appBoxBreathing },
 ];
 
 export type PlanItem = { id: string; title: string; subtitle: string; emoji: string; route: string };
@@ -31,7 +32,7 @@ export function getDynamicPlan(worstArea: string): PlanItem[] {
     { id: 's3', title: 'Body Scan',         subtitle: '7 min · deep relaxation',    emoji: '🧘', route: '/(app)/stress/body-scan' },
   ];
   return [
-    { id: 'm1', title: 'Box Breathing',  subtitle: '5 min · calm your system',      emoji: '🫁', route: '/(app)/stress/box-breathing' },
+    { id: 'm1', title: 'Box Breathing',  subtitle: '5 min · calm your system',      emoji: '🫁', route: ROUTES.appBoxBreathing },
     { id: 'm2', title: 'Journal Entry',  subtitle: '3 min · clear your mind',       emoji: '📓', route: '/(app)/stress/journal' },
     { id: 'm3', title: 'Grounding',      subtitle: '5 min · 5-4-3-2-1 technique',  emoji: '🌿', route: '/(app)/stress/grounding' },
   ];

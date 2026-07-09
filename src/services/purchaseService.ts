@@ -4,6 +4,7 @@ import Purchases, {
   type PurchasesError,
   type PurchasesPackage,
 } from 'react-native-purchases';
+import { trackPurchase } from './analytics';
 
 export type PurchaseResult = {
   success: boolean;
@@ -31,6 +32,7 @@ export async function getOfferings(): Promise<PurchasesPackage[]> {
 export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseResult> {
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
+    trackPurchase(pkg.product.identifier);
     return { success: true, customerInfo };
   } catch (err) {
     const purchasesError = err as PurchasesError;

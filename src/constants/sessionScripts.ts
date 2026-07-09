@@ -1,65 +1,11 @@
 /**
- * Guidance scripts for all relax/breathing sessions.
- * On-screen guidance text for the narration sessions (voice comes from the
- * pre-recorded clips in assets/audio/guide — see useAudioGuide).
- * Languages: en (English), hi (Hindi), ur (Urdu).
+ * On-screen guidance text for the narration sessions — Body Scan, Grounding,
+ * Muscle Release (voice comes from the pre-recorded clips in
+ * assets/audio/guide — see useAudioGuide). Breathing sessions live in the
+ * Relax player and use VOICE_SCRIPTS phase labels instead.
  */
 
 export type SessionLang = 'en';
-
-// ─── Box Breathing ────────────────────────────────────────────────────────────
-export interface BoxScript {
-  intro:       string;
-  inhale:      string;
-  inhaleSub:   string;
-  holdIn:      string;
-  holdInSub:   string;
-  exhale:      string;
-  exhaleSub:   string;
-  holdOut:     string;
-  holdOutSub:  string;
-  complete:    string;
-}
-
-export const BOX_SCRIPTS: Record<SessionLang, BoxScript> = {
-  en: {
-    intro:      'Close your eyes. Sit comfortably. Let\'s begin.',
-    inhale:     'Breathe in slowly…',
-    inhaleSub:  'Let your chest rise gently',
-    holdIn:     'Hold… stay still…',
-    holdInSub:  'You are completely safe here',
-    exhale:     'Now let it all go…',
-    exhaleSub:  'Release every bit of tension',
-    holdOut:    'Rest in the quiet…',
-    holdOutSub: 'You\'re doing beautifully',
-    complete:   'Well done. Carry this calm with you.',
-  },
-};
-
-// ─── Calm Wave ────────────────────────────────────────────────────────────────
-export interface CalmWaveScript {
-  intro:     string;
-  inhale:    string;
-  inhaleSub: string;
-  hold:      string;
-  holdSub:   string;
-  exhale:    string;
-  exhaleSub: string;
-  complete:  string;
-}
-
-export const CALM_WAVE_SCRIPTS: Record<SessionLang, CalmWaveScript> = {
-  en: {
-    intro:     'Imagine a calm ocean. Let each breath be a wave.',
-    inhale:    'Breathe in like a rising wave…',
-    inhaleSub: 'Let the tide fill you',
-    hold:      'At the crest… hold…',
-    holdSub:   'Feel the fullness',
-    exhale:    'Let the wave wash out…',
-    exhaleSub: 'All tension flows away with it',
-    complete:  'Beautiful. You are calm.',
-  },
-};
 
 // ─── Body Scan ────────────────────────────────────────────────────────────────
 export interface BodyScanZoneScript {

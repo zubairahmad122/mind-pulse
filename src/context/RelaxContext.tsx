@@ -5,6 +5,7 @@ import type { EmotionalState } from '@/constants/emotionalStates';
 import type { BreathingMusicId } from '@/constants/breathingMusic';
 import { useAuth } from './AuthContext';
 import { reportError } from '@/utils/errorLogger';
+import { trackMoodSelected, trackSessionComplete, trackSessionStart } from '@/services/analytics';
 
 export interface SessionCompletionRecord {
   sessionId: string;
@@ -127,6 +128,7 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
     setSessionElapsed(0);
     setSessionPaused(false);
     setLastEmotion(emotion);
+    trackSessionStart(sessionId, emotion);
   }, []);
 
   const handlePauseSession = useCallback(() => {
@@ -170,6 +172,7 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
       persistSessionsToFirestore(user.uid, newRecord);
     }
 
+    trackSessionComplete(currentSessionId);
     setCurrentSessionId(null);
     setSessionElapsed(0);
     setSessionPaused(false);
@@ -187,6 +190,9 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
           rating: rating > 0 ? rating : null,
         };
         persistSessions(next);
+        if (emotionAfter) {
+          trackMoodSelected(next[next.length - 1].sessionId, emotionAfter, rating);
+        }
         return next;
       });
     },

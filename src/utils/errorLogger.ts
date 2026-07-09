@@ -1,10 +1,10 @@
 /**
- * Lightweight error reporter.
- *
- * Replace the body of `report` with Sentry / Bugsnag / Firebase Crashlytics
- * in production.  Until then we log to the console so failures are at least
- * visible during development and internal testing.
+ * Lightweight error reporter — the single funnel every caught error in the
+ * app goes through. Dev: console (visible in Metro). Production: Sentry
+ * (initialized in src/app/_layout.tsx; uncaught crashes go there directly).
  */
+
+import * as Sentry from '@sentry/react-native';
 
 export type ErrorContext = Record<string, unknown>;
 
@@ -16,8 +16,8 @@ export function reportError(error: unknown, context?: ErrorContext): void {
     return;
   }
 
-  // Production: hook into your crash reporter here.
-  // Example:
-  // import * as Sentry from '@sentry/react-native';
-  // Sentry.captureException(error, { extra: context });
+  Sentry.captureException(
+    error instanceof Error ? error : new Error(String(error)),
+    { extra: context },
+  );
 }

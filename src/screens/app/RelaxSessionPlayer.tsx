@@ -25,6 +25,8 @@ import { BREATHING_MUSIC } from '@/constants/breathingMusic';
 import { BREATHING_PATTERNS } from '@/constants/breathingPatterns';
 import { colors } from '@/constants/colors';
 import { formatSessionDuration, getSessionById } from '@/constants/relaxSessions';
+import { ROUTES } from '@/constants/routes';
+import { trackSessionAbandoned } from '@/services/analytics';
 import type { AudioClipId } from '@/constants/audioGuide';
 import { useRelaxContext } from '@/context/RelaxContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -82,27 +84,31 @@ export default function RelaxSessionPlayer() {
   });
   const { scripts } = useLanguage();
 
-  // Validate session ID before proceeding
-  if (!sessionId) {
-    router.back();
-    return null;
-  }
+  // Leaving the player must never strand the user: pop back to where they
+  // came from (Relax home, Stress breathe list, Home quick action), or land
+  // on the Relax tab when there is nothing to pop (deep links, odd stacks).
+  const leavePlayer = useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else router.replace(ROUTES.appRelax as never);
+  }, [router]);
 
-  const session = getSessionById(sessionId);
-  if (!session) {
-    // Invalid session ID — exit gracefully
-    router.back();
-    return null;
-  }
+  const session = sessionId ? getSessionById(sessionId) : null;
 
-  const pattern = session.breathingPattern || 'calm';
+  // Invalid/missing session: navigate away from an effect, never during
+  // render — a render-time router call breaks the hook order. Until the
+  // navigation lands, the "Session not found" fallback below renders.
+  useEffect(() => {
+    if (!session) leavePlayer();
+  }, [session, leavePlayer]);
+
+  const pattern = session?.breathingPattern || 'calm';
   const patternDef = BREATHING_PATTERNS[pattern];
-  const sessionAudio = SESSION_AUDIO[session.id] ?? DEFAULT_SESSION_AUDIO;
+  const sessionAudio = SESSION_AUDIO[session?.id ?? ''] ?? DEFAULT_SESSION_AUDIO;
 
   // Exact, not rounded: for breathing sessions durationSeconds is derived
   // from the pattern (cycles × cycle length), so the timer ends precisely on
   // the last cycle — rounding to whole minutes was cutting cycles short.
-  const displayDurationSeconds = Math.max(60, session.durationSeconds);
+  const displayDurationSeconds = Math.max(60, session?.durationSeconds ?? 60);
 
   // Session state
   const [isRunning, setIsRunning] = useState(false);
@@ -175,6 +181,7 @@ export default function RelaxSessionPlayer() {
   const completedRef = useRef(false);
 
   const handleStart = useCallback(() => {
+    if (!session) return;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsRunning(true);
     setSessionPhase('countdown');
@@ -197,7 +204,7 @@ export default function RelaxSessionPlayer() {
       protect: true, // phase cues must never cut the intro narration
       onDone: () => setIntroDone(true),
     });
-  }, [play, sessionAudio, effectiveVoiceVol, startSession, session.id, lastEmotion]);
+  }, [play, sessionAudio, effectiveVoiceVol, startSession, session, lastEmotion]);
 
   const handleToggleVoiceMute = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -234,11 +241,15 @@ export default function RelaxSessionPlayer() {
 
   const handleStop = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Ending early = abandoned; where users bail is the retention metric.
+    if (isRunning && !completedRef.current && session) {
+      trackSessionAbandoned(session.id, elapsedSeconds, displayDurationSeconds);
+    }
     stop();
     setIsRunning(false);
     setIsPaused(false);
-    router.back();
-  }, [stop]);
+    leavePlayer();
+  }, [stop, isRunning, session, elapsedSeconds, displayDurationSeconds, leavePlayer]);
 
   // Phase orchestration. Paused = frozen: without the isPaused gate the
   // countdown kept counting and the settling cap kept running under a pause —
@@ -426,16 +437,6 @@ export default function RelaxSessionPlayer() {
     };
   }, [stop]);
 
-  if (!session) {
-    return (
-      <SafeAreaView style={styles.root}>
-        <View style={styles.centerFlex}>
-          <Text style={styles.errorText}>Session not found</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   const countdownAnimStyle = useAnimatedStyle(() => ({
     opacity: countdownOpacity.value,
     transform: [{ scale: countdownScale.value }],
@@ -449,6 +450,18 @@ export default function RelaxSessionPlayer() {
     opacity: phaseTextOpacity.value,
     transform: [{ scale: phaseTextScale.value }],
   }));
+
+  // Every hook above runs unconditionally on every render; only now may the
+  // invalid-session fallback bail out (the effect above navigates away).
+  if (!session) {
+    return (
+      <SafeAreaView style={styles.root}>
+        <View style={styles.centerFlex}>
+          <Text style={styles.errorText}>Session not found</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Big phase label + small hint, e.g. "BREATHE IN / Take a slow, deep breath".
   // Reads displayPhaseName (not activePhase) so the crossfade controls the swap.
@@ -485,7 +498,7 @@ export default function RelaxSessionPlayer() {
             <TouchableOpacity
               onPress={() => {
                 stop();
-                router.back();
+                leavePlayer();
               }}
               style={styles.backBtn}
             >
