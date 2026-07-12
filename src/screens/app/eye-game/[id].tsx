@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', marginBottom: spacing.sm,
   },
   timerRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
-  timer:      { ...typography.headingLarge, color: colors.accent.purple },
+  timer:      { ...typography.headingLarge, color: '#22d3ee' },
   timerDone:  { color: '#4CAF50' },
   timerLabel: { ...typography.caption, color: colors.text.secondary },
   pbChip: {

@@ -100,7 +100,7 @@ export function FigureEightGuide({ active }: Props) {
             <Stop offset="0%" stopColor="#ec4899" stopOpacity="0.14" /><Stop offset="60%" stopColor="#22d3ee" stopOpacity="0.06" /><Stop offset="100%" stopColor="#0A0E1A" stopOpacity="0" />
           </RadialGradient>
           <LinearGradient id="f8Track" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0%" stopColor="#ec4899" stopOpacity="0.55" /><Stop offset="50%" stopColor="#a78bfa" stopOpacity="0.65" /><Stop offset="100%" stopColor="#4FC3F7" stopOpacity="0.55" />
+            <Stop offset="0%" stopColor="#ec4899" stopOpacity="0.55" /><Stop offset="50%" stopColor="#22d3ee" stopOpacity="0.65" /><Stop offset="100%" stopColor="#4FC3F7" stopOpacity="0.55" />
           </LinearGradient>
         </Defs>
         <Circle cx={CENTER} cy={CENTER} r="115" fill="url(#f8Glow)" />
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   orbInner: { width: 14, height: 14, borderRadius: 7, backgroundColor: '#FFFFFF', borderWidth: 2.5, borderColor: '#ec4899', zIndex: 2 },
   orbGlow: { position: 'absolute', width: ORB_SIZE, height: ORB_SIZE, borderRadius: ORB_SIZE / 2, backgroundColor: '#ec4899', opacity: 0.55, zIndex: 1 },
   trailDotA: { position: 'absolute', left: 0, top: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: '#ec4899', opacity: 0.55 },
-  trailDotB: { position: 'absolute', left: 0, top: 0, width: 10, height: 10, borderRadius: 5, backgroundColor: '#a78bfa', opacity: 0.32 },
+  trailDotB: { position: 'absolute', left: 0, top: 0, width: 10, height: 10, borderRadius: 5, backgroundColor: '#22d3ee', opacity: 0.32 },
   label: { position: 'absolute', bottom: 12, fontSize: 13, fontWeight: '600', color: '#FFFFFF', letterSpacing: 0.4, textAlign: 'center', paddingHorizontal: 16 },
   speedBadge: { position: 'absolute', top: 12, right: 12, fontSize: 11, color: '#FFD700', fontWeight: '800', letterSpacing: 1 },
 });

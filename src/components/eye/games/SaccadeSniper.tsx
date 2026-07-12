@@ -12,9 +12,13 @@ import Animated, {
 import Svg, { Path } from 'react-native-svg';
 import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { GradientCTA } from '@/components/ui/GradientCTA';
+import { PILLAR_THEME } from '@/constants/theme';
+import { type GameEndStats } from './GameOverScreen';
 
 const db = getFirestore();
-import { type GameEndStats } from './GameOverScreen';
+const EYES = PILLAR_THEME.eyes;
 
 interface Props {
   running: boolean;
@@ -24,22 +28,22 @@ interface Props {
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
-  bg:          '#0e0b1e',
-  arenaBg:     '#060413',
-  card:        '#1a1535',
-  purple:      '#7f77dd',
-  purpleLight: '#a78bfa',
+  bg:          '#071216',
+  arenaBg:     '#06121a',
+  card:        'rgba(255,255,255,0.045)',
+  purple:      '#22d3ee',
+  purpleLight: '#5eead4',
   green:       '#6ee7b7',
   text:        '#ffffff',
-  muted:       '#9b8ec4',
-  dim:         '#7a6fa0',
+  muted:       'rgba(255,255,255,0.6)',
+  dim:         'rgba(255,255,255,0.38)',
   amber:       '#f59e0b',
   red:         '#e24b4a',
   gold:        '#ffd700',
   orange:      '#f97316',
 };
 
-const TARGET_COLORS = ['#7f77dd', '#a78bfa', '#6ee7b7', '#f59e0b', '#f472b6', '#38bdf8'];
+const TARGET_COLORS = ['#06b6d4', '#22d3ee', '#6ee7b7', '#f59e0b', '#f472b6', '#38bdf8'];
 
 const EYE_TIPS = [
   'Blinking resets tear film — blink between targets.',
@@ -51,10 +55,10 @@ const EYE_TIPS = [
 
 // ─── Difficulty ───────────────────────────────────────────────────────────────
 type Difficulty = 'easy' | 'sharp' | 'elite';
-const DIFF: Record<Difficulty, { icon: string; size: number; speedMs: number; pts: number; label: string }> = {
-  easy:  { icon: '🟢', size: 80, speedMs: 1000, pts: 1, label: 'Casual' },
-  sharp: { icon: '🟡', size: 60, speedMs:  600, pts: 2, label: 'Sharp'  },
-  elite: { icon: '🔴', size: 48, speedMs:  380, pts: 3, label: 'Elite'  },
+const DIFF: Record<Difficulty, { dotColor: string; size: number; speedMs: number; pts: number; label: string }> = {
+  easy:  { dotColor: '#6ee7b7', size: 80, speedMs: 1000, pts: 1, label: 'Casual' },
+  sharp: { dotColor: '#f59e0b', size: 60, speedMs:  600, pts: 2, label: 'Sharp'  },
+  elite: { dotColor: '#e24b4a', size: 48, speedMs:  380, pts: 3, label: 'Elite'  },
 };
 
 // ─── CPU random scoring intervals ────────────────────────────────────────────
@@ -260,7 +264,7 @@ function StreakDots({ streak, rush }: { streak: number; rush: boolean }) {
 }
 const dot = StyleSheet.create({
   row:  { flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' },
-  base: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#1a1535', borderWidth: 1, borderColor: '#2e2660' },
+  base: { width: 10, height: 10, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.045)', borderWidth: 1, borderColor: '#2e2660' },
 });
 
 // ─── VS bar ───────────────────────────────────────────────────────────────────
@@ -271,7 +275,7 @@ function VsBar({ playerScore, cpuScore, isActive }: { playerScore: number; cpuSc
   const isLose  = playerScore < cpuScore;
 
   return (
-    <View style={vs.card}>
+    <GlassCard simple noPadding style={vs.card}>
       <View style={vs.row}>
         <View style={vs.side}>
           <Text style={vs.roleYou}>YOU</Text>
@@ -296,11 +300,11 @@ function VsBar({ playerScore, cpuScore, isActive }: { playerScore: number; cpuSc
         <View style={[vs.fill, isWin && { backgroundColor: C.green }, isLose && { backgroundColor: C.red }, { width: `${pct}%` as DimensionValue }]} />
         <View style={vs.midLine} />
       </View>
-    </View>
+    </GlassCard>
   );
 }
 const vs = StyleSheet.create({
-  card:    { alignSelf: 'stretch', backgroundColor: C.card, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', gap: 8 },
+  card:    { alignSelf: 'stretch', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
   row:     { flexDirection: 'row', alignItems: 'center' },
   side:    { flex: 1 },
   mid:     { flex: 1, alignItems: 'center', gap: 2 },
@@ -309,7 +313,7 @@ const vs = StyleSheet.create({
   num:     { fontSize: 26, fontWeight: '900', color: C.muted },
   vsLabel: { fontSize: 10, fontWeight: '800', color: C.dim, letterSpacing: 2 },
   status:  { fontSize: 11, fontWeight: '800', color: C.muted, letterSpacing: 0.4 },
-  track:   { height: 5, backgroundColor: '#0f0d22', borderRadius: 3, overflow: 'hidden', position: 'relative' },
+  track:   { height: 5, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden', position: 'relative' },
   fill:    { height: 5, backgroundColor: C.purple, borderRadius: 3 },
   midLine: { position: 'absolute', left: '50%', top: 0, width: 1, height: 5, backgroundColor: 'rgba(255,255,255,0.12)' },
 });
@@ -689,7 +693,7 @@ export function SaccadeSniper({ running, onScore, onGameEnd }: Props) {
   }));
 
   const lowTime     = gameActive && timer <= 15;
-  const cornerColor = rushMode ? C.orange : streakGlow ? C.gold : 'rgba(127,119,221,0.25)';
+  const cornerColor = rushMode ? C.orange : streakGlow ? C.gold : 'rgba(6,182,212,0.25)';
   const arenaStyle  = [
     s.arena, { width: ARENA_W, height: ARENA_H } as const,
     missFlash  && s.arenaFlash,
@@ -702,13 +706,13 @@ export function SaccadeSniper({ running, onScore, onGameEnd }: Props) {
     <View style={s.wrap}>
 
       {/* Eye tip */}
-      <View style={s.tipBar}>
+      <GlassCard simple noPadding style={s.tipBar}>
         <Ionicons name="eye-outline" size={13} color={C.muted} />
         <Text style={s.tipText} numberOfLines={1}>{EYE_TIPS[tipIdx]}</Text>
-      </View>
+      </GlassCard>
 
       {/* Stats row */}
-      <View style={s.statsRow}>
+      <GlassCard simple noPadding style={s.statsRow}>
         <View style={s.stat}>
           <Text style={s.statVal}>{hits}</Text>
           <Text style={s.statLbl}>Hits</Text>
@@ -735,7 +739,7 @@ export function SaccadeSniper({ running, onScore, onGameEnd }: Props) {
           <Text style={s.statVal}>{bestStreak}</Text>
           <Text style={s.statLbl}>Best</Text>
         </View>
-      </View>
+      </GlassCard>
 
       {/* Difficulty pills */}
       <View style={s.diffRow}>
@@ -744,9 +748,12 @@ export function SaccadeSniper({ running, onScore, onGameEnd }: Props) {
             key={d} disabled={gameActive} onPress={() => setDiff(d)}
             style={[s.diffBtn, diff === d && s.diffBtnActive, gameActive && s.diffBtnDisabled]}
           >
-            <Text style={[s.diffBtnText, diff === d && s.diffBtnTextActive]}>
-              {DIFF[d].icon} {DIFF[d].label}
-            </Text>
+            <View style={s.diffLabelRow}>
+              <View style={[s.diffDot, { backgroundColor: DIFF[d].dotColor }]} />
+              <Text style={[s.diffBtnText, diff === d && s.diffBtnTextActive]}>
+                {DIFF[d].label}
+              </Text>
+            </View>
             {diff === d && <Text style={s.diffSub}>{DIFF[d].pts}pt · {DIFF[d].speedMs}ms</Text>}
           </TouchableOpacity>
         ))}
@@ -849,16 +856,20 @@ export function SaccadeSniper({ running, onScore, onGameEnd }: Props) {
       <StreakDots streak={streak} rush={rushMode} />
 
       {/* Start / replay button */}
-      <TouchableOpacity
-        style={[s.startBtn, gameActive && s.startBtnDisabled]}
-        onPress={startSession} disabled={gameActive} activeOpacity={0.8}
-      >
-        <Text style={s.startBtnText}>
-          {gameActive ? `Playing · ${timer}s left`
-            : sessionDone ? '▶  Play Again'
-            : '▶  Start Session'}
-        </Text>
-      </TouchableOpacity>
+      <GradientCTA
+        label={gameActive ? 'Playing' : sessionDone ? 'Play Again' : 'Start Session'}
+        sublabel={gameActive ? `${timer} sec left` : sessionDone ? 'Beat your best' : 'Ready when you are'}
+        icon={!gameActive ? <Ionicons name="play" size={16} color={EYES.buttonTextColor} /> : undefined}
+        compact
+        onPress={startSession}
+        disabled={gameActive}
+        keepBright={gameActive}
+        colors={EYES.buttonGradient}
+        glowColor={EYES.buttonShadow}
+        textColor={EYES.buttonTextColor}
+        letterSpacing={1}
+        style={s.startCta}
+      />
 
     </View>
   );
@@ -870,17 +881,16 @@ const s = StyleSheet.create({
 
   tipBar: {
     alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: 7,
-    backgroundColor: '#16113a', borderRadius: 10,
-    borderWidth: 1, borderColor: 'rgba(127,119,221,0.2)',
+    borderRadius: 10,
+    borderWidth: 1, borderColor: 'rgba(34,211,238,0.2)',
     paddingHorizontal: 12, paddingVertical: 8,
   },
   tipText: { fontSize: 11, color: C.muted, fontWeight: '500', flex: 1 },
 
   statsRow: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch',
-    backgroundColor: C.card, borderRadius: 14,
+    borderRadius: 14,
     paddingVertical: 10, paddingHorizontal: 16,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
   },
   stat:    { flex: 1, alignItems: 'center', gap: 2 },
   statVal: { fontSize: 20, fontWeight: '800', color: C.purpleLight },
@@ -893,15 +903,17 @@ const s = StyleSheet.create({
     borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.1)',
     backgroundColor: C.card,
   },
-  diffBtnActive:     { borderColor: C.purple, backgroundColor: 'rgba(127,119,221,0.15)' },
+  diffBtnActive:     { borderColor: C.purple, backgroundColor: 'rgba(34,211,238,0.15)' },
   diffBtnDisabled:   { opacity: 0.4 },
+  diffLabelRow:      { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  diffDot:           { width: 7, height: 7, borderRadius: 3.5 },
   diffBtnText:       { fontSize: 12, fontWeight: '700', color: C.dim },
   diffBtnTextActive: { color: C.purpleLight },
   diffSub:           { fontSize: 9, color: C.muted, marginTop: 2 },
 
   arena: {
     borderRadius: 22, backgroundColor: C.arenaBg,
-    borderWidth: 1.5, borderColor: 'rgba(127,119,221,0.2)',
+    borderWidth: 1.5, borderColor: 'rgba(34,211,238,0.25)',
     overflow: 'hidden', position: 'relative',
   },
   arenaFlash: { borderColor: C.red,    borderWidth: 2.5 },
@@ -924,7 +936,7 @@ const s = StyleSheet.create({
     position: 'absolute', top: 14, right: 14, zIndex: 8,
     backgroundColor: 'rgba(83,74,183,0.9)', borderRadius: 100,
     paddingHorizontal: 12, paddingVertical: 5,
-    borderWidth: 1, borderColor: 'rgba(127,119,221,0.5)',
+    borderWidth: 1, borderColor: 'rgba(6,182,212,0.5)',
   },
   comboText: { fontSize: 12, fontWeight: '900', color: '#fff', letterSpacing: 0.3 },
 
@@ -938,18 +950,18 @@ const s = StyleSheet.create({
   pauseBtn: {
     position: 'absolute', top: 10, right: 10,
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: 'rgba(26,21,53,0.88)',
+    backgroundColor: 'rgba(6,18,26,0.88)',
     alignItems: 'center', justifyContent: 'center', zIndex: 10,
   },
   pauseOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(6,4,19,0.93)',
+    backgroundColor: 'rgba(3,8,11,0.93)',
     alignItems: 'center', justifyContent: 'center', gap: 8, zIndex: 10,
   },
   pauseTitle:    { fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 1 },
   pauseSub:      { fontSize: 12, color: C.red, fontWeight: '600', marginBottom: 8 },
   resumeBtn:     { backgroundColor: C.purple, borderRadius: 100, paddingHorizontal: 38, paddingVertical: 13 },
-  resumeBtnText: { fontSize: 15, fontWeight: '800', color: '#fff' },
+  resumeBtnText: { fontSize: 15, fontWeight: '800', color: '#03212c' },
   endGameBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     borderWidth: 1.5, borderColor: 'rgba(226,75,74,0.45)',
@@ -957,12 +969,5 @@ const s = StyleSheet.create({
   },
   endGameBtnText: { fontSize: 13, fontWeight: '700', color: C.red },
 
-  startBtn: {
-    alignSelf: 'stretch', backgroundColor: C.purple,
-    borderRadius: 100, paddingVertical: 16, alignItems: 'center',
-    shadowColor: C.purple, shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.45, shadowRadius: 14, elevation: 8,
-  },
-  startBtnDisabled: { backgroundColor: '#3d3870', shadowOpacity: 0 },
-  startBtnText:     { fontSize: 15, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
+  startCta: { alignSelf: 'stretch' },
 });

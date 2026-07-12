@@ -18,7 +18,7 @@ const CHALLENGE_FEATURE_KEY: Record<string, 'eye' | 'sleep' | 'mind'> = {
 };
 
 const CHALLENGES: Record<string, { title: string; subtitle: string; icon: typeof Eye; route: string; color: string; duration: string }> = {
-  Eyes:  { title: 'Eye Break', subtitle: 'Follow the guided protocol', icon: Eye,   route: '/(app)/cvs-protocol',            color: '#06B6D4', duration: '3 min' },
+  Eyes:  { title: 'Eye Reset', subtitle: 'Follow the guided protocol', icon: Eye,   route: '/(app)/cvs-protocol',            color: '#06B6D4', duration: '3 min' },
   Sleep: { title: 'Sleep Session', subtitle: 'Track tonight\'s sleep',  icon: Moon,  route: '/(app)/(tabs)/sleep?tab=tonight', color: '#8B5CF6', duration: '1 min' },
   Mind:  { title: 'Box Breathing', subtitle: 'Calm your nervous system', icon: Wind,  route: ROUTES.appBoxBreathing,     color: '#8B5CF6', duration: '5 min' },
 };

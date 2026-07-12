@@ -700,6 +700,63 @@ breathe modes now open the Relax player. No file exists and no code references i
 
 ---
 
+## 6) Eye section — `eyes/`
+
+### ✅ Eye Reset (`/cvs-protocol`) — RECORDED & WIRED (9 × 2 = 18 files)
+
+`eyes/reset-intro` (session intro, plays over calibration), `reset-circle`,
+`reset-square`, `reset-triangle`, `reset-ninedot`, `reset-quick`,
+`reset-nearfar`, `reset-shift` (one per exercise, plays as it starts), and
+`reset-complete` (done screen). en + hi.
+
+### ⏳ Games — NOT YET RECORDED
+
+Personality: calm coach — short, unhurried, one breath per line.
+
+### Follow the Dot (`/eye-game/comet-trace`)
+
+#### `eyes/comet-intro`
+- **EN:** Hold your finger on the comet… and let your eyes follow it smoothly. This is rest, not a race.
+- **HINDI:** Ungli comet par rakho… aur aankhon ko aaram se uske peeche jaane do. Ye aaram hai, race nahi.
+
+#### `eyes/comet-rest`
+- **EN:** Well done… now look away from the screen. Focus on something far for a few moments.
+- **HINDI:** Shabash… ab screen se nazar hatao. Kuch der door kisi cheez par focus karo.
+
+### Focus Switch (`/eye-game/focus-sprint`)
+
+#### `eyes/focus-intro`
+- **EN:** Lock your focus on the near or far target before the timer runs out.
+- **HINDI:** Timer khatam hone se pehle near ya far target par focus jamao.
+
+#### `eyes/focus-near` (short cue, ≤1s)
+- **EN:** Near…
+- **HINDI:** Paas…
+
+#### `eyes/focus-far` (short cue, ≤1s)
+- **EN:** Far…
+- **HINDI:** Door…
+
+### Target Tap (`/eye-game/saccade-sniper`)
+
+#### `eyes/target-intro`
+- **EN:** Tap the glowing targets as fast as you can. Move only your eyes — keep your head still.
+- **HINDI:** Chamakte targets ko jald se jald tap karo. Sirf aankhein hilao — sar sabit rakho.
+
+### Both Eyes Together (`/eye-game/dichoptic-reaction`)
+
+#### `eyes/dichoptic-intro`
+- **EN:** Put on your red and cyan glasses… and tap only the targets that match the active color.
+- **HINDI:** Apne red aur cyan glasses pehno… aur sirf active color se milte targets ko tap karo.
+
+### Eye Break (`/eye-break`) — optional
+
+#### `eyes/break-lookaway`
+- **EN:** Look away from the screen… find something twenty feet away… and rest your eyes there.
+- **HINDI:** Screen se nazar hatao… koi door ki cheez dhoondo… aur wahin aankhon ko aaram do.
+
+---
+
 ## Checklist
 
 - [ ] Pick ONE multilingual voice, lock the settings above
@@ -708,6 +765,8 @@ breathe modes now open the Relax player. No file exists and no code references i
 - [x] §2 Body Scan (16), §3 Muscle Release (16), §4 Grounding (14)
 - [x] calm-flow + bedtime intros/completes (8)
 - ~~§5 stress-screen bonus~~ — obsolete, TTS stress screens removed
+- [x] §6 Eye Reset (9 × 2 = 18 files) — recorded & wired
+- [ ] §6 game intros + focus cues (7 × 2 = 14 files)
 - [ ] Every clip: ~0.2s silence at start, **0.8s at end**, consistent loudness
 - [ ] Overwrite placeholders at `en/` and `hi/` with EXACT same filenames
 - [ ] Restart with `npx expo start -c` so new assets bundle

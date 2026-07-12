@@ -41,9 +41,17 @@ export type AudioClipId =
   | 'tension/jaw'
   | 'tension/stomach'
   | 'tension/legs'
-  | 'tension/toes';
+  | 'tension/toes'
+  | 'eyes/reset-intro'
+  | 'eyes/reset-circle'
+  | 'eyes/reset-square'
+  | 'eyes/reset-triangle'
+  | 'eyes/reset-ninedot'
+  | 'eyes/reset-quick'
+  | 'eyes/reset-nearfar'
+  | 'eyes/reset-shift'
+  | 'eyes/reset-complete';
 
-/** Map the app language to one of the recorded guide languages. */
 /** Map the app language to one of the recorded guide languages. */
 export function resolveGuideLang(langCode: string): GuideLang {
   // The 'hi' folder holds the Hindi/Urdu recordings — use them for both.
@@ -184,5 +192,41 @@ export const AUDIO_GUIDE: Record<AudioClipId, Record<GuideLang, number>> = {
   'tension/toes': {
     en: require('@/assets/audio/guide/en/tension/toes.mp3'),
     hi: require('@/assets/audio/guide/hi/tension/toes.mp3'),
+  },
+  'eyes/reset-intro': {
+    en: require('@/assets/audio/guide/en/eyes/reset-intro.mp3'),
+    hi: require('@/assets/audio/guide/hi/eyes/reset-intro.mp3'),
+  },
+  'eyes/reset-circle': {
+    en: require('@/assets/audio/guide/en/eyes/reset-circle.mp3'),
+    hi: require('@/assets/audio/guide/hi/eyes/reset-circle.mp3'),
+  },
+  'eyes/reset-square': {
+    en: require('@/assets/audio/guide/en/eyes/reset-square.mp3'),
+    hi: require('@/assets/audio/guide/hi/eyes/reset-square.mp3'),
+  },
+  'eyes/reset-triangle': {
+    en: require('@/assets/audio/guide/en/eyes/reset-triangle.mp3'),
+    hi: require('@/assets/audio/guide/hi/eyes/reset-triangle.mp3'),
+  },
+  'eyes/reset-ninedot': {
+    en: require('@/assets/audio/guide/en/eyes/reset-ninedot.mp3'),
+    hi: require('@/assets/audio/guide/hi/eyes/reset-ninedot.mp3'),
+  },
+  'eyes/reset-quick': {
+    en: require('@/assets/audio/guide/en/eyes/reset-quick.mp3'),
+    hi: require('@/assets/audio/guide/hi/eyes/reset-quick.mp3'),
+  },
+  'eyes/reset-nearfar': {
+    en: require('@/assets/audio/guide/en/eyes/reset-nearfar.mp3'),
+    hi: require('@/assets/audio/guide/hi/eyes/reset-nearfar.mp3'),
+  },
+  'eyes/reset-shift': {
+    en: require('@/assets/audio/guide/en/eyes/reset-shift.mp3'),
+    hi: require('@/assets/audio/guide/hi/eyes/reset-shift.mp3'),
+  },
+  'eyes/reset-complete': {
+    en: require('@/assets/audio/guide/en/eyes/reset-complete.mp3'),
+    hi: require('@/assets/audio/guide/hi/eyes/reset-complete.mp3'),
   },
 };

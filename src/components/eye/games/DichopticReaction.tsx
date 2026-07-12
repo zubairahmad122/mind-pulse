@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import {
   Dimensions, StyleSheet, Text, TouchableOpacity, View,
@@ -13,7 +14,12 @@ import Animated, {
 import { type DichopticColors } from '@/utils/dichoptic';
 import { useGameSounds } from '@/hooks/useGameSounds';
 import { HeartIcon, BrokenHeartIcon } from '@/components/eye/games/DichopticIcons';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { GradientCTA } from '@/components/ui/GradientCTA';
+import { PILLAR_THEME } from '@/constants/theme';
 import type { GameEndStats } from './GameOverScreen';
+
+const EYES = PILLAR_THEME.eyes;
 
 interface Props {
   running: boolean;
@@ -383,7 +389,7 @@ export function DichopticReaction({ running, colors, onGameEnd, onReplay }: Prop
     return (
       <View style={s.wrap}>
         {/* Visual Demo — shows how the game works */}
-        <View style={s.demoCard}>
+        <GlassCard simple noPadding style={s.demoCard}>
           <Text style={s.demoTitle}>🎯 Tap the matching color</Text>
           <View style={s.demoRow}>
             <View style={[s.demoDot, { backgroundColor: leftHex }]} />
@@ -394,7 +400,7 @@ export function DichopticReaction({ running, colors, onGameEnd, onReplay }: Prop
             <Text style={s.demoLabel}>Match this!</Text>
           </View>
           <Text style={s.demoHint}>Wrong color = lose a life</Text>
-        </View>
+        </GlassCard>
 
         {/* Difficulty selector */}
         <View style={s.diffRow}>
@@ -429,11 +435,18 @@ export function DichopticReaction({ running, colors, onGameEnd, onReplay }: Prop
         </View>
 
         {/* Start / Play Again button */}
-        <TouchableOpacity style={s.startBtn} onPress={startSession} activeOpacity={0.85}>
-          <Text style={s.startBtnText}>
-            {gameOver ? '▶  PLAY AGAIN' : sessionDone ? '▶  PLAY AGAIN' : '▶  START GAME'}
-          </Text>
-        </TouchableOpacity>
+        <GradientCTA
+          label={gameOver || sessionDone ? 'Play Again' : 'Start Game'}
+          sublabel="Tap the matching color"
+          icon={<Ionicons name="play" size={16} color={EYES.buttonTextColor} />}
+          compact
+          onPress={startSession}
+          colors={EYES.buttonGradient}
+          glowColor={EYES.buttonShadow}
+          textColor={EYES.buttonTextColor}
+          letterSpacing={1}
+          style={s.startCta}
+        />
       </View>
     );
   }
@@ -443,7 +456,7 @@ export function DichopticReaction({ running, colors, onGameEnd, onReplay }: Prop
     <View style={s.wrap}>
 
       {/* Top HUD */}
-      <View style={s.hudRow}>
+      <GlassCard simple noPadding style={s.hudRow}>
         {/* Health */}
         <View style={s.healthRow}>
           {[0, 1, 2].map(i => (
@@ -462,7 +475,7 @@ export function DichopticReaction({ running, colors, onGameEnd, onReplay }: Prop
           <Text style={s.diffBadge}>{cfg.label}</Text>
           <Text style={s.timerVal}>{timer}s</Text>
         </View>
-      </View>
+      </GlassCard>
 
       {/* Combo indicator */}
       {combo >= 2 && (
@@ -542,9 +555,8 @@ const s = StyleSheet.create({
   /* Start Screen */
   demoCard: {
     alignSelf: 'stretch',
-    backgroundColor: '#1a1535',
     borderRadius: 16,
-    borderWidth: 1, borderColor: 'rgba(123,97,255,0.3)',
+    borderWidth: 1, borderColor: 'rgba(34,211,238,0.3)',
     padding: 18,
     gap: 12,
   },
@@ -555,7 +567,7 @@ const s = StyleSheet.create({
   demoDot: {
     width: 32, height: 32, borderRadius: 16,
   },
-  demoArrow: { fontSize: 18, color: '#9b8ec4' },
+  demoArrow: { fontSize: 18, color: 'rgba(255,255,255,0.6)' },
   demoChip: {
     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,
   },
@@ -569,10 +581,10 @@ const s = StyleSheet.create({
   diffBtn: {
     flex: 1, alignItems: 'center', paddingVertical: 10,
     borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: '#1a1535',
+    backgroundColor: 'rgba(255,255,255,0.045)',
   },
   diffBtnActive: { borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,0.15)' },
-  diffBtnLabel: { fontSize: 12, fontWeight: '700', color: '#9b8ec4' },
+  diffBtnLabel: { fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.6)' },
   diffBtnLabelActive: { color: '#fff' },
 
   colorDemoRow: {
@@ -583,25 +595,20 @@ const s = StyleSheet.create({
   colorDemoSwatch: {
     width: 40, height: 40, borderRadius: 10, borderWidth: 2,
   },
-  colorDemoLabel: { fontSize: 10, color: '#9b8ec4', fontWeight: '600' },
+  colorDemoLabel: { fontSize: 10, color: 'rgba(255,255,255,0.6)', fontWeight: '600' },
 
-  startBtn: {
-    alignSelf: 'stretch', backgroundColor: '#22d3ee',
-    borderRadius: 100, paddingVertical: 16, alignItems: 'center',
-  },
-  startBtnText: { fontSize: 16, fontWeight: '800', color: '#fff', letterSpacing: 1 },
+  startCta: { alignSelf: 'stretch' },
 
   /* HUD */
   hudRow: {
     flexDirection: 'row', alignSelf: 'stretch',
     alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#1a1535', borderRadius: 14,
+    borderRadius: 14,
     paddingVertical: 10, paddingHorizontal: 16,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
   },
   healthRow: { flexDirection: 'row', gap: 4, minWidth: 80 },
   scoreWrap: { alignItems: 'center', gap: 1 },
-  scoreLabel: { fontSize: 9, color: '#9b8ec4', fontWeight: '800', letterSpacing: 1.5 },
+  scoreLabel: { fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: '800', letterSpacing: 1.5 },
   scoreVal: { fontSize: 26, fontWeight: '900', color: '#ffffff', lineHeight: 30 },
   rightHud: { alignItems: 'flex-end', gap: 2, minWidth: 60 },
   diffBadge: {
@@ -631,9 +638,9 @@ const s = StyleSheet.create({
   /* Arena */
   arena: {
     width: ARENA_W, height: ARENA_H,
-    backgroundColor: '#0a0818',
+    backgroundColor: '#06121a',
     borderRadius: 22,
-    borderWidth: 1.5, borderColor: 'rgba(123,97,255,0.22)',
+    borderWidth: 1.5, borderColor: 'rgba(34,211,238,0.25)',
     overflow: 'hidden', position: 'relative',
   },
 
@@ -658,19 +665,19 @@ const s = StyleSheet.create({
   pauseBtn: {
     position: 'absolute', top: 10, right: 10,
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: 'rgba(26,21,53,0.88)',
+    backgroundColor: 'rgba(6,18,26,0.88)',
     alignItems: 'center', justifyContent: 'center', zIndex: 10,
   },
   pauseBtnIcon: { fontSize: 14 },
 
   pauseOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(6,4,19,0.93)',
+    backgroundColor: 'rgba(3,8,11,0.93)',
     alignItems: 'center', justifyContent: 'center', gap: 8, zIndex: 10,
   },
   pauseTitle:    { fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 1 },
   resumeBtn:     { backgroundColor: '#22d3ee', borderRadius: 100, paddingHorizontal: 38, paddingVertical: 13 },
-  resumeBtnText: { fontSize: 15, fontWeight: '800', color: '#fff' },
+  resumeBtnText: { fontSize: 15, fontWeight: '800', color: '#03212c' },
   endBtn: {
     borderWidth: 1.5, borderColor: 'rgba(244,67,54,0.45)',
     borderRadius: 100, paddingHorizontal: 28, paddingVertical: 10, marginTop: 4,

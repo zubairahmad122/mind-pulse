@@ -38,8 +38,8 @@ export function FocusSprintIcon({ size = 40, color = '#6ee7b7' }: IconProps) {
       {/* Head */}
       <Circle cx="20" cy="14" r="5" fill={color} />
       {/* Eyes */}
-      <Circle cx="18" cy="13" r="1.5" fill="#0a0818" />
-      <Circle cx="22" cy="13" r="1.5" fill="#0a0818" />
+      <Circle cx="18" cy="13" r="1.5" fill="#06121a" />
+      <Circle cx="22" cy="13" r="1.5" fill="#06121a" />
       {/* Antennae */}
       <Path d="M 18 10 Q 14 5 12 3" stroke={color} strokeWidth="1.2" fill="none" strokeLinecap="round" />
       <Circle cx="12" cy="3" r="1.5" fill={color} />
@@ -69,7 +69,7 @@ export function CometTraceIcon({ size = 40, color = '#60a5fa' }: IconProps) {
 }
 
 // ─── 4th game — Spiral / Hypnotic ────────────────────────────────────────────
-export function SpiralIcon({ size = 40, color = '#a78bfa' }: IconProps) {
+export function SpiralIcon({ size = 40, color = '#22d3ee' }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 40 40">
       {/* Outer glow ring */}
@@ -104,12 +104,12 @@ export function DichopticReactionIcon({ size = 40 }: IconProps) {
       {/* Left eye — almond shape + iris + pupil */}
       <Path d="M 5 20 Q 12 10 20 20 Q 12 30 5 20 Z" fill="#FF3366" opacity={0.6} />
       <Circle cx="12" cy="20" r="4.5" fill="#FF3366" opacity={0.8} />
-      <Circle cx="12" cy="20" r="2" fill="#0a0818" />
+      <Circle cx="12" cy="20" r="2" fill="#06121a" />
       <Circle cx="12" cy="19" r="0.8" fill="#fff" opacity={0.9} />
       {/* Right eye — almond shape + iris + pupil */}
       <Path d="M 20 20 Q 28 10 35 20 Q 28 30 20 20 Z" fill="#00D4FF" opacity={0.6} />
       <Circle cx="28" cy="20" r="4.5" fill="#00D4FF" opacity={0.8} />
-      <Circle cx="28" cy="20" r="2" fill="#0a0818" />
+      <Circle cx="28" cy="20" r="2" fill="#06121a" />
       <Circle cx="28" cy="19" r="0.8" fill="#fff" opacity={0.9} />
     </Svg>
   );
@@ -119,7 +119,7 @@ export const GAME_ICON_COLORS: Record<string, string> = {
   'saccade-sniper': '#e24b4a',
   'focus-sprint': '#6ee7b7',
   'comet-trace': '#60a5fa',
-  spiral: '#a78bfa',
+  spiral: '#22d3ee',
   'dichoptic-reaction': '#22d3ee',
 };
 
@@ -129,7 +129,7 @@ type EyeGameIconProps = {
 };
 
 export function EyeGameIcon({ gameId, size = 36 }: EyeGameIconProps) {
-  const color = GAME_ICON_COLORS[gameId] ?? '#a78bfa';
+  const color = GAME_ICON_COLORS[gameId] ?? '#22d3ee';
 
   switch (gameId) {
     case 'saccade-sniper':

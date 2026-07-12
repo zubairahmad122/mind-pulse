@@ -116,8 +116,8 @@ export function BlinkGuide({ active }: Props) {
           {/* Sclera (eye white) gradient — subtle warmth */}
           <RadialGradient id="scleraGrad" cx="130" cy="130" r="82" fx="130" fy="125" gradientUnits="userSpaceOnUse">
             <Stop offset="0%" stopColor="#F4F1FF" stopOpacity="0.06" />
-            <Stop offset="75%" stopColor="#1a1535" stopOpacity="0.4" />
-            <Stop offset="100%" stopColor="#0a0818" stopOpacity="0.6" />
+            <Stop offset="75%" stopColor="rgba(255,255,255,0.05)" stopOpacity="0.4" />
+            <Stop offset="100%" stopColor="#06121a" stopOpacity="0.6" />
           </RadialGradient>
 
           <RadialGradient id="outerGlow" cx="130" cy="130" r="110" gradientUnits="userSpaceOnUse">
@@ -127,11 +127,11 @@ export function BlinkGuide({ active }: Props) {
 
           {/* Eyelid skin gradient */}
           <LinearGradient id="lidTopGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor="#1a1535" stopOpacity="0.95" />
+            <Stop offset="0%" stopColor="rgba(255,255,255,0.05)" stopOpacity="0.95" />
             <Stop offset="100%" stopColor="#2a1f55" stopOpacity="1" />
           </LinearGradient>
           <LinearGradient id="lidBotGrad" x1="0" y1="1" x2="0" y2="0">
-            <Stop offset="0%" stopColor="#1a1535" stopOpacity="0.95" />
+            <Stop offset="0%" stopColor="rgba(255,255,255,0.05)" stopOpacity="0.95" />
             <Stop offset="100%" stopColor="#2a1f55" stopOpacity="1" />
           </LinearGradient>
 

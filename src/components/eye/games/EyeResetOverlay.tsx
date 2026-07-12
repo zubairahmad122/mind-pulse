@@ -10,11 +10,11 @@ import Animated, {
 
 const C = {
   bg:    'rgba(8,6,22,0.97)',
-  card:  '#1a1535',
+  card:  'rgba(255,255,255,0.045)',
   green: '#6ee7b7',
   text:  '#ffffff',
-  muted: '#9b8ec4',
-  dim:   '#7a6fa0',
+  muted: 'rgba(255,255,255,0.6)',
+  dim:   'rgba(255,255,255,0.38)',
 };
 
 const RESET_SECS = 20;
@@ -88,7 +88,7 @@ const s = StyleSheet.create({
   bigSecs: { fontSize: 88, fontWeight: '900', color: C.green, lineHeight: 96, letterSpacing: -2 },
   line:    { fontSize: 17, fontWeight: '700', color: C.text, textAlign: 'center', marginTop: 6 },
   sub:     { fontSize: 13, color: C.muted, textAlign: 'center', lineHeight: 20, maxWidth: 320 },
-  track:   { width: '78%', height: 6, backgroundColor: '#1a1535', borderRadius: 3, overflow: 'hidden', marginTop: 14 },
+  track:   { width: '78%', height: 6, backgroundColor: 'rgba(255,255,255,0.045)', borderRadius: 3, overflow: 'hidden', marginTop: 14 },
   fill:    { height: 6, backgroundColor: C.green, borderRadius: 3 },
   skipBtn: { marginTop: 20, paddingHorizontal: 18, paddingVertical: 8, opacity: 0.55 },
   skipText:{ fontSize: 12, color: C.dim, fontWeight: '600', letterSpacing: 0.5 },

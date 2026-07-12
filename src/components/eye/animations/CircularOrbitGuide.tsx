@@ -72,7 +72,7 @@ function shapeTriangle(t: number) {
 
 const SHAPES: ShapeDef[] = [
   { name: 'Circle',   color: '#4FC3F7', path: shapeCircle },
-  { name: 'Square',   color: '#a78bfa', path: shapeSquare },
+  { name: 'Square',   color: '#22d3ee', path: shapeSquare },
   { name: 'Triangle', color: '#6ee7b7', path: shapeTriangle },
 ];
 
@@ -230,16 +230,16 @@ export function CircularOrbitGuide({ active, singleShape }: Props) {
 
         {ghostPaths.map((path, i) => (
           <Path key={i} d={path} stroke={SHAPES[i].color} strokeWidth="1" fill="none"
-            opacity={i === shapeIdx ? 0.25 : 0.08} strokeDasharray={i === shapeIdx ? "none" : "3,5"}
+            opacity={i === shapeIdx ? 0.42 : 0.1} strokeDasharray={i === shapeIdx ? "none" : "3,5"}
           />
         ))}
 
-        <Circle cx={CENTER} cy={CENTER} r="3" fill="rgba(255,255,255,0.15)" />
-        <Circle cx={CENTER} cy={CENTER} r="18" stroke="rgba(255,255,255,0.04)" strokeWidth="1" fill="none" />
+        <Circle cx={CENTER} cy={CENTER} r="3" fill="rgba(255,255,255,0.3)" />
+        <Circle cx={CENTER} cy={CENTER} r="18" stroke="rgba(34,211,238,0.14)" strokeWidth="1" fill="none" />
 
         <G transform={`translate(${CENTER}, ${CENTER})`}>
-          <Path d="M 0,-112 L 0,112" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
-          <Path d="M -112,0 L 112,0" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+          <Path d="M 0,-112 L 0,112" stroke="rgba(255,255,255,0.07)" strokeWidth="0.5" />
+          <Path d="M -112,0 L 112,0" stroke="rgba(255,255,255,0.07)" strokeWidth="0.5" />
         </G>
       </Svg>
 

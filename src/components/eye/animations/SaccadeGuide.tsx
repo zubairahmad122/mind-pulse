@@ -37,10 +37,9 @@ const POSITIONS: (Pos & { label: string; muscle: string })[] = [
   { x: CENTER - R * SQ, y: CENTER - R * SQ, label: 'Up-Left', muscle: 'Sup. Oblique' },
 ];
 
-const POS_COLORS: Record<string, string> = {
-  'Sup. Rectus': '#4FC3F7', 'Sup. Oblique': '#a78bfa', 'Lat. Rectus': '#6ee7b7',
-  'Inf. Oblique': '#fb7185', 'Inf. Rectus': '#fbbf24', 'Med. Rectus': '#f97316',
-};
+// ONE accent (the step's soft amber) — six random colors read as noise and
+// made it unclear which target to follow. Active = glow, inactive = dim.
+const TARGET_ACCENT = '#fde68a';
 
 export function SaccadeGuide({ active }: Props) {
   const [speed, setSpeed] = useState(1);
@@ -138,7 +137,7 @@ export function SaccadeGuide({ active }: Props) {
   }, [active, speed, tx, ty, flash, targetPulse, currentPos, nextPos]);
 
   const jumpTarget = atNextRef.current ? nextPos : currentPos;
-  const jumpColor = POS_COLORS[jumpTarget.muscle] || '#fde047';
+  const jumpColor = TARGET_ACCENT;
 
   const orbStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: tx.value - 16 + wobbleX.value }, { translateY: ty.value - 16 + wobbleY.value }],
@@ -190,16 +189,16 @@ export function SaccadeGuide({ active }: Props) {
           const isJump = pos === jumpTarget;
           const isCurrent = pos === currentPos;
           const active = isJump || isCurrent;
-          const accent = POS_COLORS[pos.muscle] || '#fbbf24';
+          const accent = TARGET_ACCENT;
           return (
             <G key={i}>
               <Circle cx={pos.x} cy={pos.y} r={active ? 8 : 3}
-                fill={active ? accent + '44' : 'rgba(255,255,255,0.05)'}
+                fill={active ? accent + '4d' : 'rgba(255,255,255,0.09)'}
                 stroke={active ? accent + '88' : 'transparent'}
                 strokeWidth={active ? 1.5 : 0}
               />
               <Circle cx={pos.x} cy={pos.y} r={active ? 3 : 1.5}
-                fill={active ? '#FFFFFF' : 'rgba(255,255,255,0.12)'}
+                fill={active ? '#FFFFFF' : 'rgba(255,255,255,0.22)'}
               />
               {/* Connection line from center */}
               <Path d={`M ${CENTER},${CENTER} L ${pos.x},${pos.y}`}

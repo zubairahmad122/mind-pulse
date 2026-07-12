@@ -74,7 +74,7 @@ export type RecoverySession = {
 export const RECOVERY_SESSIONS: RecoverySession[] = [
   {
     id: 'cvs-protocol',
-    title: '3-Minute Eye Rest',
+    title: 'Eye Reset',
     subtitle: 'Guided eye relaxation',
     route: '/cvs-protocol',
     isPremium: false,

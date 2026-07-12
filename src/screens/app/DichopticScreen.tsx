@@ -6,6 +6,8 @@ import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { GradientCTA } from '@/components/ui/GradientCTA';
+import { PILLAR_THEME } from '@/constants/theme';
 import { DichopticReaction } from '@/components/eye/games/DichopticReaction';
 import {
   type DichopticColors,
@@ -23,6 +25,8 @@ import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { PaywallGate } from '@/components/paywall/PaywallGate';
+
+const EYES = PILLAR_THEME.eyes;
 
 // ─── Color presets ────────────────────────────────────────────────────────────
 const LEFT_PRESETS = ['#FF3366', '#FF0044', '#FF5555', '#CC0044', '#FF2266'];
@@ -179,7 +183,7 @@ export default function DichopticScreen() {
         onPress={() => setShowCalHelp(!showCalHelp)}
         activeOpacity={0.7}
       >
-        <Ionicons name={showCalHelp ? 'eye' : 'eye-outline'} size={16} color={colors.accent.purple} />
+        <Ionicons name={showCalHelp ? 'eye' : 'eye-outline'} size={16} color={EYES.accent} />
         <Text style={cs.helpToggleText}>
           {showCalHelp ? 'Hide tips' : 'How to calibrate?'}
         </Text>
@@ -219,17 +223,22 @@ export default function DichopticScreen() {
 
       {/* Save + Play */}
       <TouchableOpacity style={cs.saveBtn} onPress={handleSave} activeOpacity={0.85}>
-        <Ionicons name="checkmark-circle" size={16} color="#fff" />
+        <Ionicons name="checkmark-circle" size={16} color={EYES.accent} />
         <Text style={cs.saveBtnText}>Save Colors</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={cs.playBtn}
+      <GradientCTA
+        label="Play Game"
+        sublabel="Tap the matching color"
+        icon={<Ionicons name="play" size={16} color={EYES.buttonTextColor} />}
+        compact
         onPress={() => { setScreen('game'); setRunning(true); }}
-        activeOpacity={0.85}
-      >
-        <Text style={cs.playBtnText}>▶  PLAY GAME</Text>
-      </TouchableOpacity>
+        colors={EYES.buttonGradient}
+        glowColor={EYES.buttonShadow}
+        textColor={EYES.buttonTextColor}
+        letterSpacing={1}
+        style={cs.playCta}
+      />
 
       {record && (
         <Text style={cs.pbText}>
@@ -249,11 +258,11 @@ const cs = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     alignSelf: 'flex-start', marginBottom: spacing.sm,
   },
-  helpToggleText: { fontSize: 12, fontWeight: '700', color: colors.accent.purple },
+  helpToggleText: { fontSize: 12, fontWeight: '700', color: EYES.accent },
   helpCard: {
     backgroundColor: colors.background.card,
     borderRadius: 12,
-    borderWidth: 0.5, borderColor: colors.accent.purpleBorder,
+    borderWidth: 0.5, borderColor: 'rgba(34,211,238,0.3)',
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -274,7 +283,7 @@ const cs = StyleSheet.create({
     width: 100, height: 100,
     borderRadius: 16,
     borderWidth: 2,
-    backgroundColor: '#0a0818',
+    backgroundColor: '#06121a',
     alignItems: 'center', justifyContent: 'center',
   },
   previewInner: { width: 50, height: 50, borderRadius: 10 },
@@ -299,22 +308,15 @@ const cs = StyleSheet.create({
   /* Buttons */
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
-    backgroundColor: 'rgba(123,97,255,0.15)',
-    borderWidth: 1, borderColor: colors.accent.purpleBorder,
+    backgroundColor: 'rgba(34,211,238,0.12)',
+    borderWidth: 1, borderColor: 'rgba(34,211,238,0.3)',
     borderRadius: 100,
     paddingVertical: 14,
     marginBottom: spacing.sm,
   },
-  saveBtnText: { fontSize: 14, fontWeight: '700', color: colors.accent.purple },
+  saveBtnText: { fontSize: 14, fontWeight: '700', color: EYES.accent },
 
-  playBtn: {
-    backgroundColor: colors.accent.purple,
-    borderRadius: 100,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  playBtnText: { fontSize: 16, fontWeight: '800', color: '#fff', letterSpacing: 1 },
+  playCta: { marginBottom: spacing.sm },
 
   pbText: {
     fontSize: 12, color: '#FFD700', fontWeight: '600',

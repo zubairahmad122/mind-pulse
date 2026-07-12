@@ -131,17 +131,17 @@ export function GameOverScreen({ stats, onReplay, onDismiss }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(5, 7, 20, 0.92)',
+    backgroundColor: 'rgba(3, 8, 11, 0.92)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 99,
   },
   card: {
     width: '88%',
-    backgroundColor: '#0F1228',
+    backgroundColor: '#081720',
     borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: 'rgba(123,97,255,0.35)',
+    borderColor: 'rgba(34,211,238,0.35)',
     padding: spacing.xl,
     gap: spacing.lg,
     shadowColor: '#22d3ee',
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   replayBtn: {
-    backgroundColor: colors.accent.purple,
+    backgroundColor: '#06b6d4',
     paddingVertical: spacing.md,
     borderRadius: 100,
     alignItems: 'center',

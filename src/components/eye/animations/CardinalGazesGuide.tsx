@@ -28,7 +28,7 @@ const POSITIONS: GazePos[] = [
 ];
 
 const MUSCLE_COLORS: Record<string, string> = {
-  'Sup. Rectus': '#4FC3F7', 'Sup. Oblique': '#a78bfa', 'Lat. Rectus': '#6ee7b7',
+  'Sup. Rectus': '#4FC3F7', 'Sup. Oblique': '#22d3ee', 'Lat. Rectus': '#6ee7b7',
   'Inf. Oblique': '#fb7185', 'Inf. Rectus': '#fbbf24', 'Med. Rectus': '#f97316',
 };
 
@@ -132,12 +132,12 @@ export function CardinalGazesGuide({ active }: Props) {
 
         {/* Reference ring — tighter to avoid overflow */}
         <Circle cx={CENTER} cy={CENTER} r={RING_R} stroke="rgba(251, 191, 36, 0.08)" strokeWidth="1" fill="none" strokeDasharray="2,5" />
-        <Circle cx={CENTER} cy={CENTER} r="2.5" fill="rgba(255,255,255,0.15)" />
+        <Circle cx={CENTER} cy={CENTER} r="2.5" fill="rgba(255,255,255,0.3)" />
 
         {/* Crosshair */}
         <G transform={`translate(${CENTER}, ${CENTER})`}>
-          <Path d="M 0,-102 L 0,102" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-          <Path d="M -102,0 L 102,0" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+          <Path d="M 0,-102 L 0,102" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+          <Path d="M -102,0 L 102,0" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
         </G>
 
         {/* Position markers */}

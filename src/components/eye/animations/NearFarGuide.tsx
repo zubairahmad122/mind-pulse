@@ -22,7 +22,7 @@ const BASE_HOLD_MS = 2000;
 const SPEED_INTERVAL = 4000;
 const SPEED_STEP = 0.2;
 const MAX_SPEED = 3.0;
-const FAR_COLOR = '#A78BFA';
+const FAR_COLOR = '#a5b4fc';
 const NEAR_COLOR = '#80F5FF';
 
 // Deterministic stars for ambiance
@@ -33,7 +33,8 @@ function useStars(): Star[] {
     let seed = 7;
     const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
     for (let i = 0; i < 24; i++) {
-      stars.push({ x: 6 + rnd() * 248, y: 6 + rnd() * 248, r: 0.4 + rnd() * 1.2, o: 0.15 + rnd() * 0.4 });
+      // Barely-there: stars are ambiance, not something eyes should chase.
+      stars.push({ x: 6 + rnd() * 248, y: 6 + rnd() * 248, r: 0.4 + rnd() * 1.2, o: 0.05 + rnd() * 0.1 });
     }
     return stars;
   }, []);
@@ -121,13 +122,13 @@ export function NearFarGuide({ active }: Props) {
   const farGlowStyle = useAnimatedStyle(() => {
     'worklet';
     const f = 1 - focus.value;
-    return { transform: [{ scale: 0.6 + f * 0.5 }], opacity: 0.1 + f * 0.7 };
+    return { transform: [{ scale: 0.6 + f * 0.5 }], opacity: 0.08 + f * 0.55 };
   });
 
   const nearGlowStyle = useAnimatedStyle(() => {
     'worklet';
     const f = focus.value;
-    return { transform: [{ scale: 0.5 + f * 0.5 }], opacity: 0.1 + f * 0.6 };
+    return { transform: [{ scale: 0.5 + f * 0.5 }], opacity: 0.08 + f * 0.48 };
   });
 
   const gaugeFillStyle = useAnimatedStyle(() => {
@@ -141,13 +142,13 @@ export function NearFarGuide({ active }: Props) {
       <Svg width="260" height="260" style={StyleSheet.absoluteFill}>
         <Defs>
           <RadialGradient id="nfBg" cx="130" cy="100" r="150">
-            <Stop offset="0%" stopColor="#191445" />
-            <Stop offset="50%" stopColor="#0e0b22" />
-            <Stop offset="100%" stopColor="#050410" />
+            <Stop offset="0%" stopColor="#0a1a24" />
+            <Stop offset="50%" stopColor="#071219" />
+            <Stop offset="100%" stopColor="#03080b" />
           </RadialGradient>
           <RadialGradient id="nfHaze" cx="130" cy="50" r="120">
-            <Stop offset="0%" stopColor="#7b61ff" stopOpacity="0.25" />
-            <Stop offset="100%" stopColor="#050410" stopOpacity="0" />
+            <Stop offset="0%" stopColor="#22d3ee" stopOpacity="0.16" />
+            <Stop offset="100%" stopColor="#03080b" stopOpacity="0" />
           </RadialGradient>
         </Defs>
         <Circle cx="130" cy="130" r="130" fill="url(#nfBg)" />
@@ -161,9 +162,9 @@ export function NearFarGuide({ active }: Props) {
         <Svg width="260" height="260">
           <Defs>
             <RadialGradient id="farG" cx={CENTER} cy={FAR_Y} r="55" fx={CENTER} fy={FAR_Y} gradientUnits="userSpaceOnUse">
-              <Stop offset="0%" stopColor={FAR_COLOR} stopOpacity="0.6" />
+              <Stop offset="0%" stopColor={FAR_COLOR} stopOpacity="0.48" />
               <Stop offset="50%" stopColor={FAR_COLOR} stopOpacity="0.15" />
-              <Stop offset="100%" stopColor="#050410" stopOpacity="0" />
+              <Stop offset="100%" stopColor="#03080b" stopOpacity="0" />
             </RadialGradient>
           </Defs>
           <Circle cx={CENTER} cy={FAR_Y} r="55" fill="url(#farG)" />
@@ -193,9 +194,9 @@ export function NearFarGuide({ active }: Props) {
         <Svg width="260" height="260">
           <Defs>
             <RadialGradient id="nearG" cx={CENTER} cy={NEAR_Y} r="60" fx={CENTER} fy={NEAR_Y} gradientUnits="userSpaceOnUse">
-              <Stop offset="0%" stopColor={NEAR_COLOR} stopOpacity="0.5" />
+              <Stop offset="0%" stopColor={NEAR_COLOR} stopOpacity="0.4" />
               <Stop offset="50%" stopColor={NEAR_COLOR} stopOpacity="0.08" />
-              <Stop offset="100%" stopColor="#050410" stopOpacity="0" />
+              <Stop offset="100%" stopColor="#03080b" stopOpacity="0" />
             </RadialGradient>
           </Defs>
           <Circle cx={CENTER} cy={NEAR_Y} r="60" fill="url(#nearG)" />

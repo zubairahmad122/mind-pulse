@@ -21,6 +21,10 @@ type Props = {
   textColor?: string;
   /** Letter spacing on the main label. Defaults to 1. */
   letterSpacing?: number;
+  /** ~20% shorter button — for dense layouts (e.g. exercise players). */
+  compact?: boolean;
+  /** Keep full opacity while disabled — for status-style CTAs ("Following…"). */
+  keepBright?: boolean;
   style?: ViewStyle;
 };
 
@@ -44,6 +48,8 @@ export function GradientCTA({
   glowColor = DEFAULT_GLOW,
   textColor = '#FFFFFF',
   letterSpacing = 1,
+  compact = false,
+  keepBright = false,
   style,
 }: Props) {
   const scale = useRef(new Animated.Value(1)).current;
@@ -73,11 +79,11 @@ export function GradientCTA({
           {
             shadowColor: glowColor,
             shadowOpacity: isDisabled ? 0 : 0.55,
-            opacity: isDisabled && !loading ? 0.55 : 1,
+            opacity: isDisabled && !loading && !keepBright ? 0.55 : 1,
           },
         ]}
       >
-        <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.fill}>
+        <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.fill, compact && styles.fillCompact]}>
           {/* Glossy top highlight — gives the fill a shiny, glass-like sheen */}
           <LinearGradient
             pointerEvents="none"
@@ -120,6 +126,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 15,
     paddingHorizontal: 20,
+  },
+  fillCompact: {
+    minHeight: 44,
+    paddingVertical: 8,
   },
   sheen: {
     position: 'absolute',
