@@ -15,7 +15,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   DimensionValue,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -287,10 +286,7 @@ function Target({
   // Quick scale+fade in (100ms) — subtle "alive" feel without adding
   // perceptible delay before it's tappable; hit area is live from frame 1
   // regardless of the animation (opacity/scale are purely visual).
-  // Smaller targets (Sharp/Elite) move + respawn much faster, so they get a
-  // proportionally larger forgiveness margin — the drawn target size itself
-  // never changes, only how much near-miss slack counts as a hit.
-  const slop = Math.max(28, Math.round(56 - size * 0.5));
+  const slop = Math.max(22, Math.round(40 - size * 0.35));
 
   return (
     <Animated.View
@@ -310,25 +306,21 @@ function Target({
         elevation: 10,
       }}
     >
-      {/* Pressable (not the legacy TouchableOpacity) — its responder
-          negotiation is more reliable under rapid successive taps, which
-          matters most at Sharp/Elite spawn rates. onPressIn still fires on
-          touch-down, not touch-up, so reaction time is unaffected. */}
-      <Pressable
+      <TouchableOpacity
         onPressIn={onPress}
+        activeOpacity={0.7}
         hitSlop={{ top: slop, bottom: slop, left: slop, right: slop }}
-        style={({ pressed }) => ({
+        style={{
           width: size,
           height: size,
           alignItems: "center",
           justifyContent: "center",
-          opacity: pressed ? 0.7 : 1,
-        })}
+        }}
       >
         <Svg width={size} height={size} viewBox="0 0 50 50">
           <Path d={getShapePath(shape, size)} fill={color} />
         </Svg>
-      </Pressable>
+      </TouchableOpacity>
     </Animated.View>
   );
 }
@@ -537,7 +529,7 @@ function PerformanceBar({
             >
               {accuracy === null ? "—" : `${accuracy}%`}
             </Animated.Text>
-            <Text style={perf.lbl} numberOfLines={1}>Accuracy</Text>
+            <Text style={perf.lbl}>Accuracy</Text>
           </View>
           <View style={perf.divider} />
           <View style={perf.stat}>
@@ -548,7 +540,7 @@ function PerformanceBar({
             >
               {combo > 1 ? `×${combo}` : "—"}
             </Animated.Text>
-            <Text style={perf.lbl} numberOfLines={1}>Combo</Text>
+            <Text style={perf.lbl}>Combo</Text>
           </View>
           <View style={perf.divider} />
           <View style={perf.stat}>
@@ -559,7 +551,7 @@ function PerformanceBar({
             >
               {bestCombo > 1 ? `×${bestCombo}` : "—"}
             </Animated.Text>
-            <Text style={perf.lbl} numberOfLines={1}>Best Combo</Text>
+            <Text style={perf.lbl}>Best Combo</Text>
           </View>
         </View>
         <View style={perf.track}>
