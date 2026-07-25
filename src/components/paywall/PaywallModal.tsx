@@ -4,12 +4,14 @@ import { ActivityIndicator, Modal, StyleSheet, Text, TouchableOpacity, View } fr
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 import { PACKAGE_TYPE, type PurchasesPackage } from 'react-native-purchases';
 import { COLORS, colors } from '@/constants/colors';
+import { FONTS, GLASS_CARD, RADIUS, STATUS_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { radius } from '@/constants/radius';
 import { typography } from '@/constants/typography';
 import type { FeatureId } from '@/constants/entitlements';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { getOfferings, purchasePackage, restorePurchases } from '@/services/purchaseService';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 
 type PaywallCopy = {
   title: string;
@@ -40,14 +42,14 @@ const PAYWALL_COPY: Partial<Record<FeatureId, PaywallCopy>> = {
     benefits: ['Targeted tension-release audio', 'Use anytime, anywhere', 'Pairs with your daily routine'],
   },
   eye_focus_sprint: {
-    title: 'Reduce eye strain faster',
-    subtitle: 'Focus Sprint trains your eyes with quick daily reps.',
-    benefits: ['Full set of eye training games', 'Track focus improvements over time', 'Built for screen-heavy days'],
+    title: 'Build better screen-break habits',
+    subtitle: 'Focus Sprint is a short visual-coordination game for screen-heavy days.',
+    benefits: ['Full set of visual activities', 'Track game progress over time', 'Pair activities with guided breaks'],
   },
   eye_dichoptic: {
-    title: 'Reduce eye strain faster',
-    subtitle: 'Dichoptic training builds visual stamina with color-based reps.',
-    benefits: ['Advanced 3D reaction training', 'Personalized color modes', 'Full eye-care toolkit'],
+    title: 'Explore color-based coordination',
+    subtitle: 'A red/cyan reaction game—not a replacement for prescribed vision therapy.',
+    benefits: ['Red/cyan reaction activity', 'Personalized color modes', 'Guided eye-care toolkit'],
   },
   audio_mindful_reset: {
     title: 'Unlock deeper calm sessions',
@@ -189,60 +191,39 @@ export function PaywallModal({ visible, onClose, featureId }: Props) {
           ) : (
             <View style={styles.plans}>
               {annualPkg && (
-                <TouchableOpacity
-                  style={[styles.planBtn, styles.planBtnHighlight]}
-                  onPress={() => handlePurchase(annualPkg)}
-                  disabled={purchasingId !== null || restoring}
-                  activeOpacity={0.85}
-                >
+                <View style={styles.planWrap}>
                   <View style={styles.bestValueBadge}>
                     <Text style={styles.bestValueText}>BEST VALUE</Text>
                   </View>
-                  {purchasingId === annualPkg.identifier ? (
-                    <ActivityIndicator color={colors.text.primary} />
-                  ) : (
-                    <>
-                      <Text style={styles.planLabel}>Subscribe Yearly</Text>
-                      <Text style={styles.planPrice}>{annualPkg.product.priceString} / year</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  <GradientCTA
+                    label="Subscribe Yearly"
+                    sublabel={`${annualPkg.product.priceString} / year`}
+                    onPress={() => handlePurchase(annualPkg)}
+                    disabled={purchasingId !== null || restoring}
+                    loading={purchasingId === annualPkg.identifier}
+                  />
+                </View>
               )}
 
               {monthlyPkg && (
-                <TouchableOpacity
-                  style={styles.planBtn}
+                <GradientCTA
+                  variant="secondary"
+                  label="Subscribe Monthly"
+                  sublabel={`${monthlyPkg.product.priceString} / month`}
                   onPress={() => handlePurchase(monthlyPkg)}
                   disabled={purchasingId !== null || restoring}
-                  activeOpacity={0.85}
-                >
-                  {purchasingId === monthlyPkg.identifier ? (
-                    <ActivityIndicator color={colors.text.primary} />
-                  ) : (
-                    <>
-                      <Text style={styles.planLabel}>Subscribe Monthly</Text>
-                      <Text style={styles.planPrice}>{monthlyPkg.product.priceString} / month</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  loading={purchasingId === monthlyPkg.identifier}
+                />
               )}
 
               {fallbackPkg && (
-                <TouchableOpacity
-                  style={[styles.planBtn, styles.planBtnHighlight]}
+                <GradientCTA
+                  label="Subscribe"
+                  sublabel={fallbackPkg.product.priceString}
                   onPress={() => handlePurchase(fallbackPkg)}
                   disabled={purchasingId !== null || restoring}
-                  activeOpacity={0.85}
-                >
-                  {purchasingId === fallbackPkg.identifier ? (
-                    <ActivityIndicator color={colors.text.primary} />
-                  ) : (
-                    <>
-                      <Text style={styles.planLabel}>Subscribe</Text>
-                      <Text style={styles.planPrice}>{fallbackPkg.product.priceString}</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  loading={purchasingId === fallbackPkg.identifier}
+                />
               )}
             </View>
           )}
@@ -266,8 +247,10 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: COLORS.surface,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: RADIUS.card,
+    borderTopRightRadius: RADIUS.card,
+    borderTopWidth: 1,
+    borderColor: GLASS_CARD.border,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xxl,
@@ -292,6 +275,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
+    fontFamily: FONTS.heading,
     color: colors.text.primary,
     fontSize: 22,
     fontWeight: '800',
@@ -331,23 +315,15 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: spacing.md,
   },
-  planBtn: {
+  planWrap: {
+    position: 'relative',
     width: '100%',
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.accent.purpleBorder,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-  },
-  planBtnHighlight: {
-    backgroundColor: colors.accent.purple,
-    borderColor: colors.accent.purple,
   },
   bestValueBadge: {
     position: 'absolute',
     top: -10,
+    left: 16,
+    zIndex: 1,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.pill,
@@ -361,18 +337,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     color: colors.accent.purple,
   },
-  planLabel: {
-    ...typography.bodyLarge,
-    color: colors.text.primary,
-    fontWeight: '700',
-  },
-  planPrice: {
-    ...typography.body,
-    color: colors.text.secondary,
-  },
   errorText: {
     ...typography.body,
-    color: colors.status.error,
+    color: STATUS_COLORS.error,
     textAlign: 'center',
     marginBottom: spacing.md,
   },

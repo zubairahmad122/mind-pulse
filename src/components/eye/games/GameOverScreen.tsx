@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -11,8 +11,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/constants/colors';
+import { FONTS, PILLAR_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 
 export interface GameEndStats {
   headline: string;
@@ -27,6 +29,9 @@ interface Props {
   stats: GameEndStats;
   onReplay: () => void;
   onDismiss?: () => void;
+  /** Real, verified callout — e.g. "🏆 New Personal Best!" — only ever set
+   * from an actual record check, never a guessed/invented achievement. */
+  celebration?: string;
 }
 
 const RATING_LABEL = ['😐 Keep going', '🔥 Well played!', '🏆 Outstanding!'];
@@ -37,7 +42,7 @@ function StatRow({ label, value, delay }: { label: string; value: string; delay:
   const tx = useSharedValue(16);
 
   useEffect(() => {
-    opacity.value = withDelay(delay, withTiming(1, { duration: 280 }));
+    opacity.value = withDelay(delay, withTiming(1, { duration: 220 }));
     tx.value = withDelay(delay, withSpring(0, { damping: 18 }));
   }, []);
 
@@ -54,8 +59,8 @@ function StatRow({ label, value, delay }: { label: string; value: string; delay:
   );
 }
 
-export function GameOverScreen({ stats, onReplay, onDismiss }: Props) {
-  const scale   = useSharedValue(0.88);
+export function GameOverScreen({ stats, onReplay, onDismiss, celebration }: Props) {
+  const scale   = useSharedValue(0.95);
   const opacity = useSharedValue(0);
   const btnScale = useSharedValue(0);
 
@@ -65,10 +70,11 @@ export function GameOverScreen({ stats, onReplay, onDismiss }: Props) {
         ? Haptics.NotificationFeedbackType.Success
         : Haptics.NotificationFeedbackType.Error,
     );
-    // Gentle fade + scale — no bounce
-    opacity.value = withTiming(1, { duration: 220 });
-    scale.value   = withTiming(1, { duration: 320, easing: Easing.out(Easing.cubic) });
-    btnScale.value = withDelay(450, withSpring(1, { damping: 14, stiffness: 160 }));
+    // Quicker settle than before — this is a result screen shown after every
+    // round, so a snappy entrance matters more than a showy one.
+    opacity.value = withTiming(1, { duration: 200 });
+    scale.value   = withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) });
+    btnScale.value = withDelay(250, withSpring(1, { damping: 16, stiffness: 200 }));
   }, []);
 
   const overlayStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
@@ -78,60 +84,73 @@ export function GameOverScreen({ stats, onReplay, onDismiss }: Props) {
   const ratingColor = RATING_COLOR[stats.rating - 1];
 
   return (
-    <Animated.View style={[styles.overlay, overlayStyle]}>
-      <Animated.View style={[styles.card, cardStyle]}>
+    <Modal transparent visible animationType="none" statusBarTranslucent>
+      <Animated.View style={[styles.overlay, overlayStyle]}>
+        <Animated.View style={[styles.card, cardStyle]}>
 
-        {/* X dismiss button */}
-        {onDismiss && (
-          <TouchableOpacity style={styles.closeBtn} onPress={onDismiss} hitSlop={12}>
-            <Ionicons name="close" size={13} color="rgba(255,255,255,0.5)" />
-          </TouchableOpacity>
-        )}
+          {/* X dismiss button */}
+          {onDismiss && (
+            <TouchableOpacity style={styles.closeBtn} onPress={onDismiss} hitSlop={12}>
+              <Ionicons name="close" size={13} color="rgba(255,255,255,0.5)" />
+            </TouchableOpacity>
+          )}
 
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.resultBadge, { color: ratingColor }]}>
-            {stats.survived ? '⏱ TIME UP' : '💀 GAME OVER'}
-          </Text>
-          <Text style={styles.headline}>{stats.headline}</Text>
-          <Text style={[styles.rating, { color: ratingColor }]}>
-            {RATING_LABEL[stats.rating - 1]}
-          </Text>
-          {stats.subline ? (
-            <Text style={styles.subline}>{stats.subline}</Text>
+          {/* Header — motivational read comes before the raw number, per the
+              latest design pass, so the encouragement lands first. */}
+          <View style={styles.header}>
+            <Text style={[styles.resultBadge, { color: ratingColor }]}>
+              {stats.survived ? "⏱ TIME'S UP" : '💀 GAME OVER'}
+            </Text>
+            <Text style={[styles.rating, { color: ratingColor }]}>
+              {RATING_LABEL[stats.rating - 1]}
+            </Text>
+            <Text style={styles.headline}>{stats.headline}</Text>
+            {celebration ? (
+              <View style={styles.celebrationChip}>
+                <Text style={styles.celebrationText}>{celebration}</Text>
+              </View>
+            ) : null}
+            {stats.subline ? (
+              <Text style={styles.subline}>{stats.subline}</Text>
+            ) : null}
+          </View>
+
+          {/* Stats list */}
+          <View style={styles.statsList}>
+            {stats.stats.map((s, i) => (
+              <StatRow key={s.label} label={s.label} value={s.value} delay={100 + i * 60} />
+            ))}
+          </View>
+
+          {/* Optional honest disclaimer */}
+          {stats.disclaimer ? (
+            <Text style={styles.disclaimer}>{stats.disclaimer}</Text>
           ) : null}
-        </View>
 
-        {/* Stats list */}
-        <View style={styles.statsList}>
-          {stats.stats.map((s, i) => (
-            <StatRow key={s.label} label={s.label} value={s.value} delay={160 + i * 100} />
-          ))}
-        </View>
-
-        {/* Optional honest disclaimer */}
-        {stats.disclaimer ? (
-          <Text style={styles.disclaimer}>{stats.disclaimer}</Text>
-        ) : null}
-
-        {/* Replay button */}
-        <Animated.View style={btnStyle}>
-          <TouchableOpacity style={styles.replayBtn} onPress={onReplay} activeOpacity={0.85}>
-            <View style={styles.replayInner}>
-              <Ionicons name="play" size={16} color="#FFF" />
-              <Text style={styles.replayText}>Play Again</Text>
-            </View>
-          </TouchableOpacity>
+          {/* Replay + secondary action */}
+          <Animated.View style={[styles.actions, btnStyle]}>
+            <GradientCTA
+              label="Beat Your Best"
+              icon={<Ionicons name="play" size={16} color="#03212C" />}
+              onPress={onReplay}
+              textColor="#03212C"
+            />
+            {onDismiss && (
+              <TouchableOpacity onPress={onDismiss} style={styles.secondaryBtn} activeOpacity={0.7}>
+                <Text style={styles.secondaryText}>Continue →</Text>
+              </TouchableOpacity>
+            )}
+          </Animated.View>
         </Animated.View>
       </Animated.View>
-    </Animated.View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(3, 8, 11, 0.92)',
+    backgroundColor: 'rgba(3, 8, 11, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 99,
@@ -141,10 +160,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#081720',
     borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: 'rgba(34,211,238,0.35)',
-    padding: spacing.xl,
-    gap: spacing.lg,
-    shadowColor: '#22d3ee',
+    borderColor: 'rgba(0,224,255,0.35)',
+    padding: spacing.lg,
+    gap: spacing.md,
+    shadowColor: PILLAR_COLORS.eye,
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 40,
     shadowOpacity: 0.4,
@@ -168,43 +187,55 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 14,
   },
-  header: { alignItems: 'center', gap: spacing.xs },
+  header: { alignItems: 'center', gap: 4 },
   resultBadge: {
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 3,
   },
+  rating: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 2,
+  },
   headline: {
-    fontSize: 34,
+    fontFamily: FONTS.heading,
+    fontSize: 46,
     fontWeight: '900',
     color: colors.text.primary,
     textAlign: 'center',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
+    marginTop: 2,
   },
-  rating: {
-    fontSize: 18,
-    fontWeight: '700',
+  celebrationChip: {
+    backgroundColor: 'rgba(255,215,0,0.12)',
+    borderWidth: 1, borderColor: 'rgba(255,215,0,0.4)',
+    borderRadius: 100,
+    paddingHorizontal: 12, paddingVertical: 4,
+    marginTop: 4,
   },
+  celebrationText: { fontSize: 12, fontWeight: '800', color: '#FFD700' },
   subline: {
     ...typography.caption,
     color: colors.text.secondary,
     textAlign: 'center',
+    marginTop: 4,
   },
   statsList: {
-    gap: 2,
+    gap: 1,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.07)',
-    paddingTop: spacing.md,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    paddingTop: spacing.sm,
   },
   statRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
-  statLabel: { ...typography.body, color: colors.text.secondary },
-  statValue: { ...typography.body, color: colors.text.primary, fontWeight: '700' },
+  statLabel: { fontSize: 14, color: colors.text.secondary },
+  statValue: { fontSize: 18, color: colors.text.primary, fontWeight: '700' },
   disclaimer: {
     fontSize: 11,
     lineHeight: 16,
@@ -213,12 +244,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     paddingHorizontal: spacing.sm,
   },
-  replayBtn: {
-    backgroundColor: '#06b6d4',
-    paddingVertical: spacing.md,
-    borderRadius: 100,
-    alignItems: 'center',
-  },
-  replayInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  replayText: { ...typography.bodyLarge, color: '#FFF', fontWeight: '800' },
+  actions: { gap: spacing.sm },
+  secondaryBtn: { alignItems: 'center', paddingVertical: 6 },
+  secondaryText: { fontSize: 14, fontWeight: '600', color: colors.text.secondary },
 });

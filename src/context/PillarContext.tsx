@@ -1,25 +1,24 @@
 import { createContext, useContext, useMemo } from 'react';
-import {
-  PILLAR_THEME,
-  DEFAULT_PILLAR_THEME,
-  type PillarKey,
-  type PillarTheme,
-} from '@/constants/theme';
+import { PILLAR_COLORS } from '@/constants/designSystem';
+
+export type PillarKey = keyof typeof PILLAR_COLORS;
 
 interface PillarCtx {
   pillar: PillarKey;
-  theme: PillarTheme;
+  accent: string;
 }
 
 const PillarContext = createContext<PillarCtx>({
   pillar: 'mind',
-  theme: DEFAULT_PILLAR_THEME,
+  accent: PILLAR_COLORS.mind,
 });
 
 /**
- * Provides the current pillar theme (mind / sleep / eyes) to all descendants.
- * Wired into ScreenShell — every screen automatically gets the right pillar
- * without needing to pass props through intermediate components.
+ * Provides the current screen's accent color (one of `PILLAR_COLORS`) to all
+ * descendants. Wired into `ScreenShell` — every screen automatically gets
+ * the right accent without needing to pass props through intermediate
+ * components. Background is global (see `ScreenShell`) — this context only
+ * ever drives per-screen accent color, never background/card styling.
  */
 export function PillarProvider({
   pillar,
@@ -29,7 +28,7 @@ export function PillarProvider({
   children: React.ReactNode;
 }) {
   const value = useMemo(
-    () => ({ pillar, theme: PILLAR_THEME[pillar] }),
+    () => ({ pillar, accent: PILLAR_COLORS[pillar] }),
     [pillar],
   );
   return (
@@ -39,24 +38,17 @@ export function PillarProvider({
   );
 }
 
-/**
- * Returns the current pillar key and its full PillarTheme (accent, cardTint,
- * bgGradient, buttonGradient, etc.).
- */
+/** Returns the current pillar key and its accent color. */
 export function usePillar(): PillarCtx {
   return useContext(PillarContext);
 }
 
-/**
- * Convenience: returns just the current PillarKey.
- */
+/** Convenience: returns just the current PillarKey. */
 export function usePillarKey(): PillarKey {
   return useContext(PillarContext).pillar;
 }
 
-/**
- * Convenience: returns just the current PillarTheme.
- */
-export function usePillarTheme(): PillarTheme {
-  return useContext(PillarContext).theme;
+/** Convenience: returns just the current pillar's accent color. */
+export function usePillarAccent(): string {
+  return useContext(PillarContext).accent;
 }

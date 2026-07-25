@@ -1,4 +1,5 @@
 import { spacing } from "@/constants/spacing";
+import { RADIUS } from "@/constants/designSystem";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import type { LucideIcon } from "lucide-react-native";
@@ -29,7 +30,7 @@ type Props = {
 };
 
 const DEFAULT_ACCENT = "#60a5fa";
-const CARD_RADIUS = 22;
+const CARD_RADIUS = RADIUS.card;
 
 /**
  * Premium action card with a rich glass aesthetic: gradient-tinted background

@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '@/constants';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { pulseScoreTheme } from '@/utils/scoring';
+import { GlassCard } from '@/components/ui/GlassCard';
 
 type DayEntry = { date: string; mindPulseScore: number } | null;
 
@@ -18,7 +18,7 @@ export function ScoreTrendChart({ days }: Props) {
   if (days.length === 0) return null;
 
   return (
-    <View style={s.card}>
+    <GlassCard style={s.card}>
       <Text style={s.title}>7-DAY TREND</Text>
       <View style={s.barsRow}>
         {days.map((entry, i) => {
@@ -50,18 +50,13 @@ export function ScoreTrendChart({ days }: Props) {
           );
         })}
       </View>
-    </View>
+    </GlassCard>
   );
 }
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: spacing.md,
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     gap: spacing.sm,
   },
   title: {

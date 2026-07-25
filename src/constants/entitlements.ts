@@ -63,3 +63,19 @@ export const FEATURE_NAMES: Record<FeatureId, string> = {
   report_weekly_summary: 'Weekly Summary',
   journal_archive: 'Journal Archive',
 };
+
+/** One-line, feature-specific pitch shown on the locked-feature card — replaces the generic "This is a Pro feature." */
+export const FEATURE_DESCRIPTIONS: Record<FeatureId, string> = {
+  eye_focus_sprint: 'Train your eyes to quickly switch focus between near and far objects. Available with MindPulse Pro.',
+  eye_dichoptic: 'Play a red/cyan color-coordination activity. This is not clinician-prescribed vision therapy. Available with MindPulse Pro.',
+  relax_body_scan: 'A guided body scan to release tension zone by zone. Available with MindPulse Pro.',
+  relax_tension_release: 'A guided session to release physical tension and reset your nervous system. Available with MindPulse Pro.',
+  relax_sleep_drop: 'A calming wind-down session to help you drop into sleep. Available with MindPulse Pro.',
+  relax_reset_wave: 'A short reset session to clear your mind. Available with MindPulse Pro.',
+  voice_guidance_tts: 'Spoken voice guidance through every session. Available with MindPulse Pro.',
+  audio_mindful_reset: 'A guided audio track to reset your focus and calm your mind. Available with MindPulse Pro.',
+  audio_gentle_hope: 'A gentle, calming audio track. Available with MindPulse Pro.',
+  report_extended_trends: 'See your 7-day score trends and full breakdown of every score. Available with MindPulse Pro.',
+  report_weekly_summary: 'A weekly AI-written reflection on your progress. Available with MindPulse Pro.',
+  journal_archive: 'Access your full journal history beyond the last 7 days. Available with MindPulse Pro.',
+};

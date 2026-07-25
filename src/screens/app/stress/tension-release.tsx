@@ -28,6 +28,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { GradientCTA } from '@/components/ui/GradientCTA';
 import { TENSION_SCRIPTS } from '@/constants/sessionScripts';
 import { colors } from '@/constants/colors';
+import { PILLAR_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { resolveGuideLang, type AudioClipId } from '@/constants/audioGuide';
@@ -35,7 +36,9 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
 
 // One accent across the whole Relax feature — matches RelaxSessionPlayer.
-const ACCENT = '#34D399';
+// Same accent as the Relax tab / session player — one color for the feature
+// (was a stale green predating the frozen spec's blue Relax accent).
+const ACCENT = PILLAR_COLORS.relax;
 
 // Zone icons (lucide, matching the app's icon set)
 const ZONE_ICONS = [Hand, PersonStanding, Smile, Wind, Footprints, Grip] as const;

@@ -19,13 +19,15 @@ import Animated, {
 import { EMOTIONAL_STATES, type EmotionalState } from '@/constants/emotionalStates';
 import { getSessionById, getRecommendedSession, getSessionRoute } from '@/constants/relaxSessions';
 import { colors } from '@/constants/colors';
+import { PILLAR_COLORS } from '@/constants/designSystem';
 import { ROUTES } from '@/constants/routes';
 import { spacing } from '@/constants/spacing';
 import { useRelaxContext } from '@/context/RelaxContext';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
 
 // Same accent as the Relax tab / session player — one color for the feature.
-const RELAX_ACCENT = '#34D399';
+// Was a stale green (#34D399) predating the frozen spec's blue Relax accent.
+const RELAX_ACCENT = PILLAR_COLORS.relax;
 
 // Emotion grid: 3 columns. Card widths are computed in pixels from the
 // measured grid width — percentage widths + gap wrapped to a broken

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
+import { FONTS } from '@/constants/designSystem';
 
 const BADGE_SIZE = 40;
 
@@ -88,6 +89,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
+    fontFamily: FONTS.heading,
     fontSize: 18,
     fontWeight: '800',
   },

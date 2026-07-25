@@ -1,12 +1,13 @@
 import { GlassCard } from "@/components/ui/GlassCard";
 import { colors } from "@/constants/colors";
+import { PILLAR_COLORS } from "@/constants/designSystem";
 import { spacing } from "@/constants/spacing";
 import { typography } from "@/constants/typography";
 import { adjustTime } from "@/utils/formatTime";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-const PURPLE = "#8B5CF6";
+const INDIGO = PILLAR_COLORS.sleep;
 
 /** Format a "HH:MM" 24h string as "12:00 AM". */
 function to12h(value: string): { time: string; period: string } {
@@ -44,7 +45,7 @@ function StepButton({
       <Ionicons
         name={icon === "remove" ? "remove" : "add"}
         size={20}
-        color={PURPLE}
+        color={INDIGO}
       />
       <Text style={styles.stepLabel}>{stepLabel}</Text>
     </TouchableOpacity>
@@ -114,22 +115,22 @@ const styles = StyleSheet.create({
     minWidth: 56,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.xs,
-    borderRadius: 14,
-    backgroundColor: "rgba(167, 139, 250, 0.15)",
+    borderRadius: 18,
+    backgroundColor: "rgba(123, 127, 255, 0.10)",
     borderWidth: 1,
-    borderColor: "rgba(167, 139, 250, 0.3)",
+    borderColor: "rgba(123, 127, 255, 0.35)",
     gap: 4,
     // No `elevation` here on purpose — Android's elevation shadow ignores
     // shadowColor and draws from the view's full rectangle, which shows
     // through a translucent background as a visible colored square.
-    shadowColor: "rgba(167, 139, 250, 0.2)",
+    shadowColor: "rgba(123, 127, 255, 0.2)",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
   stepLabel: {
     ...typography.caption,
-    color: PURPLE,
+    color: INDIGO,
     fontWeight: "700",
   },
   timeCenter: { alignItems: "center", gap: 2 },
@@ -148,10 +149,10 @@ const styles = StyleSheet.create({
   quickChip: {
     flex: 1,
     paddingVertical: spacing.sm,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(167, 139, 250, 0.35)",
-    backgroundColor: "rgba(167, 139, 250, 0.08)",
+    borderColor: "rgba(255, 255, 255, 0.10)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     alignItems: "center",
   },
   quickText: {

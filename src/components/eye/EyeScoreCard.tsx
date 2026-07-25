@@ -1,5 +1,6 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import { colors } from '@/constants/colors';
+import { PILLAR_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { Flame } from 'lucide-react-native';
@@ -63,7 +64,7 @@ export function EyeScoreCard({ result, loading, hasAnySessions = true, streak = 
       <View style={{ gap: spacing.sm }}>
       {/* Label row */}
       <View style={styles.labelRow}>
-        <Text style={styles.cardLabel}>EYE SCORE</Text>
+        <Text style={styles.cardLabel}>EYE COMFORT &amp; HABITS</Text>
         {!loading && hasAnySessions && (
           <View style={[styles.statusPill, { backgroundColor: theme.color + '22', borderColor: theme.color + '55' }]}>
             <Text style={[styles.statusPillText, { color: theme.color }]}>
@@ -100,7 +101,7 @@ export function EyeScoreCard({ result, loading, hasAnySessions = true, streak = 
           </Text>
           {!loading && hasAnySessions && streak >= 2 && (
             <View style={styles.streakBadge}>
-              <Flame size={12} color="#F59E0B" fill="#F59E0B" />
+              <Flame size={12} color={PILLAR_COLORS.challenge} fill={PILLAR_COLORS.challenge} />
               <Text style={styles.streakText}>{streak}-day streak</Text>
             </View>
           )}
@@ -204,10 +205,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F59E0B18',
+    backgroundColor: PILLAR_COLORS.challenge + '18',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#F59E0B33',
+    borderColor: PILLAR_COLORS.challenge + '33',
     paddingHorizontal: 8,
     paddingVertical: 3,
     alignSelf: 'flex-start',
@@ -215,7 +216,7 @@ const styles = StyleSheet.create({
   streakText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#F59E0B',
+    color: PILLAR_COLORS.challenge,
     letterSpacing: 0.3,
   },
 

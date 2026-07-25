@@ -1,9 +1,11 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '@/constants/colors';
 import { radius } from '@/constants/radius';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 
+// rgba(123,127,255,...) below is PILLAR_COLORS.sleep (#7B7FFF) — the Sleep
+// tab's frozen indigo accent, spelled out in rgba so it can carry per-state
+// opacity without string concatenation.
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
 type Props = {
@@ -46,15 +48,15 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.10)',
     backgroundColor: 'rgba(255,255,255,0.03)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dayActive: {
-    backgroundColor: 'rgba(139,92,246,0.22)',
-    borderColor: 'rgba(139,92,246,0.55)',
+    backgroundColor: 'rgba(123,127,255,0.22)',
+    borderColor: 'rgba(123,127,255,0.55)',
   },
-  dayText: { ...typography.label, color: colors.text.tertiary },
+  dayText: { ...typography.label, color: 'rgba(255,255,255,0.75)' },
   dayTextActive: { color: '#FFFFFF', fontWeight: '700' },
 });

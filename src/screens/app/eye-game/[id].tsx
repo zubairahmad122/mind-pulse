@@ -17,29 +17,35 @@ import { GameOverScreen, type GameEndStats } from '@/components/eye/games/GameOv
 import { SaccadeSniper } from '@/components/eye/games/SaccadeSniper';
 import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
-import { PrimaryButton } from '@/components/ui/PrimaryButton';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { PaywallGate } from '@/components/paywall/PaywallGate';
+import { ENTITLEMENTS } from '@/constants/entitlements';
 import { getEyeActivity } from '@/constants/eyeRelax';
 import { useAuth } from '@/context/AuthContext';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { useGameRecord } from '@/hooks/useGameRecord';
 import { type GameId } from '@/services/gameRecords';
 import { colors } from '@/constants/colors';
+import { PILLAR_COLORS, STATUS_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 
+const EYE_ACCENT = PILLAR_COLORS.eye;
+
 function GameView({
-  id, running, onGameEnd, onSaccadeScore, onFocusSession,
+  id, running, onGameEnd, onSaccadeScore, onFocusSession, personalBestMs,
 }: {
   id: string;
   running: boolean;
   onGameEnd: (stats: GameEndStats) => void;
   onSaccadeScore?: (score: number, bestMs: number) => void;
   onFocusSession?: (score: number) => void;
+  personalBestMs?: number | null;
 }) {
   switch (id) {
     case 'saccade-sniper':
-      return <SaccadeSniper running={running} onScore={onSaccadeScore} onGameEnd={onGameEnd} />;
+      return <SaccadeSniper running={running} onScore={onSaccadeScore} onGameEnd={onGameEnd} personalBestMs={personalBestMs} />;
     case 'focus-sprint':
       return <FocusSprint running={running} onSession={onFocusSession} onGameEnd={onGameEnd} />;
     case 'comet-trace':
@@ -78,6 +84,7 @@ function RecordBadge({ visible, label }: { visible: boolean; label: string }) {
 export default function EyeGameScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
+  const { isPremium } = useSubscription();
   const activity = id ? getEyeActivity(id) : undefined;
   const [secondsLeft, setSecondsLeft] = useState(activity?.durationSeconds ?? 60);
   const [running, setRunning]         = useState(true);
@@ -111,9 +118,21 @@ export default function EyeGameScreen() {
 
   if (!activity) {
     return (
-      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
+      <ScreenShell scroll={false} safeBottom pillar="eye" ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="Eye Game" showBack />
         <Text style={styles.missing}>Activity not found</Text>
+      </ScreenShell>
+    );
+  }
+
+  // Locked games get the same clean, upfront lock card as DichopticScreen —
+  // not the game rendered live-but-inert underneath a small corner badge.
+  const locked = !isPremium && !!activity.featureId && ENTITLEMENTS[activity.featureId] === 'pro';
+  if (locked) {
+    return (
+      <ScreenShell safeBottom pillar="eye" ambient={<AmbientBackground subtle />}>
+        <ScreenHeader title={activity.title} subtitle={activity.subtitle} showBack />
+        <PaywallGate featureId={activity.featureId!}>{null}</PaywallGate>
       </ScreenShell>
     );
   }
@@ -141,7 +160,7 @@ export default function EyeGameScreen() {
   }
 
   return (
-    <ScreenShell scroll={isSelfManaged} safeBottom ambient={<AmbientBackground subtle />}>
+    <ScreenShell scroll={isSelfManaged} safeBottom pillar="eye" ambient={<AmbientBackground subtle />}>
       <ScreenHeader title={activity.title} subtitle={activity.subtitle} showBack />
 
       {/* Timer + personal best row — hidden for self-managed games */}
@@ -164,8 +183,10 @@ export default function EyeGameScreen() {
         </View>
       )}
 
-      {/* PB chip only for self-managed games (not exercises) */}
-      {isSelfManaged && !isExercise && record !== null && (
+      {/* PB chip only for self-managed games (not exercises) — Saccade Sniper
+          shows its own PB inline next to the difficulty control instead of a
+          floating top-right badge, so it's excluded here. */}
+      {isSelfManaged && !isExercise && activity.id !== 'saccade-sniper' && record !== null && (
         <View style={[styles.topRow, { justifyContent: 'flex-end' }]}>
           <View style={styles.pbChip}>
             <Text style={styles.pbLabel}>PB</Text>
@@ -204,6 +225,7 @@ export default function EyeGameScreen() {
               }}
               onSaccadeScore={(_, bMs) => { bestMsRef.current = bMs; }}
               onFocusSession={score => submit(score)}
+              personalBestMs={gameId === 'saccade-sniper' ? (record?.value ?? null) : null}
             />
           </View>
         );
@@ -217,9 +239,10 @@ export default function EyeGameScreen() {
 
       {/* Pause/Resume only for timer-managed games */}
       {!isSelfManaged && !gameEndStats && (
-        <PrimaryButton
+        <GradientCTA
           label={running ? 'Pause' : 'Resume'}
           onPress={() => setRunning(r => !r)}
+          textColor="#03212C"
         />
       )}
 
@@ -229,6 +252,7 @@ export default function EyeGameScreen() {
       {gameEndStats && (
         <GameOverScreen
           stats={gameEndStats}
+          celebration={!isExercise && isNewRecord ? '🏆 New Personal Best!' : undefined}
           onReplay={handleReplay}
           onDismiss={() => {
             setGameEndStats(null);
@@ -254,8 +278,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', marginBottom: spacing.sm,
   },
   timerRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
-  timer:      { ...typography.headingLarge, color: '#22d3ee' },
-  timerDone:  { color: '#4CAF50' },
+  timer:      { ...typography.headingLarge, color: EYE_ACCENT },
+  timerDone:  { color: STATUS_COLORS.success },
   timerLabel: { ...typography.caption, color: colors.text.secondary },
   pbChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,

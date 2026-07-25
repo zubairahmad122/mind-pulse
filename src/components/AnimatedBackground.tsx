@@ -15,19 +15,20 @@ import Svg, {
   Rect,
   Stop,
 } from 'react-native-svg';
+import { BACKGROUND } from '@/constants/designSystem';
 
 /**
  * Soft nebula glow rendered as an SVG radial gradient so it has NO hard edges
- * or seams — a smooth, premium "deep space" wash. A single restrained violet
- * haze drifting in from the upper-left, matching the clean reference look.
+ * or seams — background is ~80% black, purple is a faint accent confined to
+ * behind the header, not a wash across the whole screen.
  */
 function Nebula() {
   return (
     <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
       <Defs>
-        <RadialGradient id="nebulaViolet" cx="22%" cy="10%" r="85%">
-          <Stop offset="0%" stopColor="#6d28d9" stopOpacity={0.22} />
-          <Stop offset="45%" stopColor="#4f46c8" stopOpacity={0.07} />
+        <RadialGradient id="nebulaViolet" cx="24%" cy="0%" r="45%">
+          <Stop offset="0%" stopColor="#6d28d9" stopOpacity={0.14} />
+          <Stop offset="50%" stopColor="#4f46c8" stopOpacity={0.04} />
           <Stop offset="100%" stopColor="#4f46c8" stopOpacity={0} />
         </RadialGradient>
       </Defs>
@@ -67,11 +68,10 @@ export default function AnimatedBackground() {
 
   return (
     <Animated.View style={[StyleSheet.absoluteFill, containerStyle]} pointerEvents="none">
-      {/* Deep, clean near-black base with a faint purple tint up top that fades
-          to black toward the bottom — soft and minimal, matching the reference. */}
+      {/* Frozen global background (spec section 2) — identical on every screen. */}
       <LinearGradient
-        colors={['#0B0918', '#07060F', '#040308']}
-        locations={[0, 0.5, 1]}
+        colors={BACKGROUND.overlay}
+        locations={[0, 1]}
         style={StyleSheet.absoluteFill}
       />
 

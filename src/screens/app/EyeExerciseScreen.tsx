@@ -10,12 +10,15 @@ import Animated, {
 import { SessionCompleteOverlay } from '@/components/eye/SessionCompleteOverlay';
 import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
-import { PrimaryButton } from '@/components/ui/PrimaryButton';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { getEyeActivity } from '@/constants/eyeRelax';
 import { colors } from '@/constants/colors';
+import { PILLAR_COLORS, STATUS_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+
+const EYE_ACCENT = PILLAR_COLORS.eye;
 
 export default function EyeExerciseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -53,7 +56,7 @@ export default function EyeExerciseScreen() {
 
   if (!exercise) {
     return (
-      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
+      <ScreenShell scroll={false} safeBottom pillar="eye" ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="Exercise" showBack />
         <Text style={styles.missing}>Not found</Text>
       </ScreenShell>
@@ -71,7 +74,7 @@ export default function EyeExerciseScreen() {
   };
 
   return (
-    <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
+    <ScreenShell scroll={false} safeBottom pillar="eye" ambient={<AmbientBackground subtle />}>
       <ScreenHeader title={exercise.title} subtitle={exercise.subtitle} showBack />
 
       <Animated.View style={[styles.center, animStyle]}>
@@ -88,11 +91,12 @@ export default function EyeExerciseScreen() {
         {/* Controls */}
         <View style={styles.simpleControls}>
           {isDone ? (
-            <PrimaryButton label="Restart" onPress={handleRestart} />
+            <GradientCTA label="Restart" onPress={handleRestart} textColor="#03212C" />
           ) : (
-            <PrimaryButton
+            <GradientCTA
               label={running ? 'Pause' : 'Start'}
               onPress={() => setRunning(r => !r)}
+              textColor="#03212C"
             />
           )}
         </View>
@@ -115,15 +119,15 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 100,
     borderWidth: 2,
-    borderColor: colors.accent.purple,
+    borderColor: EYE_ACCENT,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.accent.purpleLight,
+    backgroundColor: 'rgba(0,224,255,0.12)',
     gap: spacing.sm,
   },
   guideEmoji: { fontSize: 48 },
   guideTimer: { ...typography.headingLarge, color: colors.text.primary },
-  timerDone: { color: '#4CAF50' },
+  timerDone: { color: STATUS_COLORS.success },
   description: {
     ...typography.bodyLarge,
     color: colors.text.secondary,

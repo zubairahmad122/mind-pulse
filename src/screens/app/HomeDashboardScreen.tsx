@@ -1,23 +1,21 @@
 import { DailyTip } from '@/components/home/DailyTip';
 import { DailyChallenge } from '@/components/home/DailyChallenge';
 import { FeatureGrid } from '@/components/home/FeatureGrid';
-import { ContinueJourney } from '@/components/home/ContinueJourney';
+import { TodaysJourneyCard } from '@/components/home/TodaysJourneyCard';
 import { ScreenShell } from '@/components/layout/ScreenShell';
-import { AmbientBackground, GlassCard, SectionLabel } from '@/components/ui';
+import { AmbientBackground, SectionLabel } from '@/components/ui';
 import { SoftPaywallModal } from '@/components/ui/SoftPaywallModal';
 import { StaggerItem } from '@/components/ui/StaggerItem';
-import { MPProgressRing } from '@/components/molecules/MPProgressRing';
+import { WeeklyProgressRow } from '@/components/ui/WeeklyProgressRow';
 
 import { ROUTES } from '@/constants';
-import { spacing } from '@/constants/spacing';
+import { FONTS, PILLAR_COLORS, SPACING, TYPOGRAPHY } from '@/constants/designSystem';
 import { useAuth } from '@/context/AuthContext';
-import { useSleep } from '@/context/SleepContext';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useProgressStore } from '@/stores/useProgressStore';
 import { useDailyTip } from '@/hooks/useDailyTip';
 import { useEyeScore } from '@/hooks/useEyeScore';
 import { useGreeting } from '@/hooks/useGreeting';
-import { useHomeInsight } from '@/hooks/useHomeInsight';
 import { useMindScore } from '@/hooks/useMindScore';
 import { useSleepScore } from '@/hooks/useSleepScore';
 import { saveDailyScore } from '@/services/dailyScorePersistence';
@@ -26,29 +24,15 @@ import {
     getFocusArea,
     pulseScoreTheme,
 } from '@/utils/scoring';
-import { calculateStreak } from '@/utils/sleepUtils';
+import { useWellnessStore } from '@/stores/useWellnessStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
-import { User, Sparkles, ArrowRight } from 'lucide-react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { User, Flame } from 'lucide-react-native';
 
 const ONBOARDING_PAYWALL_KEY = '@mindpulse/onboarding-paywall-shown';
 const STREAK_PAYWALL_KEY     = '@mindpulse/streak-paywall-shown';
-
-
-
-// ── MiniStat — compact score-card breakdown row ───────────────────────────────
-
-function MiniStat({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <View style={{ alignItems: 'center', flex: 1 }}>
-      <Text style={{ fontFamily: 'SpaceGrotesk_700Bold', fontSize: 17, color }}>{value}</Text>
-      <Text style={{ fontSize: 10.5, color: 'rgba(245,247,251,0.5)', marginTop: 2, textAlign: 'center' }}>{label}</Text>
-    </View>
-  );
-}
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
@@ -56,9 +40,9 @@ export default function HomeDashboardScreen() {
   const router        = useRouter();
   const { user }      = useAuth();
   const { isPremium } = useSubscription();
-  const { sessions }  = useSleep();
   const displayName   = user?.displayName ?? user?.email?.split('@')[0] ?? null;
-  const rawGreeting   = useGreeting(displayName || '');
+  const firstName     = displayName?.split(' ')[0] ?? '';
+  const { text: rawGreeting, emoji: greetingEmoji, period: greetingPeriod } = useGreeting(firstName);
   const greeting      = displayName ? rawGreeting : 'Welcome to MindPulse';
 
   // ── First-time detection (computed inline for efficient re-renders) ───
@@ -83,11 +67,6 @@ export default function HomeDashboardScreen() {
   const theme          = pulseScoreTheme(mindPulseScore);
   const focusArea      = getFocusArea(eyes, sleepScore, mind);
 
-  const { insight: homeInsight } = useHomeInsight({
-    eye: eyeResult, sleep: sleepResult, mind: mindResult,
-    focusArea, mindPulseScore, anyLoading,
-  });
-
   const { tip: dailyTip } = useDailyTip({
     mindPulseScore, eyeScore: eyes, sleepScore, mindScore: mind, focusArea, anyLoading,
   });
@@ -102,7 +81,7 @@ export default function HomeDashboardScreen() {
   }, [anyLoading, user?.uid, mindPulseScore, eyes, sleepScore, mind]);
 
 
-  const streak = calculateStreak(sessions);
+  const streak = useWellnessStore((s) => s.streak);
   const [showOnboardingPaywall, setShowOnboardingPaywall] = useState(false);
   const [showStreakPaywall, setShowStreakPaywall]         = useState(false);
 
@@ -133,49 +112,50 @@ export default function HomeDashboardScreen() {
   };
   const goToPremium = () => router.push(ROUTES.appPremium as never);
 
-  const dateLabel = new Date().toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric',
-  }).toUpperCase();
-
-  // ── CTA subtle scale pulse (first-time users only) ──────────────────
-  const ctaPulse = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    if (hasCompletedAnySession) return;
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.delay(1500),
-        Animated.timing(ctaPulse, { toValue: 1.02, duration: 1200, useNativeDriver: true }),
-        Animated.timing(ctaPulse, { toValue: 1, duration: 1200, useNativeDriver: true }),
-      ]),
-    );
-    pulse.start();
-    return () => pulse.stop();
-  }, [hasCompletedAnySession, ctaPulse]);
-
   return (
     <ScreenShell scroll={true} ambient={<AmbientBackground subtle />}>
-      {/* ── Header ─────────────────────────────────────────────────── */}
+      {/* ── Header — greeting (screen-title scale) + inline streak, avatar ── */}
       <StaggerItem index={0}>
         <View style={{
-          flexDirection: 'row', alignItems: 'center',
+          flexDirection: 'row', alignItems: 'flex-end',
           justifyContent: 'space-between',
-          paddingVertical: 6, marginBottom: 4,
+          paddingTop: SPACING.screenTop, marginBottom: SPACING.titleGap,
         }}>
           <View style={{ flex: 1, marginRight: 12 }}>
-            <Text style={{
-              fontSize: 11, color: 'rgba(245,247,251,0.45)',
-              letterSpacing: 0.5,
-            }}>
-              {dateLabel}
+            <Text numberOfLines={1}>
+              <Text
+                style={{
+                  fontFamily: FONTS.heading,
+                  fontSize: TYPOGRAPHY.screenTitle.fontSize,
+                  fontWeight: TYPOGRAPHY.screenTitle.fontWeight,
+                  color: TYPOGRAPHY.screenTitle.color,
+                }}
+              >
+                {greeting}
+              </Text>
+              {displayName && (
+                <Text style={{ fontSize: 24 }}> {greetingEmoji}</Text>
+              )}
             </Text>
-            <Text
-              style={{
-                fontFamily: 'SpaceGrotesk_700Bold',
-                fontSize: 21, color: '#f6f8fc', marginTop: 3,
-              }}
+            <TouchableOpacity
+              onPress={() => router.push(ROUTES.appChallenges as never)}
+              activeOpacity={0.7}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}
             >
-              {greeting}
-            </Text>
+              <Flame
+                size={13}
+                color={streak > 0 ? PILLAR_COLORS.challenge : 'rgba(245,247,251,0.4)'}
+                fill={streak > 0 ? PILLAR_COLORS.challenge : 'transparent'}
+                strokeWidth={1.5}
+              />
+              <Text style={{ fontSize: TYPOGRAPHY.subtitle.fontSize, fontWeight: TYPOGRAPHY.subtitle.fontWeight, color: TYPOGRAPHY.subtitle.color }}>
+                {streak > 0
+                  ? `${streak} Day Streak`
+                  : greetingPeriod === 'Night'
+                    ? 'Wind down before bed'
+                    : 'Start your streak today'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -195,137 +175,24 @@ export default function HomeDashboardScreen() {
         </View>
       </StaggerItem>
 
-      {/* ── Hero: Wellness Score Card (returning users only) ────────── */}
-      {hasCompletedAnySession && (
+      {/* ── Today's Journey — the one hero: progress + the one next action ── */}
       <StaggerItem index={1}>
-        <View style={{ marginTop: spacing.sm }}>
-          <GlassCard>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-              <MPProgressRing
-                size={92}
-                strokeWidth={8}
-                progress={anyLoading ? 0 : mindPulseScore}
-                color="#60a5fa"
-                value={anyLoading ? '–' : mindPulseScore}
-                valueSuffix="SCORE"
-                gradient={{
-                  id: 'scoreG',
-                  stops: [
-                    { offset: '0%', color: '#60a5fa' },
-                    { offset: '100%', color: '#a78bfa' },
-                  ],
-                }}
-              />
-
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 10, fontWeight: '600', letterSpacing: 2, color: 'rgba(245,247,251,0.45)' }}>
-                  OVERALL WELLNESS SCORE
-                </Text>
-                <Text style={{
-                  fontFamily: 'SpaceGrotesk_600SemiBold',
-                  fontSize: 15, color: '#f6f8fc', marginTop: 4,
-                }}>
-                  {anyLoading ? 'Loading…' : theme.label}
-                </Text>
-                {/* Contextual message — encouraging for low scores, not scolding */}
-                {!anyLoading && (
-                  <Text style={{
-                    fontSize: 12, lineHeight: 17,
-                    color: 'rgba(245,247,251,0.6)',
-                    marginTop: 6, flexShrink: 1,
-                  }} numberOfLines={2}>
-                    {mindPulseScore >= 80
-                      ? (homeInsight ?? "You're thriving! Keep up the amazing work.")
-                      : mindPulseScore >= 50
-                      ? (homeInsight ?? 'Good progress! Try a session to boost your score.')
-                      : "You're building habits — keep going!"}
-                  </Text>
-                )}
-              </View>
-            </View>
-
-            {/* Mind Health / Sleep Quality / Focus Level breakdown — only with real data */}
-            {(mind > 0 || sleepScore > 0 || eyes > 0) && (
-            <View style={{
-              flexDirection: 'row', marginTop: 18, paddingTop: 16,
-              borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)',
-            }}>
-              <MiniStat label="Mind Health" value={anyLoading ? '–' : mind > 0 ? `${mind}%` : '—'} color="#60a5fa" />
-              <MiniStat label="Sleep Quality" value={anyLoading ? '–' : sleepScore > 0 ? `${sleepScore}%` : '—'} color="#a78bfa" />
-              <MiniStat label="Focus Level" value={anyLoading ? '–' : eyes > 0 ? `${eyes}%` : '—'} color="#22d3ee" />
-            </View>
-            )}
-          </GlassCard>
+        <View style={{ marginTop: 8 }}>
+          <TodaysJourneyCard />
         </View>
       </StaggerItem>
-      )}
 
-      {/* ── Continue Your Journey (returning users only) ──────────── */}
-      {hasCompletedAnySession && (
+      {/* ── Today's Challenge ───────────────────────────────────────── */}
       <StaggerItem index={2}>
-        <View style={{ marginTop: spacing.md }}>
-          <ContinueJourney />
+        <View style={{ marginTop: SPACING.section }}>
+          <DailyChallenge worstArea={focusArea} ready={!anyLoading} />
         </View>
       </StaggerItem>
-      )}
 
-      {/* ── Start Journey CTA (first-time users only) ──────────────── */}
-      {!hasCompletedAnySession && (
-      <StaggerItem index={1}>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => router.push(ROUTES.appEyeRelax as never)}
-          style={{ marginTop: spacing.sm }}
-        >
-          <GlassCard>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <Sparkles size={18} color="#F59E0B" strokeWidth={2.5} />
-              <Text style={{
-                fontFamily: 'SpaceGrotesk_700Bold',
-                fontSize: 17, color: '#f6f8fc',
-              }}>
-                Welcome to MindPulse
-              </Text>
-            </View>
-            <Text style={{
-              fontSize: 13, color: 'rgba(245,247,251,0.6)',
-              marginBottom: 14, lineHeight: 18,
-            }}>
-              Your wellness journey starts with your first 2-minute eye exercise.
-            </Text>
-            <Animated.View style={{ transform: [{ scale: ctaPulse }] }}>
-              <LinearGradient
-                colors={['#6366f1', '#8b5cf6']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{
-                  borderRadius: 16,
-                  paddingVertical: 15,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                }}
-              >
-                <Sparkles size={18} color="#fff" strokeWidth={2.5} />
-                <Text style={{
-                  fontFamily: 'SpaceGrotesk_700Bold',
-                  fontSize: 14, color: '#fff', letterSpacing: 0.3,
-                }}>
-                  Start First Exercise
-                </Text>
-                <ArrowRight size={16} color="#fff" strokeWidth={2.5} />
-              </LinearGradient>
-            </Animated.View>
-          </GlassCard>
-        </TouchableOpacity>
-      </StaggerItem>
-      )}
-
-      {/* ── Feature Grid (Your 5 Pillars) ────────────────────────── */}
+      {/* ── Quick Actions ────────────────────────────────────────── */}
       <StaggerItem index={3}>
-        <View style={{ marginTop: 24 }}>
-          <SectionLabel first>EXPLORE</SectionLabel>
+        <View style={{ marginTop: SPACING.section }}>
+          <SectionLabel first>QUICK ACTIONS</SectionLabel>
           <FeatureGrid
             showStartHere={!hasCompletedAnySession}
             weeklySessions={{
@@ -339,23 +206,31 @@ export default function HomeDashboardScreen() {
         </View>
       </StaggerItem>
 
-      {/* ── Daily Challenge ───────────────────────────────────────── */}
+      {/* ── Weekly Wellness — score teaser, links to Challenges ── */}
       <StaggerItem index={4}>
-        <View style={{ marginTop: spacing.md }}>
-          <DailyChallenge worstArea={focusArea} />
+        <View style={{ marginTop: SPACING.section }}>
+          <SectionLabel first>WEEKLY WELLNESS</SectionLabel>
+          <WeeklyProgressRow
+            icon={<Flame size={13} color={PILLAR_COLORS.challenge} fill={PILLAR_COLORS.challenge} strokeWidth={1.5} />}
+            label="Weekly Wellness"
+            value={anyLoading ? '–' : `${mindPulseScore}/100`}
+            percent={anyLoading ? 0 : mindPulseScore}
+            accentColor={theme.color}
+            onPress={() => router.push(ROUTES.appChallenges as never)}
+          />
         </View>
       </StaggerItem>
 
       {/* ── Daily Tip ────────────────────────────────────────────── */}
       <StaggerItem index={5}>
-        <View style={{ marginTop: spacing.md }}>
-          <SectionLabel first>TODAY'S TIP</SectionLabel>
+        <View style={{ marginTop: SPACING.section }}>
+          <SectionLabel first>TODAY&apos;S TIP</SectionLabel>
           <DailyTip tip={dailyTip} focusArea={focusArea} />
         </View>
       </StaggerItem>
 
       {/* Bottom runway so the tip card clears the floating tab bar */}
-      <View style={{ height: 32 }} />
+      <View style={{ height: SPACING.screenBottom }} />
 
       <SoftPaywallModal
         visible={showOnboardingPaywall}

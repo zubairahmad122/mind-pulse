@@ -1,9 +1,11 @@
 import { ScreenHeader } from "@/components/layout/ScreenHeader";
-import { GlassCard } from "@/components/ui";
+import { GlassCard, HeroCard } from "@/components/ui";
+import { GradientCTA } from "@/components/ui/GradientCTA";
 import { PillarProvider } from "@/context/PillarContext";
 import { WheelTimePicker } from "@/components/sleep/WheelTimePicker";
 import { ALARM_RINGTONES, SMART_ALARM_WINDOWS } from "@/constants/alarmSounds";
-import { GLASS_CARD, PILLAR_THEME } from "@/constants/theme";
+import { GLASS_CARD } from "@/constants/theme";
+import { BACKGROUND, PILLAR_COLORS, STATUS_COLORS, SURFACE_TINT } from "@/constants/designSystem";
 import { useAlarmSettings } from "@/hooks/useAlarmSettings";
 import { useGlobalFrame } from "@/hooks/useAnimationFrame";
 import { useSleepSchedule } from "@/hooks/useSleepSchedule";
@@ -60,15 +62,17 @@ function timeDiffMinutes(from: string, to: string): number {
   return diff;
 }
 
-// ── Sleep pillar theme tokens ───────────────────────────────────────────────────
+// ── Sleep pillar accent — the frozen spec token (section 16: Sleep = Indigo) ──
 
-const SLEEP = PILLAR_THEME.sleep;
-const ACCENT = SLEEP.accent; // '#a78bfa'
+const ACCENT = PILLAR_COLORS.sleep;
 
 // Unified accent for every interactive control on this screen (toggles, picker,
-// duration icon) — one active color keeps the picker consistent.
-const PURPLE = "#8B5CF6";
-const BLUE = "#3B82F6";
+// duration icon) — one active color keeps the picker consistent with the rest
+// of the Sleep screen (was a stray purple/blue pair, off-brand from the
+// frozen indigo accent). The primary CTA at the bottom is the one exception —
+// it uses the app's single frozen cyan button gradient via `GradientCTA`, same
+// as "Start Sleep" and "Save routine", not this indigo accent.
+const PURPLE = ACCENT;
 
 // ── Animated background elements (matching onboarding hero) ─────────────────────
 
@@ -277,9 +281,9 @@ export function SleepTimePickerSheet({
     >
       <PillarProvider pillar="sleep">
       <View style={styles.screen}>
-        {/* Sleep gradient background — matching onboarding */}
+        {/* Same frozen global background as every other screen */}
         <LinearGradient
-          colors={SLEEP.bgGradient}
+          colors={[BACKGROUND.overlay[0], BACKGROUND.overlay[1], BACKGROUND.base]}
           locations={[0, 0.48, 1]}
           style={StyleSheet.absoluteFill}
         />
@@ -328,7 +332,7 @@ export function SleepTimePickerSheet({
                 >
                   <Icon
                     size={15}
-                    color={active ? "#FFFFFF" : "#9CA3AF"}
+                    color={active ? "#FFFFFF" : "rgba(255,255,255,0.65)"}
                     fill={active ? "#FFFFFF" : "transparent"}
                   />
                   <Text
@@ -347,17 +351,18 @@ export function SleepTimePickerSheet({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Wheel picker — premium glass card */}
-          <GlassCard noPadding style={{ marginBottom: 14 }}>
+          {/* Wheel picker — same hero card + gradient as Home's hero */}
+          <HeroCard style={{ marginBottom: 14 }}>
             <View style={{ paddingVertical: 14 }}>
               <WheelTimePicker
                 value={tab === "bedtime" ? bedtime : wakeTime}
                 onChange={
                   tab === "bedtime" ? onBedtimeChange : onWakeTimeChange
                 }
+                accent={ACCENT}
               />
             </View>
-          </GlassCard>
+          </HeroCard>
 
           {/* Goal block */}
           <GlassCard style={{ marginBottom: 14 }}>
@@ -508,23 +513,13 @@ export function SleepTimePickerSheet({
             { paddingBottom: Math.max(insets.bottom, 16) },
           ]}
         >
-          <TouchableOpacity
+          <GradientCTA
+            label={justSaved ? savedLabel : title}
+            icon={justSaved ? <Check size={18} color="#FFFFFF" /> : undefined}
+            colors={justSaved ? ([STATUS_COLORS.success, "#22A868"] as const) : undefined}
+            glowColor={justSaved ? "rgba(50,213,131,0.45)" : undefined}
             onPress={handleSave}
-            activeOpacity={0.85}
-            style={styles.ctaWrap}
-          >
-            <LinearGradient
-              colors={justSaved ? ["#10B981", "#059669"] : [PURPLE, BLUE]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.cta}
-            >
-              {justSaved && <Check size={18} color="#FFFFFF" />}
-              <Text style={styles.ctaText}>
-                {justSaved ? savedLabel : title}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
+          />
         </View>
       </View>
       </PillarProvider>
@@ -776,7 +771,7 @@ function SelectSheet({
             style={StyleSheet.absoluteFill}
           />
           <LinearGradient
-            colors={SLEEP.cardTint}
+            colors={SURFACE_TINT.card}
             style={StyleSheet.absoluteFill}
           />
           <LinearGradient
@@ -843,7 +838,7 @@ function SelectSheet({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#06040e",
+    backgroundColor: BACKGROUND.base,
   },
   doneBtn: {
     paddingHorizontal: 8,
@@ -859,35 +854,35 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     paddingBottom: 4,
   },
+  // Same segmented-control tokens as the Sleep tab's own Tonight/Routine/
+  // Analysis strip — bg, radius, and font weights kept identical.
   segment: {
     flexDirection: "row",
     gap: 4,
-    padding: 5,
-    borderRadius: 16,
-    backgroundColor: "rgba(12,8,28,0.6)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    padding: 4,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.05)",
   },
   segBtn: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 7,
-    paddingVertical: 10,
-    borderRadius: 12,
+    gap: 6,
+    paddingVertical: 11,
+    borderRadius: 16,
   },
   segBtnActive: {
     backgroundColor: PURPLE,
   },
   segText: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#9CA3AF",
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.65)",
   },
   segTextActive: {
     color: "#FFFFFF",
-    fontWeight: "800",
+    fontWeight: "600",
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -899,24 +894,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.06)",
     backgroundColor: "rgba(6,4,14,0.6)",
-  },
-  ctaWrap: {
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  cta: {
-    height: 52,
-    borderRadius: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  ctaText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
   },
   goalText: {
     fontSize: 12,

@@ -14,6 +14,7 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BREATH_MODES, type BreathMode } from '@/constants/breathingModes';
 import { colors } from '@/constants/colors';
+import { BACKGROUND, GLASS_CARD, RADIUS, SHADOWS, TYPOGRAPHY } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 
@@ -164,7 +165,7 @@ export default function BreatheSelectScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: BACKGROUND.base,
   },
 
   // Header
@@ -197,10 +198,12 @@ const styles = StyleSheet.create({
   // Mode card
   card: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.background.secondary,
-    borderRadius: 20, borderWidth: 1,
+    backgroundColor: GLASS_CARD.bg,
+    borderRadius: RADIUS.card, borderWidth: 1,
+    borderColor: GLASS_CARD.border,
     padding: spacing.md, gap: spacing.md,
     marginBottom: spacing.md,
+    ...SHADOWS.card,
   },
   iconBox: {
     width: 54, height: 54, borderRadius: 16, borderWidth: 1,
@@ -209,7 +212,7 @@ const styles = StyleSheet.create({
   },
   cardText:    { flex: 1, gap: 4 },
   titleRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardTitle:   { fontSize: 16, fontWeight: '800', color: colors.text.primary },
+  cardTitle:   { fontSize: TYPOGRAPHY.cardTitle.fontSize, fontWeight: TYPOGRAPHY.cardTitle.fontWeight, color: colors.text.primary },
   defaultBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
   defaultBadgeText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
   cardTagline: { fontSize: 12, color: colors.text.secondary, fontStyle: 'italic', lineHeight: 17 },

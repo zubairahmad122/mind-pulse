@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { AmbientBackground } from '@/components/ui';
-import { PillarProvider } from '@/context/PillarContext';
+import { ScreenShell } from '@/components/layout/ScreenShell';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
@@ -21,18 +21,20 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GradientCTA } from '@/components/ui/GradientCTA';
 import { BODY_SCAN_SCRIPTS } from '@/constants/sessionScripts';
 import { colors } from '@/constants/colors';
+import { PILLAR_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import type { AudioClipId } from '@/constants/audioGuide';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
 
 // One accent across the whole Relax feature — matches RelaxSessionPlayer.
-const ACCENT = '#34D399';
+// Same accent as the Relax tab / session player — one color for the feature
+// (was a stale green predating the frozen spec's blue Relax accent).
+const ACCENT = PILLAR_COLORS.relax;
 
 // Zone icons (lucide, matching the app's icon set)
 const ZONE_ICONS = [Brain, PersonStanding, Heart, Hand, Wind, Footprints] as const;
@@ -176,8 +178,7 @@ export default function BodyScanScreen() {
   }));
 
   return (
-    <SafeAreaView style={styles.root}>
-      <PillarProvider pillar="mind"><AmbientBackground subtle /></PillarProvider>
+    <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -325,17 +326,11 @@ export default function BodyScanScreen() {
           />
         )}
       </View>
-    </SafeAreaView>
+    </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-    paddingHorizontal: spacing.lg,
-  },
-
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center',

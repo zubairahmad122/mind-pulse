@@ -14,14 +14,46 @@ const PATTERN_SECONDS = {
   drop: patternDurationSeconds(BREATHING_PATTERNS.drop),
 } as const;
 
-/** "540 → 9 min", "320 → 5:20 min" — one formatter for every duration label. */
+/**
+ * "540 → 9 min", "320 → 5m 20s" — one formatter for every duration label.
+ * Deliberately not "5:20 min" — that reads as a clock time, not a duration.
+ */
 export function formatSessionDuration(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
-  return s === 0 ? `${m} min` : `${m}:${String(s).padStart(2, '0')} min`;
+  return s === 0 ? `${m} min` : `${m}m ${s}s`;
 }
 
 export type SessionCategory = 'breathe' | 'release' | 'ground' | 'sleep';
+
+/**
+ * One accent color per category — every session in a category shares it, so
+ * the category itself has a recognizable identity instead of colors varying
+ * session-by-session within the same category. Used everywhere a category
+ * shows up on the Relax screen: hero, cards, icons, progress bar, buttons.
+ *
+ * NOTE: `sleep` (Wind Down) no longer matches PILLAR_COLORS.sleep (#a78bfa) —
+ * an earlier round deliberately aligned them so Relax's Wind Down matched the
+ * Sleep tab's own accent. This palette is a newer, explicit instruction to
+ * use one fixed 4-color set inside Relax; flagging the tradeoff since it
+ * re-introduces that cross-screen mismatch.
+ */
+export const CATEGORY_COLOR: Record<SessionCategory, string> = {
+  breathe: '#36D3FF',
+  release: '#5CE4B4',
+  ground: '#F3B74D',
+  sleep: '#8D6BFF',
+};
+
+/** A brighter tint of each category color, for text that sits on a filled
+ * pill of the base color (e.g. the Start button) — plain base-color text on
+ * a base-color-tinted background reads flat/low-contrast. */
+export const CATEGORY_COLOR_LIGHT: Record<SessionCategory, string> = {
+  breathe: '#6FD8FF',
+  release: '#8FF0D0',
+  ground: '#FFD98F',
+  sleep: '#B9A6FF',
+};
 
 export interface RelaxSession {
   id: string;
@@ -42,7 +74,7 @@ export interface RelaxSession {
 
   // Recommendation logic
   emotionTriggers: EmotionalState[];
-  timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'anytime';
+  timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | 'anytime';
   useCase: string;
 
   // Content metadata
@@ -60,11 +92,11 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     description: 'Gentle five-second waves. Breathe with the circle.',
     emoji: '🫁',
     icon: Wind,
-    color: '#4FC3F7',
+    color: CATEGORY_COLOR.breathe,
     breathingPattern: 'calm',
     defaultSound: 'forest',
     emotionTriggers: ['at-ease'],
-    timeOfDay: 'afternoon',
+    timeOfDay: 'evening',
     useCase: 'Break time, exploration, curiosity',
     difficulty: 'beginner',
     tags: ['relaxation', 'openness', 'clarity'],
@@ -78,11 +110,11 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     description: 'Calm your nervous system. Structure you can follow.',
     emoji: '📦',
     icon: Box,
-    color: '#4FC3F7',
+    color: CATEGORY_COLOR.breathe,
     breathingPattern: 'box',
     defaultSound: 'ocean',
     emotionTriggers: ['tense', 'overwhelmed'],
-    timeOfDay: 'anytime',
+    timeOfDay: 'afternoon',
     useCase: 'Anxiety, overwhelm, before stressful events',
     difficulty: 'beginner',
     tags: ['anxiety', 'calm', 'structure'],
@@ -96,12 +128,12 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     description: 'Wake up your senses. Restore your energy.',
     emoji: '🌊',
     icon: Waves,
-    color: '#FF9800',
+    color: CATEGORY_COLOR.breathe,
     breathingPattern: 'wave',
     defaultSound: 'forest',
     featureId: 'relax_reset_wave',
     emotionTriggers: ['drained'],
-    timeOfDay: 'afternoon',
+    timeOfDay: 'morning',
     useCase: 'Afternoon slump, energy dip, low motivation',
     difficulty: 'beginner',
     tags: ['energy', 'wake', 'focus'],
@@ -115,12 +147,12 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     description: 'Slow everything down. Drift into rest.',
     emoji: '😴',
     icon: Moon,
-    color: '#a78bfa',
+    color: CATEGORY_COLOR.sleep,
     breathingPattern: 'drop',
     defaultSound: 'rain',
     featureId: 'relax_sleep_drop',
     emotionTriggers: ['sleepy'],
-    timeOfDay: 'evening',
+    timeOfDay: 'night',
     useCase: 'Bedtime, sleep preparation, insomnia',
     difficulty: 'beginner',
     tags: ['sleep', 'rest', 'drift'],
@@ -135,7 +167,7 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     description: 'Travel through your body and release what you have been holding.',
     emoji: '🫀',
     icon: Heart,
-    color: '#4FC3F7',
+    color: CATEGORY_COLOR.release,
     defaultSound: 'ocean',
     featureId: 'relax_body_scan',
     emotionTriggers: ['tense', 'overwhelmed', 'drained'],
@@ -155,7 +187,7 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     description: 'Squeeze everything tight. Then let it all collapse.',
     emoji: '💪',
     icon: Zap,
-    color: '#FF9800',
+    color: CATEGORY_COLOR.release,
     defaultSound: 'fire',
     featureId: 'relax_tension_release',
     emotionTriggers: ['tense', 'overwhelmed'],
@@ -174,7 +206,7 @@ export const RELAX_SESSIONS: RelaxSession[] = [
     description: 'Your senses are your anchor when thoughts run away.',
     emoji: '🌍',
     icon: Globe,
-    color: '#4CAF50',
+    color: CATEGORY_COLOR.ground,
     emotionTriggers: ['overwhelmed', 'tense'],
     timeOfDay: 'anytime',
     useCase: 'Emergency grounding, anxiety, panic, disconnect',
@@ -219,4 +251,24 @@ export function getRecommendedSession(emotion: EmotionalState): RelaxSession | n
 
 export function getSessionsByEmotion(emotion: EmotionalState): RelaxSession[] {
   return RELAX_SESSIONS.filter(s => s.emotionTriggers.includes(emotion));
+}
+
+/**
+ * A sensible session to lead with before the user has picked a mood —
+ * matches the current time of day against each session's `timeOfDay`,
+ * falling back to 'anytime' sessions. Real, derived from actual session
+ * metadata (not a placeholder).
+ */
+export function getDefaultRecommendedSession(date: Date = new Date()): RelaxSession | null {
+  const hour = date.getHours();
+  const period =
+    hour < 6 ? 'night' :
+    hour < 12 ? 'morning' :
+    hour < 17 ? 'afternoon' :
+    hour < 21 ? 'evening' :
+    'night';
+  const forPeriod = RELAX_SESSIONS.filter(s => s.timeOfDay === period);
+  if (forPeriod.length > 0) return forPeriod[0];
+  const anytime = RELAX_SESSIONS.filter(s => s.timeOfDay === 'anytime');
+  return anytime.length > 0 ? anytime[0] : RELAX_SESSIONS[0] ?? null;
 }

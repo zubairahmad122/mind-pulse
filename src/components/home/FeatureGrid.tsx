@@ -1,11 +1,10 @@
-import { GlassCard } from '@/components/ui/GlassCard';
 import { ROUTES } from '@/constants';
 import { colors } from '@/constants/colors';
+import { DURATION, ICON_CONTAINERS, ICON_SIZES, PILLAR_COLORS } from '@/constants/designSystem';
 import { useRouter } from 'expo-router';
 import { Brain, Eye, Gamepad2, Leaf, Moon } from 'lucide-react-native';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, NativeSyntheticEvent, NativeScrollEvent, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { memo, useEffect, useRef, useState } from 'react';
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Pillar = {
   id: string;
@@ -16,15 +15,15 @@ type Pillar = {
 };
 
 const PILLARS: Pillar[] = [
-  { id: 'eye-exercise', label: 'Eye Exercise', icon: Eye, color: '#06B6D4', route: ROUTES.appEyeRelax },
+  { id: 'eye-exercise', label: 'Eye Exercise', icon: Eye, color: PILLAR_COLORS.eye, route: ROUTES.appEyeRelax },
   { id: 'eye-games',    label: 'Eye Games',    icon: Gamepad2, color: '#F59E0B', route: ROUTES.appEyeRelax },
-  { id: 'relax',        label: 'Relax',        icon: Leaf, color: '#10B981', route: ROUTES.appRelax },
-  { id: 'mind',         label: 'Mind',         icon: Brain, color: '#8B5CF6', route: ROUTES.appBoxBreathing },
-  { id: 'sleep',        label: 'Sleep',        icon: Moon, color: '#6366F1', route: ROUTES.appSleep },
+  { id: 'relax',        label: 'Relax',        icon: Leaf, color: PILLAR_COLORS.relax, route: ROUTES.appRelax },
+  { id: 'mind',         label: 'Mind',         icon: Brain, color: PILLAR_COLORS.mind, route: ROUTES.appBoxBreathing },
+  { id: 'sleep',        label: 'Sleep',        icon: Moon, color: PILLAR_COLORS.sleep, route: ROUTES.appSleep },
 ];
 
-const CARD_WIDTH = 72;
-const CARD_GAP = 10;
+const CARD_WIDTH = ICON_CONTAINERS.quickAction + 12;
+const CARD_GAP = 0;
 
 interface Props {
   weeklySessions?: Record<string, number>;
@@ -51,6 +50,7 @@ function PillarCard({
   pillar,
   Icon,
   sessions,
+  index,
   showPulse,
   showStartBadge,
   showDots,
@@ -58,6 +58,7 @@ function PillarCard({
   pillar: Pillar;
   Icon: React.ComponentType<{ size: number; color: string; strokeWidth?: number }>;
   sessions: number;
+  index: number;
   showPulse: boolean;
   showStartBadge?: boolean;
   showDots?: boolean;
@@ -66,6 +67,7 @@ function PillarCard({
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const iconOpacity = useRef(new Animated.Value(1)).current;
+  const [entryAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (!showPulse) return;
@@ -78,6 +80,11 @@ function PillarCard({
     pulse.start();
     return () => pulse.stop();
   }, [showPulse, pulseAnim]);
+
+  useEffect(() => {
+    // Pop in one after another rather than all at once.
+    Animated.timing(entryAnim, { toValue: 1, duration: DURATION.normal, delay: index * 60, useNativeDriver: true }).start();
+  }, [entryAnim, index]);
 
   const handlePressIn = () => {
     Animated.parallel([
@@ -101,24 +108,36 @@ function PillarCard({
       onPressOut={handlePressOut}
       style={styles.cell}
     >
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        <GlassCard simple noPadding style={styles.card}>
-          <View style={styles.cardInner}>
-            <Animated.View
-              style={[
-                styles.iconWrap,
-                { backgroundColor: pillar.color + '20', borderColor: pillar.color + '30' },
-                showPulse && { transform: [{ scale: pulseAnim }] },
-              ]}
-            >
-              <Animated.View style={{ opacity: iconOpacity }}>
-                <Icon size={22} color={pillar.color} strokeWidth={2} />
-              </Animated.View>
-            </Animated.View>
-            <Text style={styles.label} numberOfLines={2}>{pillar.label}</Text>
-            {showDots && <WeeklyDots count={sessions} color={pillar.color} />}
-          </View>
-        </GlassCard>
+      <Animated.View
+        style={[
+          styles.cardInner,
+          {
+            opacity: entryAnim,
+            transform: [
+              { scale: scaleAnim },
+              { translateY: entryAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) },
+            ],
+          },
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.iconWrap,
+            {
+              backgroundColor: pillar.color + '1F',
+              borderColor: pillar.color + '59',
+              borderTopColor: 'rgba(255,255,255,0.28)',
+              shadowColor: pillar.color,
+            },
+            showPulse && { transform: [{ scale: pulseAnim }] },
+          ]}
+        >
+          <Animated.View style={{ opacity: iconOpacity }}>
+            <Icon size={ICON_SIZES.quickAction} color={pillar.color} strokeWidth={2} />
+          </Animated.View>
+        </Animated.View>
+        <Text style={styles.label} numberOfLines={2}>{pillar.label}</Text>
+        {showDots && <WeeklyDots count={sessions} color={pillar.color} />}
       </Animated.View>
 
       {/* Subtle "first step" dot indicator — replaces the ugly floating badge */}
@@ -133,29 +152,22 @@ function PillarCard({
 }
 
 export const FeatureGrid = memo(function FeatureGrid({ weeklySessions = {}, showStartHere = false }: Props) {
-  const [showFade, setShowFade] = useState(true);
-
-  const handleScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-      const atEnd = contentOffset.x + layoutMeasurement.width >= contentSize.width - 16;
-      setShowFade(!atEnd);
-    },
-    [],
-  );
-
   return (
     <View>
+      {/* No edge-fade overlay here on purpose — every attempt at a color-matched
+          fade ended up reading as a mismatched dark box, since the real
+          background behind this row isn't flat (ambient glow/gradient). The
+          ScrollView's own natural clip on the last icon (a partially-visible
+          circle) is a standard, self-explanatory "swipe for more" affordance
+          on its own — no overlay needed. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         snapToInterval={CARD_WIDTH + CARD_GAP}
         decelerationRate="fast"
         contentContainerStyle={styles.scrollContent}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
       >
-        {PILLARS.map((p) => {
+        {PILLARS.map((p, index) => {
           const Icon = p.icon;
           const sessions = weeklySessions[p.id] ?? 0;
           return (
@@ -164,6 +176,7 @@ export const FeatureGrid = memo(function FeatureGrid({ weeklySessions = {}, show
               pillar={p}
               Icon={Icon}
               sessions={sessions}
+              index={index}
               showPulse={showStartHere && p.id === 'eye-exercise'}
               showStartBadge={showStartHere && p.id === 'eye-exercise'}
               showDots={!showStartHere}
@@ -171,17 +184,6 @@ export const FeatureGrid = memo(function FeatureGrid({ weeklySessions = {}, show
           );
         })}
       </ScrollView>
-
-      {/* Right-edge fade gradient — visual cue that more cards are off-screen */}
-      {showFade && (
-        <LinearGradient
-          pointerEvents="none"
-          colors={['transparent', colors.background.primary]}
-          start={{ x: 0.7, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.fadeEdge}
-        />
-      )}
     </View>
   );
 });
@@ -195,30 +197,30 @@ const styles = StyleSheet.create({
   cell: {
     width: CARD_WIDTH,
   },
-  card: {
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 6,
-  },
   cardInner: {
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     width: '100%',
+    paddingVertical: 12,
+    paddingHorizontal: 2,
   },
   iconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
+    width: ICON_CONTAINERS.quickAction,
+    height: ICON_CONTAINERS.quickAction,
+    borderRadius: ICON_CONTAINERS.quickAction / 2,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
   },
   label: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: '700',
     color: colors.text.primary,
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: 12,
     letterSpacing: 0.1,
   },
   // ── "First step" dot indicator (replaces floating badge) ───────────────────
@@ -236,9 +238,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F59E0B',
   },
   startDotLabel: {
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     color: 'rgba(245,158,11,0.75)',
   },
   dotsRow: {
@@ -251,12 +253,5 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-  },
-  fadeEdge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    width: 56,
   },
 });

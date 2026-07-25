@@ -17,6 +17,11 @@ type Props = {
   bg?: string;
   fill?: string;
   textColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  /** Fixed height — omit to size from the label's own padding (default). */
+  height?: number;
+  radius?: number;
 };
 
 /**
@@ -31,6 +36,10 @@ export function HoldButton({
   bg = '#0E1116',
   fill = 'rgba(255,255,255,0.18)',
   textColor = '#FFFFFF',
+  borderColor,
+  borderWidth = 0,
+  height,
+  radius = 999,
 }: Props) {
   const progress = useSharedValue(0);
 
@@ -64,7 +73,10 @@ export function HoldButton({
       disabled={disabled}
       style={{
         width: '100%',
-        borderRadius: 999,
+        height,
+        borderRadius: radius,
+        borderWidth,
+        borderColor,
         overflow: 'hidden',
         backgroundColor: bg,
         opacity: disabled ? 0.6 : 1,
@@ -74,7 +86,7 @@ export function HoldButton({
         pointerEvents="none"
         style={[{ position: 'absolute', top: 0, bottom: 0, left: 0, backgroundColor: fill }, fillStyle]}
       />
-      <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+      <View style={{ flex: height ? 1 : undefined, paddingVertical: height ? 0 : 20, alignItems: 'center', justifyContent: 'center' }}>
         <Text style={{ fontSize: 17, fontWeight: '800', color: textColor, letterSpacing: 1 }}>{label}</Text>
       </View>
     </Pressable>

@@ -30,6 +30,7 @@ interface RelaxContextType {
 
   // History
   completedSessions: SessionCompletionRecord[];
+  sessionsLoaded: boolean;
 
   // Actions
   startSession: (sessionId: string, emotion: EmotionalState | null) => void;
@@ -69,6 +70,9 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
   const [selectedSound, setSelectedSound] = useState<BreathingMusicId>('ocean');
   const [lastEmotion, setLastEmotion] = useState<EmotionalState | null>(null);
   const [completedSessions, setCompletedSessions] = useState<SessionCompletionRecord[]>([]);
+  // True once the initial history fetch has settled (success or failure) —
+  // lets screens distinguish "still loading" from "genuinely no history yet".
+  const [sessionsLoaded, setSessionsLoaded] = useState(false);
 
   // Evaluated at render time, not import time — improves unit-testability.
   const db = useMemo(() => getFirestore(), []);
@@ -109,7 +113,7 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
       }
     }
 
-    void load();
+    void load().finally(() => setSessionsLoaded(true));
   }, [user?.uid]);
 
   function persistSessions(sessions: SessionCompletionRecord[]): void {
@@ -216,6 +220,7 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
     selectedSound,
     lastEmotion,
     completedSessions,
+    sessionsLoaded,
 
     startSession: handleStartSession,
     pauseSession: handlePauseSession,

@@ -5,6 +5,7 @@ import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { colors } from '@/constants/colors';
+import { PILLAR_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { getAudioTrackById } from '@/utils/audioTracks';
@@ -63,7 +64,7 @@ export default function AudioPlayerScreen() {
       <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
         <ScreenHeader title={track.title} showBack />
         <View style={styles.center}>
-          <ActivityIndicator color={colors.accent.purple} size="large" />
+          <ActivityIndicator color={PILLAR_COLORS.mind} size="large" />
         </View>
       </ScreenShell>
     );

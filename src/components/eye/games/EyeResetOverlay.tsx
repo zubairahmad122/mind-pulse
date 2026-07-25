@@ -7,11 +7,14 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { FONTS, PILLAR_COLORS } from '@/constants/designSystem';
 
+// Same "look 20 feet away" mechanic as CVSProtocolScreen's built-in 20-20-20
+// recovery phase — uses the same cyan eye accent (was a mismatched green here).
 const C = {
   bg:    'rgba(8,6,22,0.97)',
   card:  'rgba(255,255,255,0.045)',
-  green: '#6ee7b7',
+  green: PILLAR_COLORS.eye,
   text:  '#ffffff',
   muted: 'rgba(255,255,255,0.6)',
   dim:   'rgba(255,255,255,0.38)',
@@ -84,8 +87,8 @@ const s = StyleSheet.create({
     padding: 24,
     zIndex: 200,
   },
-  title:   { fontSize: 18, fontWeight: '800', color: C.text, letterSpacing: 1, marginTop: 6 },
-  bigSecs: { fontSize: 88, fontWeight: '900', color: C.green, lineHeight: 96, letterSpacing: -2 },
+  title:   { fontFamily: FONTS.heading, fontSize: 18, fontWeight: '800', color: C.text, letterSpacing: 1, marginTop: 6 },
+  bigSecs: { fontFamily: FONTS.heading, fontSize: 88, fontWeight: '900', color: C.green, lineHeight: 96, letterSpacing: -2 },
   line:    { fontSize: 17, fontWeight: '700', color: C.text, textAlign: 'center', marginTop: 6 },
   sub:     { fontSize: 13, color: C.muted, textAlign: 'center', lineHeight: 20, maxWidth: 320 },
   track:   { width: '78%', height: 6, backgroundColor: 'rgba(255,255,255,0.045)', borderRadius: 3, overflow: 'hidden', marginTop: 14 },

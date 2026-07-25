@@ -6,7 +6,6 @@ import Animated, {
   cancelAnimation,
   Easing,
   FadeIn,
-  FadeOut,
   Keyframe,
   runOnJS,
   useAnimatedStyle,
@@ -21,14 +20,12 @@ import Svg, { Path } from 'react-native-svg';
 import { Footprints, Infinity as InfinityIcon, Rabbit, Snail, type LucideIcon } from 'lucide-react-native';
 import { FocusDot } from '@/components/eye/animations/FocusDot';
 import { GradientCTA } from '@/components/ui/GradientCTA';
-import { PILLAR_THEME } from '@/constants/theme';
+import { FONTS, PILLAR_COLORS } from '@/constants/designSystem';
 import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
-
-const db = getFirestore();
 import { type GameEndStats } from './GameOverScreen';
 
-const EYES = PILLAR_THEME.eyes;
+const db = getFirestore();
 
 const PATH_ICONS: Record<string, LucideIcon> = {
   slow: Snail, medium: Footprints, faster: Rabbit, figure8: InfinityIcon,
@@ -55,10 +52,10 @@ interface Props {
 const C = {
   arenaBg:     '#06121a',
   card:        'rgba(255,255,255,0.045)',
-  blue:        '#22d3ee',  // eyes accent — high contrast on the dark teal arena
+  blue:        PILLAR_COLORS.eye,  // eyes accent — matches the Eye tab (was a mismatched teal-cyan)
   blueDim:     '#06b6d4',
   green:       '#6ee7b7',  // status feedback only ("FOLLOWING")
-  guide:       'rgba(34,211,238,0.22)',
+  guide:       'rgba(0,224,255,0.22)',
   red:         '#e24b4a',
   text:        '#ffffff',
   muted:       'rgba(255,255,255,0.6)',
@@ -623,10 +620,9 @@ export function CometTrace({ running, onGameEnd }: Props) {
   }, [prepNum]);
 
   // Rotate the coaching tip every ~7s while tracking (fades via key remount).
-  // Guided sessions coach per phase; practice uses the general set.
+  // Guided sessions show the quiet, time-sequenced guidedCoach line instead —
+  // practice uses the general rotating set.
   // (mode can't change mid-session — the selector is hidden while active)
-  const activeTips =
-    exerciseActive && mode === 'guided' ? GUIDED_PHASES[phaseIdx].tips : TIPS;
   useEffect(() => {
     if (!exerciseActive || paused) return;
     // Slow rotation — coaching should whisper, not flicker.
@@ -750,22 +746,14 @@ export function CometTrace({ running, onGameEnd }: Props) {
       <View style={s.midSlot}>
         {exerciseActive ? (
           <View style={s.tipBar}>
-            {mode === 'guided' ? (
-              <Animated.View key={`ph-${phaseIdx}`} entering={FadeIn.duration(350)} style={s.phaseChip}>
-                <Text style={s.phaseChipText}>
-                  {`${GUIDED_PHASES[phaseIdx].kicker} · ${GUIDED_PHASES[phaseIdx].label}`}
-                </Text>
-              </Animated.View>
-            ) : (
-              <Ionicons name="eye-outline" size={13} color={C.muted} />
-            )}
+            <Ionicons name="eye-outline" size={13} color={C.muted} />
             <Animated.Text
-              key={`${phaseIdx}-${tipIdx}`}
+              key={mode === 'guided' ? guidedCoach : tipIdx}
               entering={FadeIn.duration(450)}
               style={s.tipText}
               numberOfLines={1}
             >
-              {activeTips[tipIdx % activeTips.length]}
+              {mode === 'guided' ? guidedCoach : TIPS[tipIdx % TIPS.length]}
             </Animated.Text>
           </View>
         ) : mode === 'practice' ? (
@@ -819,8 +807,7 @@ export function CometTrace({ running, onGameEnd }: Props) {
             {
               left: ARENA_W / 2 - 110,
               top: ARENA_H / 2 - 110,
-              backgroundColor:
-                exerciseActive && mode === 'guided' ? GUIDED_PHASES[phaseIdx].glow : C.blue,
+              backgroundColor: C.blue,
             },
             ambientStyle,
           ]}
@@ -913,20 +900,6 @@ export function CometTrace({ running, onGameEnd }: Props) {
           </Animated.View>
         )}
 
-        {/* Guided phase announce — "TRACKING / Follow the gentle waves" */}
-        {phaseAnnounce && exerciseActive && !paused && (
-          <Animated.View
-            entering={FadeIn.duration(300)}
-            exiting={FadeOut.duration(400)}
-            style={s.phaseAnnounce}
-            pointerEvents="none"
-          >
-            <Text style={s.phaseAnnounceKicker}>{phaseAnnounce.kicker}</Text>
-            <Text style={s.phaseAnnounceLabel}>{phaseAnnounce.label.toUpperCase()}</Text>
-            <Text style={s.phaseAnnounceHint}>{phaseAnnounce.hint}</Text>
-          </Animated.View>
-        )}
-
         {/* 3-2-1 prep beat */}
         {prepNum !== null && (
           <View style={s.prepOverlay} pointerEvents="none">
@@ -941,9 +914,7 @@ export function CometTrace({ running, onGameEnd }: Props) {
         {paused && (
           <View style={s.pauseOverlay}>
             <Text style={s.pauseTitle}>Paused</Text>
-            <TouchableOpacity style={s.resumeBtn} onPress={resumeSession} activeOpacity={0.8}>
-              <Text style={s.resumeBtnText}>Resume</Text>
-            </TouchableOpacity>
+            <GradientCTA label="Resume" onPress={resumeSession} textColor="#03212C" compact />
             <TouchableOpacity style={s.endGameBtn} onPress={() => endSession()} activeOpacity={0.8}>
               <Ionicons name="stop-circle-outline" size={15} color={C.red} />
               <Text style={s.endGameBtnText}>End Session</Text>
@@ -979,18 +950,16 @@ export function CometTrace({ running, onGameEnd }: Props) {
         }
         icon={
           exerciseActive
-            ? <Ionicons name="eye" size={15} color={EYES.buttonTextColor} />
+            ? <Ionicons name="eye" size={15} color="#03212C" />
             : !cooldownActive && prepNum === null
-              ? <Ionicons name="play" size={16} color={EYES.buttonTextColor} />
+              ? <Ionicons name="play" size={16} color="#03212C" />
               : undefined
         }
         compact
         onPress={beginExercise}
         disabled={exerciseActive || cooldownActive || prepNum !== null}
         keepBright={exerciseActive}
-        colors={EYES.buttonGradient}
-        glowColor={EYES.buttonShadow}
-        textColor={EYES.buttonTextColor}
+        textColor="#03212C"
         letterSpacing={1.4}
         style={s.startCta}
       />
@@ -1022,7 +991,7 @@ const s = StyleSheet.create({
   },
   infoChipText: { fontSize: 12, fontWeight: '600', color: C.muted, letterSpacing: 0.3 },
   activeInfo: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 10 },
-  timerBig: { fontSize: 26, fontWeight: '800', color: C.purpleLight },
+  timerBig: { fontFamily: FONTS.heading, fontSize: 26, fontWeight: '800', color: C.purpleLight },
   statusWord: { fontSize: 14, fontWeight: '700' },
 
   // Mode selector (idle only)
@@ -1032,20 +1001,13 @@ const s = StyleSheet.create({
     borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
-  modeBtnActive: { borderColor: C.blue + '99', backgroundColor: 'rgba(34,211,238,0.12)' },
+  modeBtnActive: { borderColor: C.blue + '99', backgroundColor: 'rgba(0,224,255,0.12)' },
   modeBtnText: { fontSize: 13, fontWeight: '700', color: C.dim },
   modeBtnTextActive: { color: C.blue },
   modeBtnHint: { fontSize: 9, fontWeight: '600', color: C.dim, letterSpacing: 0.4 },
   modeBtnHintActive: { color: C.blue + 'aa' },
 
   guidedHint: { fontSize: 12, color: C.dim, fontWeight: '500', textAlign: 'center', letterSpacing: 0.2 },
-
-  phaseChip: {
-    backgroundColor: 'rgba(34,211,238,0.12)',
-    borderWidth: 1, borderColor: 'rgba(34,211,238,0.35)',
-    borderRadius: 100, paddingHorizontal: 10, paddingVertical: 3,
-  },
-  phaseChipText: { fontSize: 10, fontWeight: '800', color: C.blue, letterSpacing: 0.8, textTransform: 'uppercase' },
 
   // One mid slot: phase/coaching (active) ↔ chips or hint (idle) — fixed height
   midSlot: { alignSelf: 'stretch', height: 40, justifyContent: 'center' },
@@ -1058,7 +1020,7 @@ const s = StyleSheet.create({
     borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
-  diffBtnActive:     { borderColor: C.blue + '99', backgroundColor: 'rgba(34,211,238,0.12)' },
+  diffBtnActive:     { borderColor: C.blue + '99', backgroundColor: 'rgba(0,224,255,0.12)' },
   diffBtnText:       { fontSize: 12, fontWeight: '700', color: C.dim },
   diffBtnTextActive: { color: C.blue },
 
@@ -1074,28 +1036,12 @@ const s = StyleSheet.create({
     borderWidth: 1.5, borderColor: C.blue,
   },
 
-  phaseAnnounce: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: 'rgba(3,8,11,0.55)',
-  },
-  phaseAnnounceKicker: {
-    fontSize: 11, fontWeight: '800', color: C.muted, letterSpacing: 2.5,
-  },
-  phaseAnnounceLabel: {
-    fontSize: 20, fontWeight: '800', color: C.blue,
-    letterSpacing: 3,
-    textShadowColor: 'rgba(34,211,238,0.4)',
-    textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 16,
-  },
-  phaseAnnounceHint: { fontSize: 13, color: C.muted, fontWeight: '500' },
-
   steadyTrack: { alignSelf: 'stretch', height: 4, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' },
   steadyFill:  { height: 4, backgroundColor: C.blue, borderRadius: 2, opacity: 0.8 },
 
   arena: {
     borderRadius: 22, backgroundColor: C.arenaBg,
-    borderWidth: 1.5, borderColor: 'rgba(34,211,238,0.25)',
+    borderWidth: 1.5, borderColor: 'rgba(0,224,255,0.25)',
     overflow: 'hidden', position: 'relative',
   },
 
@@ -1129,8 +1075,8 @@ const s = StyleSheet.create({
 
   restBanner: {
     alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: 7,
-    backgroundColor: 'rgba(34,211,238,0.10)', borderRadius: 10,
-    borderWidth: 1, borderColor: 'rgba(34,211,238,0.3)',
+    backgroundColor: 'rgba(0,224,255,0.10)', borderRadius: 10,
+    borderWidth: 1, borderColor: 'rgba(0,224,255,0.3)',
     paddingHorizontal: 12, paddingVertical: 8,
   },
   restText: { fontSize: 11, color: C.blue, fontWeight: '700', flex: 1, lineHeight: 15 },
@@ -1139,7 +1085,7 @@ const s = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     alignItems: 'center', justifyContent: 'center', gap: 10,
   },
-  idleTitle: { fontSize: 22, fontWeight: '900', color: C.text, letterSpacing: 0.5 },
+  idleTitle: { fontFamily: FONTS.heading, fontSize: 22, fontWeight: '900', color: C.text, letterSpacing: 0.5 },
   idleLines: { gap: 5, marginTop: 2 },
   idleLine: { fontSize: 13, color: C.muted, textAlign: 'center', lineHeight: 19 },
 
@@ -1148,7 +1094,7 @@ const s = StyleSheet.create({
     width: 46, height: 46, borderRadius: 23,
     left: -7, top: -7,
     borderWidth: 1.5, borderColor: C.blue,
-    backgroundColor: 'rgba(34,211,238,0.08)',
+    backgroundColor: 'rgba(0,224,255,0.08)',
   },
 
   prepOverlay: {
@@ -1159,7 +1105,7 @@ const s = StyleSheet.create({
   prepHint: { fontSize: 12, color: C.muted, fontWeight: '600', letterSpacing: 0.4 },
   prepNum: {
     fontSize: 84, fontWeight: '200', letterSpacing: 1,
-    textShadowColor: 'rgba(34,211,238,0.35)',
+    textShadowColor: 'rgba(0,224,255,0.35)',
     textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 22,
   },
 
@@ -1182,9 +1128,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(3,8,11,0.93)',
     alignItems: 'center', justifyContent: 'center', gap: 8, zIndex: 10,
   },
-  pauseTitle:    { fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 1 },
-  resumeBtn:     { backgroundColor: C.blue, borderRadius: 100, paddingHorizontal: 38, paddingVertical: 13 },
-  resumeBtnText: { fontSize: 15, fontWeight: '800', color: '#03212c' },
+  pauseTitle:    { fontFamily: FONTS.heading, fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 1 },
   endGameBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     borderWidth: 1.5, borderColor: 'rgba(226,75,74,0.45)',

@@ -1,10 +1,8 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Animated,
-  Easing,
-  SafeAreaView,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,189 +10,119 @@ import {
   View,
 } from 'react-native';
 import { PACKAGE_TYPE, type PurchasesPackage } from 'react-native-purchases';
-import { AmbientBackground } from '@/components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  FadeIn,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { Brain, Crown, Eye, Headphones, Moon, X } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenShell } from '@/components/layout/ScreenShell';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { BUTTON, FONTS, PILLAR_COLORS, PRO_GOLD, RADIUS, STATUS_COLORS, TYPOGRAPHY } from '@/constants/designSystem';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { getOfferings, purchasePackage, restorePurchases } from '@/services/purchaseService';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Check, X } from 'lucide-react-native';
 
 // ── Design Tokens ──────────────────────────────────────────────────────────────
+// Radius/gradient now read from the frozen design system (RADIUS.card,
+// BUTTON.primaryGradient) instead of one-off values, so this screen matches
+// Home/Relax/Eye/Challenges/Profile. Background/safe-area come from the same
+// ScreenShell + AnimatedBackground every other screen uses.
 
-const T = {
-  bg: '#0F0F1A',
-  purple: '#8B5CF6',
-  gold: '#F59E0B',
-  goldGlow: 'rgba(245,158,11,0.3)',
-  success: '#10B981',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#9CA3AF',
-  textMuted: '#6B7280',
-} as const;
+const GOLD = PRO_GOLD;
+// Slightly darker than the previous round so the primary gradient CTA stays
+// the single brightest element on the card.
+const CARD_GRADIENT = ['#160F26', '#0B0817'] as const;
 
-// ── Bottom CTA height estimate (for ScrollView padding) ────────────────────────
-// CTA button (60) + gap (12) + restore (40) + trust (50) + padding (12+4) = ~178
-const BOTTOM_CTA_HEIGHT = 180;
-
-// ── Premium features list ──────────────────────────────────────────────────────
-
-const FEATURES = [
-  'Unlimited Eye Training Games',
-  'Advanced Sleep Analysis & Smart Alarm',
-  'All Relaxation Sessions',
-  'Personalized AI Wellness Insights',
-  'Priority Support & Future Updates',
+const FEATURES: { icon: typeof Eye; color: string; lead: string; desc: string }[] = [
+  { icon: Headphones, color: PILLAR_COLORS.relax, lead: 'Unlimited Sessions', desc: 'Every guided relax and sleep session, unlocked.' },
+  { icon: Brain, color: PILLAR_COLORS.mind, lead: 'Advanced Insights', desc: 'Personalized AI analysis of your wellness patterns.' },
+  { icon: Moon, color: PILLAR_COLORS.sleep, lead: 'Adaptive Alarm', desc: 'Use your selected wake window and gentle alarm sounds.' },
+  { icon: Eye, color: PILLAR_COLORS.eye, lead: 'Eye Comfort', desc: 'Guided breaks, recovery sessions, and visual activities.' },
 ];
-
-// ── Avatar colors ──────────────────────────────────────────────────────────────
-
-const AVATAR_COLORS = ['#8B5CF6', '#60A5FA', '#34D399', '#F59E0B'];
-const AVATAR_INITIALS = ['A', 'M', 'J', 'S'];
-
-// ── Crown Icon (gold with glow) ───────────────────────────────────────────────
-
-function CrownIcon({ size = 56, frame }: { size?: number; frame: number }) {
-  const glowOpacity = 0.4 + Math.sin(frame * 0.03) * 0.15;
-  return (
-    <View style={{ width: size + 24, height: size + 24, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Glow behind crown */}
-      <View style={{
-        position: 'absolute',
-        width: size * 2,
-        height: size * 2,
-        borderRadius: size,
-        backgroundColor: T.goldGlow,
-        opacity: glowOpacity,
-      }} />
-      {/* Crown circle */}
-      <View style={{
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: 'rgba(245,158,11,0.15)',
-        borderWidth: 2,
-        borderColor: 'rgba(245,158,11,0.3)',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <Text style={{ fontSize: size * 0.5 }}>👑</Text>
-      </View>
-    </View>
-  );
-}
 
 // ── Feature Row ────────────────────────────────────────────────────────────────
 
-function FeatureRow({ text, index }: { text: string; index: number }) {
-  const delay = index * 100;
-  const progress = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: 500,
-      delay,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  }, [delay]);
-
-  const opacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
-  const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [20, 0] });
-
+function FeatureRow({
+  icon: Icon,
+  color,
+  lead,
+  desc,
+  last,
+  index,
+}: {
+  icon: typeof Eye;
+  color: string;
+  lead: string;
+  desc: string;
+  last: boolean;
+  index: number;
+}) {
   return (
-    <Animated.View style={[styles.featureRow, { opacity, transform: [{ translateY }] }]}>
-      <View style={styles.featureCheck}>
-        <Check size={14} color="#fff" strokeWidth={3} />
+    <Animated.View
+      entering={FadeIn.delay(150 + index * 80).duration(300)}
+      style={[styles.featureRow, !last && styles.featureRowDivider]}
+    >
+      <View style={[styles.featureIconWrap, { backgroundColor: color + '18', borderColor: color + '28' }]}>
+        <Icon size={20} color={color} strokeWidth={2} />
       </View>
-      <Text style={styles.featureText}>{text}</Text>
+      <View style={styles.featureTextWrap}>
+        <Text style={styles.featureLead}>{lead}</Text>
+        <Text style={styles.featureDesc}>{desc}</Text>
+      </View>
     </Animated.View>
   );
 }
 
-// ── Save Badge (pulsing) ───────────────────────────────────────────────────────
+// ── Plan Button — tapping it purchases that plan directly, no separate CTA ────
 
-function SaveBadge({ frame }: { frame: number }) {
-  const pulse = 1 + Math.sin(frame * 0.05) * 0.04;
-  return (
-    <View style={[styles.saveBadge, { transform: [{ scale: pulse }] }]}>
-      <Text style={styles.saveBadgeText}>SAVE 40%</Text>
-    </View>
-  );
-}
-
-// ── Shimmer CTA Button ─────────────────────────────────────────────────────────
-
-function ShimmerCTA({
-  label,
-  sublabel,
-  onPress,
+function PlanButton({
+  variant,
+  line1,
+  line2,
   loading,
   disabled,
+  onPress,
 }: {
-  label: string;
-  sublabel?: string;
+  variant: 'primary' | 'secondary';
+  line1: string;
+  line2: string;
+  loading: boolean;
+  disabled: boolean;
   onPress: () => void;
-  loading?: boolean;
-  disabled?: boolean;
 }) {
-  const shimmerX = useRef(new Animated.Value(0)).current;
+  const content = loading ? (
+    <ActivityIndicator color={variant === 'primary' ? '#03212C' : '#FFFFFF'} size="small" />
+  ) : (
+    <View style={styles.planTextWrap}>
+      <Text style={variant === 'primary' ? styles.planLine1Primary : styles.planLine1Secondary}>{line1}</Text>
+      <Text style={variant === 'primary' ? styles.planLine2Primary : styles.planLine2Secondary}>{line2}</Text>
+    </View>
+  );
 
-  useEffect(() => {
-    if (loading) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.delay(2000),
-        Animated.timing(shimmerX, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(shimmerX, { toValue: 0, duration: 0, useNativeDriver: true }),
-      ]),
+  if (variant === 'primary') {
+    return (
+      <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.85} style={styles.planBtnShell}>
+        <LinearGradient colors={BUTTON.primaryGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.planBtn, disabled && { opacity: 0.6 }]}>
+          {content}
+        </LinearGradient>
+      </TouchableOpacity>
     );
-    loop.start();
-    return () => loop.stop();
-  }, [loading]);
+  }
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      disabled={disabled || loading}
+      disabled={disabled}
       activeOpacity={0.85}
-      style={[styles.ctaButton, disabled && { opacity: 0.6 }]}
+      style={[styles.planBtn, styles.planBtnOutline, disabled && { opacity: 0.6 }]}
     >
-      <View style={styles.ctaGradient}>
-        {loading ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <>
-            <Text style={styles.ctaLabel}>{label}</Text>
-            {sublabel ? <Text style={styles.ctaSublabel}>{sublabel}</Text> : null}
-          </>
-        )}
-      </View>
-      {/* Shimmer sweep */}
-      <Animated.View pointerEvents="none" style={{
-        position: 'absolute',
-        top: -4,
-        bottom: -4,
-        width: 50,
-        transform: [
-          { translateX: shimmerX.interpolate({ inputRange: [0, 1], outputRange: [-80, 360] }) },
-          { rotate: '20deg' },
-        ],
-      }}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20 }} />
-      </Animated.View>
+      {content}
     </TouchableOpacity>
-  );
-}
-
-// ── Trust Badge Row ────────────────────────────────────────────────────────────
-
-function TrustBadge({ icon, label }: { icon: string; label: string }) {
-  return (
-    <View style={styles.trustBadge}>
-      <Text style={styles.trustIcon}>{icon}</Text>
-      <Text style={styles.trustLabel}>{label}</Text>
-    </View>
   );
 }
 
@@ -204,28 +132,18 @@ export default function PremiumScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium, refreshSubscription } = useSubscription();
-  const frame = useRef(0);
-  const animRef = useRef<number | null>(null);
-  const [tick, setTick] = useState(0);
 
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
-  const [selectedType, setSelectedType] = useState<'monthly' | 'yearly'>('yearly');
   const [loadingOfferings, setLoadingOfferings] = useState(true);
-  const [purchasing, setPurchasing] = useState(false);
+  const [purchasingId, setPurchasingId] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justUnlocked, setJustUnlocked] = useState(false);
-
-  // Frame ticker for animations
-  useEffect(() => {
-    const tick = () => {
-      frame.current += 1;
-      if (frame.current % 2 === 0) setTick(t => t + 1);
-      animRef.current = requestAnimationFrame(tick);
-    };
-    animRef.current = requestAnimationFrame(tick);
-    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, []);
+  // Show 2 features up front; "View all features" opens a modal with the
+  // full list instead of expanding inline — keeps the card itself compact.
+  const [showFeaturesModal, setShowFeaturesModal] = useState(false);
+  const visibleFeatures = FEATURES.slice(0, 2);
+  const hiddenFeatureCount = FEATURES.length - visibleFeatures.length;
 
   useEffect(() => {
     let cancelled = false;
@@ -240,28 +158,35 @@ export default function PremiumScreen() {
 
   const monthlyPkg = packages.find(p => p.packageType === PACKAGE_TYPE.MONTHLY) ?? null;
   const annualPkg = packages.find(p => p.packageType === PACKAGE_TYPE.ANNUAL) ?? null;
+  // Only used if the offering has neither a recognized monthly nor annual
+  // package — still lets a single configured plan work instead of showing nothing.
   const fallbackPkg = packages.length > 0 && !monthlyPkg && !annualPkg ? packages[0] : null;
 
-  const activePkg = selectedType === 'yearly'
-    ? (annualPkg ?? fallbackPkg)
-    : (monthlyPkg ?? fallbackPkg);
+  // Real monthly-equivalent for the annual plan, and a real savings % against
+  // the actual monthly price — never a hardcoded "Save 40%".
+  const annualMonthlyEquivalent = annualPkg?.product.price != null
+    ? Math.round((annualPkg.product.price / 12) * 100) / 100
+    : null;
+  const savingsPct = annualMonthlyEquivalent != null && monthlyPkg?.product.price
+    ? Math.round((1 - annualMonthlyEquivalent / monthlyPkg.product.price) * 100)
+    : null;
 
-  const handlePurchase = useCallback(async () => {
-    if (!activePkg || purchasing || restoring) return;
+  const handlePurchase = useCallback(async (pkg: PurchasesPackage) => {
+    if (purchasingId || restoring) return;
     setError(null);
-    setPurchasing(true);
-    const result = await purchasePackage(activePkg);
-    setPurchasing(false);
+    setPurchasingId(pkg.identifier);
+    const result = await purchasePackage(pkg);
+    setPurchasingId(null);
     if (result.success) {
       await refreshSubscription();
       setJustUnlocked(true);
       return;
     }
     if (result.error) setError(result.error);
-  }, [activePkg, purchasing, restoring, refreshSubscription]);
+  }, [purchasingId, restoring, refreshSubscription]);
 
   const handleRestore = useCallback(async () => {
-    if (purchasing || restoring) return;
+    if (purchasingId || restoring) return;
     setError(null);
     setRestoring(true);
     const result = await restorePurchases();
@@ -272,500 +197,505 @@ export default function PremiumScreen() {
       return;
     }
     if (result.error) setError(result.error);
-  }, [purchasing, restoring, refreshSubscription]);
+  }, [purchasingId, restoring, refreshSubscription]);
 
-  const showPlans = !isPremium && !justUnlocked && !loadingOfferings && !!activePkg;
   const showAlreadyPro = isPremium || justUnlocked;
+  const anyBusy = purchasingId !== null || restoring;
+
+  // Card entrance: scale 0.95 -> 1 + fade, 220ms (FadeIn below handles opacity).
+  const cardScale = useSharedValue(0.95);
+  useEffect(() => {
+    cardScale.value = withTiming(1, { duration: 220 });
+  }, [cardScale]);
+  const cardScaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: cardScale.value }] }));
 
   return (
-    <View style={styles.root}>
-      {/* Background */}
-      <View style={StyleSheet.absoluteFill}>
-        <AmbientBackground subtle />
-      </View>
-
-      <SafeAreaView style={{ flex: 1 }}>
-        {/* Close button */}
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={[styles.closeBtn, { top: insets.top + 8 }]}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <X size={20} color={T.textSecondary} />
-        </TouchableOpacity>
-
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: BOTTOM_CTA_HEIGHT + Math.max(insets.bottom, 16) + 16 },
-          ]}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
-          {/* ── Hero Section ────────────────────────────────────── */}
-          <View style={styles.hero}>
-            <CrownIcon frame={tick} />
-            <Text style={styles.heroTitle}>{'Sleep Better.\nSee Clearer. Stress Less.'}</Text>
-            <Text style={styles.heroSub}>Join 10,000+ people transforming their daily wellness</Text>
-          </View>
-
-          {/* ── Feature List ────────────────────────────────────── */}
-          <GlassCard style={styles.featureCard}>
-            <View style={styles.featureCardHeader}>
-              <Text style={styles.featureCardTitle}>WHAT YOU GET WITH PRO</Text>
+    <ScreenShell
+      scroll={false}
+      edges={['top', 'bottom']}
+      safeBottom
+      pillar="challenge"
+      contentStyle={styles.shellContent}
+      ambient={<AmbientBackground subtle />}
+    >
+      <Animated.View
+        entering={FadeIn.duration(220)}
+        style={[styles.cardWrap, cardScaleStyle]}
+      >
+        <GlassCard noPadding tint={CARD_GRADIENT} style={styles.card}>
+        <View style={styles.cardInner}>
+          {showAlreadyPro ? (
+            <View style={styles.alreadyProWrap}>
+              <View style={styles.crownWrap}>
+                <Crown size={22} color={GOLD} fill={GOLD + '33'} />
+              </View>
+              <Text style={styles.badgeLabel}>MINDPULSE PRO</Text>
+              <Text style={styles.title}>{"You're a Pro member ✨"}</Text>
+              <Text style={styles.finePrint}>Thanks for supporting MindPulse.</Text>
+              <TouchableOpacity onPress={() => router.back()} activeOpacity={0.85} style={styles.planBtnShell}>
+                <LinearGradient colors={BUTTON.primaryGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.planBtn}>
+                  <Text style={styles.planLine1Primary}>Done</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
-            <View style={styles.featureDivider} />
-            {FEATURES.map((feature, i) => (
-              <FeatureRow key={feature} text={feature} index={i} />
-            ))}
-          </GlassCard>
+          ) : (
+            // Everything scrolls together — crown through fine print — instead
+            // of splitting into a "scrolling top / fixed bottom" that needed
+            // the ScrollView to get an exact measured height it wasn't
+            // reliably getting, which is what was clipping the feature list
+            // and crowding the pricing section against it.
+            <ScrollView
+              style={styles.scrollArea}
+              contentContainerStyle={styles.scrollAreaContent}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
+              <View style={styles.crownWrap}>
+                <Crown size={22} color={GOLD} fill={GOLD + '33'} />
+              </View>
+              <Text style={styles.badgeLabel}>MINDPULSE PRO</Text>
 
-          {/* ── Social Proof ────────────────────────────────────── */}
-          <View style={styles.socialProof}>
-            <View style={styles.starsRow}>
-              {[1, 2, 3, 4, 5].map(i => (
-                <Text key={i} style={styles.star}>{'★'}</Text>
-              ))}
-              <Text style={styles.ratingText}>4.8 from 2,400 reviews</Text>
-            </View>
-            <View style={styles.avatarsRow}>
-              {AVATAR_COLORS.map((color, i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.avatar,
-                    { marginLeft: i > 0 ? -10 : 0, backgroundColor: color },
-                  ]}
-                >
-                  <Text style={styles.avatarInitial}>{AVATAR_INITIALS[i]}</Text>
-                </View>
-              ))}
-              <Text style={styles.avatarLabel}>Pro members</Text>
-            </View>
-          </View>
+              <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                Unlock MindPulse Pro
+              </Text>
+              <Text style={styles.subtitle}>
+                One membership for better sleep,{'\n'}calmer days, and healthier eyes.
+              </Text>
 
-          {/* ── Pricing Section ─────────────────────────────────── */}
-          {showPlans && (
-            <View style={styles.pricingSection}>
-              {/* Plan toggle */}
-              <View style={styles.planToggle}>
-                <TouchableOpacity
-                  style={[styles.planBtn, selectedType === 'monthly' && styles.planBtnActive]}
-                  onPress={() => setSelectedType('monthly')}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.planBtnText, selectedType === 'monthly' && styles.planBtnTextActive]}>
-                    Monthly
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.planBtn, selectedType === 'yearly' && styles.planBtnActive]}
-                  onPress={() => setSelectedType('yearly')}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.planBtnText, selectedType === 'yearly' && styles.planBtnTextActive]}>
-                    Yearly
-                  </Text>
-                  <SaveBadge frame={tick} />
-                </TouchableOpacity>
+              <View style={styles.featureList}>
+                {visibleFeatures.map((f, i) => (
+                  <FeatureRow
+                    key={f.lead}
+                    icon={f.icon}
+                    color={f.color}
+                    lead={f.lead}
+                    desc={f.desc}
+                    last={i === visibleFeatures.length - 1 && hiddenFeatureCount === 0}
+                    index={i}
+                  />
+                ))}
+                {hiddenFeatureCount > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setShowFeaturesModal(true)}
+                    activeOpacity={0.7}
+                    style={styles.readMoreBtn}
+                  >
+                    <Text style={styles.readMoreText}>
+                      View all features ({FEATURES.length}) →
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
-              {/* Price display */}
-              {activePkg && (
-                <View style={styles.priceDisplay}>
-                  <Text style={styles.price}>{activePkg.product.priceString}</Text>
-                  <Text style={styles.pricePeriod}>
-                    {selectedType === 'yearly' ? '/year' : '/month'}
-                  </Text>
-                  {selectedType === 'yearly' && activePkg.product.price != null && (
-                    <Text style={styles.priceEquivalent}>
-                      {`That's just ~$${Math.round((activePkg.product.price / 12) * 100) / 100}/month`}
-                    </Text>
-                  )}
-                </View>
+              {loadingOfferings ? (
+                <ActivityIndicator color={PILLAR_COLORS.mind} size="small" style={{ marginVertical: 24 }} />
+              ) : !annualPkg && !monthlyPkg && !fallbackPkg ? (
+                <Text style={styles.finePrint}>Plans unavailable — check your connection and try again.</Text>
+              ) : (
+                <Animated.View entering={FadeInUp.delay(400).duration(300)} style={styles.pricingSection}>
+                  <View style={styles.pricingDivider} />
+                  <View style={styles.plansWrap}>
+                    {annualPkg && (
+                      <>
+                        <View style={styles.popularPill}>
+                          <Text style={styles.popularPillText}>MOST POPULAR</Text>
+                        </View>
+                        <PlanButton
+                          variant="primary"
+                          line1="Continue with Yearly"
+                          line2={savingsPct != null ? `$${annualMonthlyEquivalent}/month · Save ${savingsPct}%` : `$${annualMonthlyEquivalent}/month`}
+                          loading={purchasingId === annualPkg.identifier}
+                          disabled={anyBusy}
+                          onPress={() => void handlePurchase(annualPkg)}
+                        />
+                      </>
+                    )}
+                    {monthlyPkg && (
+                      <PlanButton
+                        variant={annualPkg ? 'secondary' : 'primary'}
+                        line1="Continue with Monthly"
+                        line2={`${monthlyPkg.product.priceString}/month`}
+                        loading={purchasingId === monthlyPkg.identifier}
+                        disabled={anyBusy}
+                        onPress={() => void handlePurchase(monthlyPkg)}
+                      />
+                    )}
+                    {fallbackPkg && (
+                      <PlanButton
+                        variant="primary"
+                        line1="Continue"
+                        line2={fallbackPkg.product.priceString}
+                        loading={purchasingId === fallbackPkg.identifier}
+                        disabled={anyBusy}
+                        onPress={() => void handlePurchase(fallbackPkg)}
+                      />
+                    )}
+                  </View>
+                  <View style={styles.pricingDivider} />
+                </Animated.View>
               )}
 
-              {/* Trial text */}
-              <View style={styles.trialRow}>
-                <Text style={styles.trialText}>7-day free trial · Cancel anytime</Text>
-              </View>
-            </View>
+              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+              <TouchableOpacity
+                onPress={() => void handleRestore()}
+                disabled={anyBusy}
+                activeOpacity={0.7}
+                style={styles.restoreBtn}
+              >
+                <Text style={styles.restoreText}>
+                  {restoring ? 'Restoring…' : 'Restore Purchases  →'}
+                </Text>
+              </TouchableOpacity>
+
+              <Text style={styles.finePrint}>
+                Cancel anytime. Subscription renews automatically.{'\n'}Terms • Privacy
+              </Text>
+            </ScrollView>
           )}
 
-          {showAlreadyPro && (
-            <GlassCard style={styles.statusCard}>
-              <Text style={styles.statusTitle}>{"You're a Pro member ✨"}</Text>
-              <Text style={styles.statusSub}>Thanks for supporting MindPulse.</Text>
-            </GlassCard>
-          )}
+          {/* Close button rendered LAST — not before the ScrollView — so it
+              stacks on top for touch handling. It sat underneath the
+              ScrollView before, which was silently swallowing the tap. */}
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.closeBtn}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <X size={18} color="rgba(255,255,255,0.65)" />
+          </TouchableOpacity>
+        </View>
+        </GlassCard>
+      </Animated.View>
 
-          {!isPremium && !justUnlocked && loadingOfferings && (
-            <ActivityIndicator color={T.purple} size="large" style={{ marginVertical: 40 }} />
-          )}
-
-          {!isPremium && !justUnlocked && !loadingOfferings && packages.length === 0 && !error && (
-            <GlassCard style={styles.statusCard}>
-              <Text style={styles.statusTitle}>Plans unavailable</Text>
-              <Text style={styles.statusSub}>Please check your connection and try again later.</Text>
-            </GlassCard>
-          )}
-
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        </ScrollView>
-
-        {/* ── Bottom CTA Area (fixed) ─────────────────────────── */}
-        {!showAlreadyPro && !loadingOfferings && packages.length > 0 && (
-          <View style={[styles.bottomCTA, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-            {/* CTA Buttons */}
-            <ShimmerCTA
-              label="Start Free Trial"
-              sublabel={activePkg ? `${activePkg.product.priceString}${selectedType === 'yearly' ? '/year' : '/month'} after trial` : undefined}
-              onPress={handlePurchase}
-              loading={purchasing}
-              disabled={!activePkg || purchasing}
-            />
+      {/* All Pro features — modal instead of inline expansion */}
+      <Modal
+        visible={showFeaturesModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFeaturesModal(false)}
+      >
+        <View style={styles.featuresModalOverlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setShowFeaturesModal(false)}
+          />
+          <View style={[styles.featuresModalSheet, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+            <View style={styles.featuresModalHandle} />
+            <Text style={styles.featuresModalTitle}>Everything in Pro</Text>
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.featuresModalScroll}>
+              {FEATURES.map((f, i) => (
+                <FeatureRow
+                  key={f.lead}
+                  icon={f.icon}
+                  color={f.color}
+                  lead={f.lead}
+                  desc={f.desc}
+                  last={i === FEATURES.length - 1}
+                  index={i}
+                />
+              ))}
+            </ScrollView>
             <TouchableOpacity
-              onPress={handleRestore}
-              disabled={purchasing || restoring}
-              activeOpacity={0.7}
-              style={styles.restoreBtn}
-            >
-              <Text style={styles.restoreText}>{restoring ? 'Restoring…' : 'Restore Purchases'}</Text>
-            </TouchableOpacity>
-
-            {/* Trust badges */}
-            <View style={styles.trustRow}>
-              <TrustBadge icon="🔒" label="Secure Payment" />
-              <TrustBadge icon="🛡️" label="30-Day Money Back" />
-              <TrustBadge icon="✓" label="Cancel Anytime" />
-            </View>
-          </View>
-        )}
-
-        {showAlreadyPro && (
-          <View style={[styles.bottomCTA, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-            <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => setShowFeaturesModal(false)}
               activeOpacity={0.85}
-              style={styles.doneButton}
+              style={styles.featuresModalCloseBtn}
             >
-              <Text style={styles.doneText}>Done</Text>
+              <Text style={styles.featuresModalCloseText}>Close</Text>
             </TouchableOpacity>
           </View>
-        )}
-      </SafeAreaView>
-    </View>
+        </View>
+      </Modal>
+    </ScreenShell>
   );
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: T.bg,
+  shellContent: {
+    paddingHorizontal: 0,
+    alignItems: 'center',
+    paddingTop: 12,
+    // Overrides ScreenShell's default scroll-bottom clearance (meant for
+    // scrollable page content, ~40-50px here) — this is a single full-height
+    // modal card, not a list, so that space was just shrinking the card.
+    paddingBottom: 12,
   },
-  closeBtn: {
-    position: 'absolute',
-    left: 20,
-    zIndex: 10,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+  cardWrap: {
+    width: '92%',
+    flex: 1,
+  },
+  card: {
+    flex: 1,
+    borderRadius: RADIUS.card,
+  },
+  cardInner: {
+    flex: 1,
+    padding: 22,
+  },
+  // The short "already Pro" state doesn't need to scroll — just center it
+  // in the same fixed-height card so it doesn't look like a stretched, empty box.
+  alreadyProWrap: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
+  scrollArea: {
+    flex: 1,
   },
-
-  // ── Hero ──
-  hero: {
+  scrollAreaContent: {
     alignItems: 'center',
-    marginBottom: 32,
+    paddingBottom: 8,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 28,
+    right: 28,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  crownWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: GOLD + '1A',
+    borderWidth: 2,
+    borderColor: GOLD + '45',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: GOLD,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+  },
+  badgeLabel: {
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+    fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
+    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+    color: GOLD,
     marginTop: 8,
-    gap: 12,
   },
-  heroTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: T.textPrimary,
+  title: {
+    fontFamily: FONTS.heading,
+    fontSize: 26,
+    lineHeight: 32,
+    color: '#FFFFFF',
     textAlign: 'center',
-    letterSpacing: -0.7,
-    lineHeight: 36,
+    marginTop: 12,
   },
-  heroSub: {
-    fontSize: 14,
-    color: T.textSecondary,
+  subtitle: {
+    fontSize: TYPOGRAPHY.subtitle.fontSize,
+    fontWeight: TYPOGRAPHY.subtitle.fontWeight,
+    color: TYPOGRAPHY.subtitle.color,
     textAlign: 'center',
     lineHeight: 20,
-    paddingHorizontal: 12,
+    marginTop: 10,
+    marginBottom: 16,
   },
 
-  // ── Feature Card ──
-  featureCard: {
-    marginBottom: 28,
-  },
-  featureCardHeader: {
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  featureCardTitle: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.8,
-    color: T.textMuted,
-  },
-  featureDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    marginBottom: 4,
+  // ── Features ──
+  featureList: {
+    width: '100%',
+    marginBottom: 24,
   },
   featureRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 12,
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingVertical: 14,
   },
-  featureCheck: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: T.purple,
+  featureRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  readMoreBtn: {
+    alignSelf: 'center',
+    paddingVertical: 10,
+    marginTop: 4,
+  },
+  readMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: PILLAR_COLORS.mind,
+  },
+
+  // ── Full features modal — same bottom-sheet tokens as the app's other
+  // sheets (Ringtone picker, alarm-window picker): bg, radius, handle bar.
+  featuresModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  featuresModalSheet: {
+    backgroundColor: '#11162a',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderBottomWidth: 0,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 24,
+    maxHeight: '75%',
+  },
+  featuresModalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  featuresModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  featuresModalScroll: {
+    maxHeight: 380,
+  },
+  featuresModalCloseBtn: {
+    marginTop: 12,
+    height: BUTTON.height,
+    borderRadius: BUTTON.radius,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featuresModalCloseText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  featureIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  featureText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: T.textPrimary,
+  featureTextWrap: {
     flex: 1,
-    lineHeight: 22,
+    gap: 2,
+  },
+  featureLead: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  featureDesc: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: 'rgba(255,255,255,0.6)',
+    lineHeight: 20,
   },
 
-  // ── Social Proof ──
-  socialProof: {
-    alignItems: 'center',
-    marginBottom: 28,
-    gap: 12,
-  },
-  starsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  star: {
-    fontSize: 16,
-    color: T.gold,
-  },
-  ratingText: {
-    fontSize: 13,
-    color: T.textSecondary,
-    marginLeft: 8,
-    fontWeight: '500',
-  },
-  avatarsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 4,
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: T.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitial: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  avatarLabel: {
-    fontSize: 12,
-    color: T.textSecondary,
-    marginLeft: 10,
-    fontWeight: '500',
-  },
-
-  // ── Pricing ──
+  // ── Plans ──
   pricingSection: {
-    marginBottom: 24,
+    width: '100%',
   },
-  planToggle: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 16,
-    padding: 4,
-    marginBottom: 20,
+  pricingDivider: {
+    height: 1,
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  plansWrap: {
+    width: '100%',
+    gap: 12,
+    paddingVertical: 16,
+  },
+  popularPill: {
+    alignSelf: 'center',
+    backgroundColor: PILLAR_COLORS.eye + '22',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: PILLAR_COLORS.eye + '55',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginBottom: -4,
+  },
+  popularPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: PILLAR_COLORS.eye,
+  },
+  planBtnShell: {
+    width: '100%',
+    borderRadius: BUTTON.radius,
+    overflow: 'hidden',
   },
   planBtn: {
-    flex: 1,
-    flexDirection: 'row',
+    height: 60,
+    borderRadius: BUTTON.radius,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 8,
   },
-  planBtnActive: {
-    backgroundColor: T.purple,
+  planBtnOutline: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
-  planBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: T.textSecondary,
-  },
-  planBtnTextActive: {
-    color: T.textPrimary,
-  },
-  saveBadge: {
-    backgroundColor: T.success,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  saveBadgeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: 0.5,
-  },
-  priceDisplay: {
+  planTextWrap: {
     alignItems: 'center',
-    marginBottom: 8,
   },
-  price: {
-    fontSize: 38,
-    fontWeight: '800',
-    color: T.textPrimary,
-    letterSpacing: -1,
-  },
-  pricePeriod: {
-    fontSize: 14,
-    color: T.textSecondary,
-    marginTop: 4,
-  },
-  priceEquivalent: {
-    fontSize: 13,
-    color: T.textMuted,
-    marginTop: 6,
-  },
-  trialRow: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  trialText: {
-    fontSize: 14,
+  planLine1Primary: {
+    fontSize: 18,
     fontWeight: '600',
-    color: T.success,
+    color: '#03212C',
+  },
+  planLine2Primary: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#03212C',
+    opacity: 0.75,
+    marginTop: 1,
+  },
+  planLine1Secondary: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  planLine2Secondary: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 1,
   },
 
-  // ── CTA ──
-  bottomCTA: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    backgroundColor: T.bg,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.05)',
-  },
-  ctaButton: {
-    height: 60,
-    borderRadius: 18,
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  ctaGradient: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: T.purple,
-    borderRadius: 18,
-    gap: 8,
-  },
-  ctaLabel: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: T.textPrimary,
-    letterSpacing: 0.3,
-  },
-  ctaSublabel: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.65)',
-    fontWeight: '500',
-  },
+  // ── Restore + fine print ──
   restoreBtn: {
-    alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
+    marginTop: 20,
+    marginBottom: 24,
   },
   restoreText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: PILLAR_COLORS.mind,
+  },
+  finePrint: {
     fontSize: 13,
-    fontWeight: '600',
-    color: T.textMuted,
-  },
-
-  // ── Trust Badges ──
-  trustRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 24,
-    marginTop: 14,
-    paddingBottom: 4,
-  },
-  trustBadge: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  trustIcon: {
-    fontSize: 16,
-  },
-  trustLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: T.textMuted,
-  },
-
-  // ── Status ──
-  statusCard: {
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 20,
-  },
-  statusTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: T.textPrimary,
-  },
-  statusSub: {
-    fontSize: 14,
-    color: T.textSecondary,
-  },
-  doneButton: {
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: T.purple,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  doneText: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: T.textPrimary,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.5)',
+    textAlign: 'center',
+    lineHeight: 18,
   },
   errorText: {
-    fontSize: 14,
-    color: '#EF4444',
+    fontSize: 13,
+    color: STATUS_COLORS.error,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
 });

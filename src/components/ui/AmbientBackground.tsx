@@ -3,14 +3,41 @@ import Svg, {
   Defs,
   LinearGradient as SvgLinearGradient,
   Path,
+  RadialGradient,
+  Rect,
   Stop,
 } from 'react-native-svg';
 import { useGlobalFrame } from '@/hooks/useAnimationFrame';
-import { usePillarTheme } from '@/context/PillarContext';
+import { usePillarAccent } from '@/context/PillarContext';
 
 // ── Beam configuration ───────────────────────────────────────────────────────
 
 const BEAM_ANGLES = [0, 72, 144, 216, 288];
+
+/**
+ * Two soft, static radial glows — a purple wash near the top and a dimmer
+ * blue wash low on the screen. Gives the flat background depth and a
+ * recognizable identity without competing with content (very low opacity,
+ * never animates).
+ */
+function AmbientGlow({ accent }: { accent: string }) {
+  return (
+    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+      <Defs>
+        <RadialGradient id="glowTop" cx="18%" cy="6%" r="60%">
+          <Stop offset="0%" stopColor={accent} stopOpacity={0.22} />
+          <Stop offset="100%" stopColor={accent} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient id="glowBottom" cx="88%" cy="78%" r="42%">
+          <Stop offset="0%" stopColor="#2563EB" stopOpacity={0.14} />
+          <Stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect x="0" y="0" width="100%" height="100%" fill="url(#glowTop)" />
+      <Rect x="0" y="0" width="100%" height="100%" fill="url(#glowBottom)" />
+    </Svg>
+  );
+}
 
 function AmbientBeams({ frame, accent }: { frame: number; accent: string }) {
   const angle = (-frame * 0.06) % 360;
@@ -69,12 +96,13 @@ interface AmbientBackgroundProps {
  */
 export function AmbientBackground({ subtle = false }: AmbientBackgroundProps) {
   const frame = useGlobalFrame();
-  const { accent } = usePillarTheme();
+  const accent = usePillarAccent();
 
   const opacity = subtle ? 0.5 : 1;
 
   return (
     <View pointerEvents="none" style={{ ...StyleSheet.absoluteFill, opacity }}>
+      <AmbientGlow accent={accent} />
       <AmbientBeams frame={frame} accent={accent} />
     </View>
   );

@@ -3,7 +3,10 @@ import { DayPicker } from '@/components/sleep/DayPicker';
 import { RoutineSkeleton } from '@/components/sleep/Skeletons';
 import { TimePickerRow } from '@/components/sleep/TimePickerRow';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { GradientCTA } from '@/components/ui/GradientCTA';
+import { SectionLabel } from '@/components/ui/SectionLabel';
 import { colors } from '@/constants/colors';
+import { PILLAR_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { useAuth } from '@/context/AuthContext';
@@ -11,22 +14,13 @@ import { useSleepRecommendation } from '@/hooks/useSleepRecommendation';
 import { useSleepSchedule } from '@/hooks/useSleepSchedule';
 import { SleepSchedule } from '@/types/sleep.types';
 import { calculateSleepDurationHours } from '@/utils/formatTime';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-// The legacy `colors.accent.purple` token is actually blue (#1A8FFF); use the
-// real theme purple so this screen matches the rest of the app.
-const PURPLE = '#8B5CF6';
-const BLUE = '#3B82F6';
+// The Sleep tab's frozen accent — same indigo as the Tonight tab and its
+// segmented control, so Routine doesn't drift into its own purple identity.
+const INDIGO = PILLAR_COLORS.sleep;
 
 export function SleepRoutinePanel() {
   const { user, isGuestMode } = useAuth();
@@ -101,7 +95,7 @@ export function SleepRoutinePanel() {
         </View>
       </GlassCard>
 
-      <Text style={styles.sectionTitle}>Active days</Text>
+      <SectionLabel>ACTIVE DAYS</SectionLabel>
       <DayPicker selected={schedule.activeDays} onChange={activeDays => update({ activeDays })} />
 
       <GlassCard style={styles.reminderRow}>
@@ -119,7 +113,7 @@ export function SleepRoutinePanel() {
             styles.switchTrack,
             {
               justifyContent: schedule.reminderEnabled ? 'flex-end' : 'flex-start',
-              backgroundColor: schedule.reminderEnabled ? PURPLE : '#252542',
+              backgroundColor: schedule.reminderEnabled ? INDIGO : '#252542',
             },
           ]}
         >
@@ -127,49 +121,28 @@ export function SleepRoutinePanel() {
         </TouchableOpacity>
       </GlassCard>
 
-      <TouchableOpacity
-        onPress={handleSave}
-        disabled={saving}
-        activeOpacity={0.85}
-        style={styles.saveBtn}
-      >
-        <LinearGradient
-          colors={[PURPLE, BLUE]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.saveGradient}
-        >
-          {saving ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <Text style={styles.saveLabel}>Save routine</Text>
-          )}
-        </LinearGradient>
-      </TouchableOpacity>
+      <View style={styles.saveBtn}>
+        <GradientCTA label="Save routine" onPress={() => void handleSave()} loading={saving} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { paddingBottom: 120 },
+  root: { paddingBottom: 100 },
   loading: { ...typography.body, color: colors.text.secondary, textAlign: 'center', marginTop: spacing.xl },
   intro: { ...typography.body, color: colors.text.secondary, marginBottom: spacing.md, lineHeight: 20 },
   durationCard: { marginBottom: spacing.md, gap: spacing.sm },
   durationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   durationLabel: { ...typography.label, color: colors.text.secondary },
-  durationValue: { ...typography.headingSmall, color: PURPLE, fontWeight: '800' },
+  durationValue: { ...typography.headingSmall, color: INDIGO, fontWeight: '800' },
   barTrack: {
-    height: 10,
-    borderRadius: 5,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     overflow: 'hidden',
   },
-  barFill: { height: '100%', backgroundColor: PURPLE, borderRadius: 5 },
-  sectionTitle: {
-    ...typography.headingSmall,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
+  barFill: { height: '100%', backgroundColor: INDIGO, borderRadius: 3 },
   reminderRow: {
     marginTop: spacing.md,
     flexDirection: 'row',
@@ -194,16 +167,5 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     backgroundColor: '#FFFFFF',
   },
-  saveBtn: { marginTop: spacing.xl, marginBottom: spacing.lg, borderRadius: 16, overflow: 'hidden' },
-  saveGradient: {
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveLabel: {
-    ...typography.bodyLarge,
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
+  saveBtn: { marginTop: spacing.xl, marginBottom: spacing.lg },
 });

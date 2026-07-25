@@ -16,10 +16,8 @@ import { useGameSounds } from '@/hooks/useGameSounds';
 import { HeartIcon, BrokenHeartIcon } from '@/components/eye/games/DichopticIcons';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GradientCTA } from '@/components/ui/GradientCTA';
-import { PILLAR_THEME } from '@/constants/theme';
+import { FONTS, PILLAR_COLORS, STATUS_COLORS } from '@/constants/designSystem';
 import type { GameEndStats } from './GameOverScreen';
-
-const EYES = PILLAR_THEME.eyes;
 
 interface Props {
   running: boolean;
@@ -235,7 +233,7 @@ export function DichopticReaction({ running, colors, onGameEnd, onReplay }: Prop
       const fid = nextIdRef.current++;
       setFloats(prev => [...prev, {
         id: fid, x: target.x, y: target.y,
-        text: '✗', color: '#F44336',
+        text: '✗', color: STATUS_COLORS.error,
       }]);
       setTimeout(() => setFloats(prev => prev.filter(f => f.id !== fid)), 950);
 
@@ -438,12 +436,10 @@ export function DichopticReaction({ running, colors, onGameEnd, onReplay }: Prop
         <GradientCTA
           label={gameOver || sessionDone ? 'Play Again' : 'Start Game'}
           sublabel="Tap the matching color"
-          icon={<Ionicons name="play" size={16} color={EYES.buttonTextColor} />}
+          icon={<Ionicons name="play" size={16} color="#03212C" />}
           compact
           onPress={startSession}
-          colors={EYES.buttonGradient}
-          glowColor={EYES.buttonShadow}
-          textColor={EYES.buttonTextColor}
+          textColor="#03212C"
           letterSpacing={1}
           style={s.startCta}
         />
@@ -535,9 +531,7 @@ export function DichopticReaction({ running, colors, onGameEnd, onReplay }: Prop
         {paused && (
           <View style={s.pauseOverlay}>
             <Text style={s.pauseTitle}>Paused</Text>
-            <TouchableOpacity style={s.resumeBtn} onPress={resumeSession} activeOpacity={0.8}>
-              <Text style={s.resumeBtnText}>Resume</Text>
-            </TouchableOpacity>
+            <GradientCTA label="Resume" onPress={resumeSession} textColor="#03212C" compact />
             <TouchableOpacity style={s.endBtn} onPress={endGame} activeOpacity={0.8}>
               <Text style={s.endBtnText}>Quit Game</Text>
             </TouchableOpacity>
@@ -556,11 +550,11 @@ const s = StyleSheet.create({
   demoCard: {
     alignSelf: 'stretch',
     borderRadius: 16,
-    borderWidth: 1, borderColor: 'rgba(34,211,238,0.3)',
+    borderWidth: 1, borderColor: 'rgba(0,224,255,0.3)',
     padding: 18,
     gap: 12,
   },
-  demoTitle: { fontSize: 18, fontWeight: '800', color: '#fff', textAlign: 'center' },
+  demoTitle: { fontFamily: FONTS.heading, fontSize: 18, fontWeight: '800', color: '#fff', textAlign: 'center' },
   demoRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
   },
@@ -573,7 +567,7 @@ const s = StyleSheet.create({
   },
   demoChipText: { fontSize: 14, fontWeight: '800', color: '#fff' },
   demoLabel: { fontSize: 13, color: '#6ee7b7', fontWeight: '700' },
-  demoHint: { fontSize: 12, color: '#F44336', textAlign: 'center', fontWeight: '600' },
+  demoHint: { fontSize: 12, color: STATUS_COLORS.error, textAlign: 'center', fontWeight: '600' },
 
   diffRow: {
     flexDirection: 'row', gap: 8, alignSelf: 'stretch',
@@ -583,7 +577,7 @@ const s = StyleSheet.create({
     borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.1)',
     backgroundColor: 'rgba(255,255,255,0.045)',
   },
-  diffBtnActive: { borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,0.15)' },
+  diffBtnActive: { borderColor: PILLAR_COLORS.eye, backgroundColor: 'rgba(0,224,255,0.15)' },
   diffBtnLabel: { fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.6)' },
   diffBtnLabelActive: { color: '#fff' },
 
@@ -609,7 +603,7 @@ const s = StyleSheet.create({
   healthRow: { flexDirection: 'row', gap: 4, minWidth: 80 },
   scoreWrap: { alignItems: 'center', gap: 1 },
   scoreLabel: { fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: '800', letterSpacing: 1.5 },
-  scoreVal: { fontSize: 26, fontWeight: '900', color: '#ffffff', lineHeight: 30 },
+  scoreVal: { fontFamily: FONTS.heading, fontSize: 26, fontWeight: '900', color: '#ffffff', lineHeight: 30 },
   rightHud: { alignItems: 'flex-end', gap: 2, minWidth: 60 },
   diffBadge: {
     fontSize: 9, fontWeight: '800', color: '#FFD700',
@@ -640,7 +634,7 @@ const s = StyleSheet.create({
     width: ARENA_W, height: ARENA_H,
     backgroundColor: '#06121a',
     borderRadius: 22,
-    borderWidth: 1.5, borderColor: 'rgba(34,211,238,0.25)',
+    borderWidth: 1.5, borderColor: 'rgba(0,224,255,0.25)',
     overflow: 'hidden', position: 'relative',
   },
 
@@ -675,13 +669,11 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(3,8,11,0.93)',
     alignItems: 'center', justifyContent: 'center', gap: 8, zIndex: 10,
   },
-  pauseTitle:    { fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 1 },
-  resumeBtn:     { backgroundColor: '#22d3ee', borderRadius: 100, paddingHorizontal: 38, paddingVertical: 13 },
-  resumeBtnText: { fontSize: 15, fontWeight: '800', color: '#03212c' },
+  pauseTitle:    { fontFamily: FONTS.heading, fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 1 },
   endBtn: {
     borderWidth: 1.5, borderColor: 'rgba(244,67,54,0.45)',
     borderRadius: 100, paddingHorizontal: 28, paddingVertical: 10, marginTop: 4,
   },
-  endBtnText: { fontSize: 13, fontWeight: '700', color: '#F44336' },
+  endBtnText: { fontSize: 13, fontWeight: '700', color: STATUS_COLORS.error },
 
 });

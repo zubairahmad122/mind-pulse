@@ -1,6 +1,7 @@
 import { Crown } from 'lucide-react-native';
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { COLORS } from '@/constants/colors';
+import { PRO_GOLD } from '@/constants/designSystem';
 import { radius } from '@/constants/radius';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
@@ -27,7 +28,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: radius.pill,
-    backgroundColor: COLORS.gold,
+    backgroundColor: PRO_GOLD,
   },
   text: {
     ...typography.caption,

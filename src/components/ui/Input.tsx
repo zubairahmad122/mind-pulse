@@ -2,6 +2,10 @@ import { forwardRef, useCallback, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
+import { SURFACE } from '../../constants/designSystem';
+
+// Only used by Edit Profile — the app's generic brand purple, not a pillar color.
+const ACCENT = SURFACE.purple;
 
 type Props = TextInputProps & {
   label: string;
@@ -40,7 +44,7 @@ const Input = forwardRef<TextInput, Props>(function Input(
       <Text style={focused ? styles.labelFocused : styles.label}>{label}</Text>
       <View style={[styles.field, focused && styles.fieldFocused]}>
         {icon ? (
-          <Ionicons name={icon} size={18} color={focused ? COLORS.purpleLight : COLORS.textMuted} style={styles.leftIcon} />
+          <Ionicons name={icon} size={18} color={focused ? ACCENT : COLORS.textMuted} style={styles.leftIcon} />
         ) : null}
         <TextInput
           ref={setRefs}
@@ -62,7 +66,7 @@ const Input = forwardRef<TextInput, Props>(function Input(
             <Ionicons
               name={show ? 'eye-off' : 'eye'}
               size={18}
-              color={focused ? COLORS.purpleLight : COLORS.textMuted}
+              color={focused ? ACCENT : COLORS.textMuted}
             />
           </TouchableOpacity>
         ) : null}
@@ -77,35 +81,36 @@ const styles = StyleSheet.create({
   wrap: { gap: 8 },
   label: {
     color: COLORS.textMuted,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
   labelFocused: {
-    color: COLORS.purpleLight,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
+    color: ACCENT,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
+    height: 52,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
     paddingRight: 12,
   },
   fieldFocused: {
-    borderColor: COLORS.purple,
+    borderColor: ACCENT,
   },
   input: {
     flex: 1,
-    color: COLORS.text,
-    fontSize: 15,
-    paddingVertical: 16,
+    color: '#FFFFFF',
+    fontSize: 16,
+    paddingVertical: 14,
     paddingHorizontal: 16,
   },
   inputWithIcon: {

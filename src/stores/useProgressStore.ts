@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getMondayISO, todayISO } from '@/utils/dateUtils';
 
 /** Weekly session counts — resets every Monday. */
 interface WeeklySessions {
@@ -46,6 +47,8 @@ interface ProgressState {
   todayDate: string;
   /** Which features were completed today. */
   todaySessions: DailySessions;
+  /** YYYY-MM-DD the user last opened the app — a real, repeatable endowed-progress credit. */
+  checkedInDate: string | null;
 
   // Actions
   logEyeExercise: () => void;
@@ -58,24 +61,12 @@ interface ProgressState {
   setLastFeature: (id: FeatureId) => void;
   getWeeklySessions: () => WeeklySessions;
   hasCompletedAnySession: () => boolean;
-}
-
-/** Return the ISO date string of the most recent Monday (start of week). */
-function getMondayISO(d: Date = new Date()): string {
-  const date = new Date(d);
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-  date.setDate(diff);
-  date.setHours(0, 0, 0, 0);
-  return date.toISOString().split('T')[0];
+  /** Marks today as opened — idempotent per day. Not a wellness pillar, so it doesn't feed the streak. */
+  checkIn: () => void;
 }
 
 const EMPTY_WEEKLY: WeeklySessions = { eye: 0, eyeGames: 0, relax: 0, mind: 0, sleep: 0 };
 const EMPTY_DAILY: DailySessions = { eye: false, eyeGames: false, relax: false, mind: false, sleep: false };
-
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 /** Standalone helper — checks if we've crossed into a new week and resets counters. */
 function ensureWeeklyReset(state: ProgressState): Partial<ProgressState> {
@@ -106,6 +97,7 @@ export const useProgressStore = create<ProgressState>()(
       weeklyResetDate: null,
       todayDate: todayISO(),
       todaySessions: { ...EMPTY_DAILY },
+      checkedInDate: null,
 
       logEyeExercise: () =>
         set((s) => {
@@ -204,6 +196,13 @@ export const useProgressStore = create<ProgressState>()(
           s.sleepSessionsTracked > 0
         );
       },
+
+      checkIn: () =>
+        set((s) => {
+          const today = todayISO();
+          if (s.checkedInDate === today) return {};
+          return { checkedInDate: today };
+        }),
     }),
     {
       name: 'mindpulse-progress',

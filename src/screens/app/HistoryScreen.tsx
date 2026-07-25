@@ -6,6 +6,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { SleepSummaryCard, type SleepSummaryData, type SleepStageData } from '@/components/sleep/SleepSummaryCard';
 import { COLORS, HISTORY_CHART, qualityEmojiForRating } from '@/constants';
+import { GLASS_CARD, PILLAR_COLORS } from '@/constants/designSystem';
 import { useSleep } from '@/context/SleepContext';
 import { formatHistoryClock, formatHistorySessionDate } from '@/utils/historyDisplay';
 import { avgDuration, formatDuration } from '@/utils/sleepUtils';
@@ -19,23 +20,23 @@ export default function HistoryScreen() {
 
   if (loading) {
     return (
-      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
+      <ScreenShell scroll={false} safeBottom pillar="sleep" ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="Sleep History" showBack />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={COLORS.purple} size="large" />
+          <ActivityIndicator color={PILLAR_COLORS.sleep} size="large" />
         </View>
       </ScreenShell>
     );
   }
 
   return (
-    <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
+    <ScreenShell safeBottom pillar="sleep" ambient={<AmbientBackground subtle />}>
       <ScreenHeader title="Sleep History" showBack />
 
       {sessions.length === 0 ? (
         <View className="flex-1 items-center justify-center gap-4 pt-20">
           <View style={styles.emptyOrb}>
-            <Ionicons name="moon" size={46} color={COLORS.purple} />
+            <Ionicons name="moon" size={46} color={PILLAR_COLORS.sleep} />
           </View>
           <Text className="text-xl font-bold text-white mt-2">No sessions yet</Text>
           <Text className="text-[14px] text-app-muted text-center leading-6">
@@ -101,7 +102,7 @@ export default function HistoryScreen() {
                           styles.bar,
                           {
                             height: `${Math.max(pct * 100, 8)}%` as DimensionValue,
-                            backgroundColor: isGood ? COLORS.purple : COLORS.border,
+                            backgroundColor: isGood ? PILLAR_COLORS.sleep : COLORS.border,
                           },
                           isGood && styles.barGlow,
                         ]}
@@ -144,12 +145,8 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   emptyOrb: {
     width: 120, height: 120, borderRadius: 60,
-    backgroundColor: COLORS.card, borderWidth: 1.5, borderColor: COLORS.border,
+    backgroundColor: GLASS_CARD.bg, borderWidth: 1.5, borderColor: GLASS_CARD.border,
     alignItems: 'center', justifyContent: 'center',
-  },
-  summaryCard: {
-    backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
-    borderRadius: 22, padding: 20, marginBottom: 20,
   },
   summaryLabel: { color: COLORS.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 4, letterSpacing: 0.3 },
   summaryAvg:   { color: '#ffffff', fontSize: 32, fontWeight: '800', letterSpacing: -1 },
@@ -160,7 +157,7 @@ const styles = StyleSheet.create({
   avgBadgeText: { color: COLORS.textMuted, fontSize: 11, fontWeight: '600' },
   bar: { width: '100%', borderTopLeftRadius: 5, borderTopRightRadius: 5 },
   barGlow: {
-    shadowColor: COLORS.purple, shadowOffset: { width: 0, height: 0 },
+    shadowColor: PILLAR_COLORS.sleep, shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.45, shadowRadius: 5, elevation: 4,
   },
   barDate: { color: COLORS.textMuted, fontSize: 9, marginTop: 5, fontWeight: '500' },
@@ -168,13 +165,7 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted, fontSize: 11, fontWeight: '700',
     letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10,
   },
-  sessionCard: {
-    backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
-    borderRadius: 16, padding: 16,
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginBottom: 10,
-  },
   sessionDate:     { color: '#ffffff', fontSize: 15, fontWeight: '700' },
   sessionTime:     { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
-  sessionDuration: { color: COLORS.purpleLight, fontSize: 16, fontWeight: '800' },
+  sessionDuration: { color: PILLAR_COLORS.sleep, fontSize: 16, fontWeight: '800' },
 });

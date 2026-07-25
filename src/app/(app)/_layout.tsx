@@ -1,13 +1,24 @@
 import { useRouter , Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { COLORS } from '@/theme';
+import { BACKGROUND } from '@/constants/designSystem';
 import { AlarmOverlayProvider } from '@/context/AlarmOverlayContext';
 import { SleepProvider } from '@/context/SleepContext';
 import { EYE_BREAK_NOTIF_PREFIX } from '@/services/eyeBreakNotification';
 import { ROUTES } from '@/constants';
+import { useStreakSync } from '@/hooks/useStreakSync';
+import { useDailyCheckIn } from '@/hooks/useDailyCheckIn';
+import { useEveningReminderSync } from '@/hooks/useEveningReminderSync';
+import { useSurpriseBadgeSync } from '@/hooks/useSurpriseBadgeSync';
+import { useWellnessCloudSync } from '@/hooks/useWellnessCloudSync';
 
 export default function AppStackLayout() {
   const router = useRouter();
+
+  useStreakSync();
+  useDailyCheckIn();
+  useEveningReminderSync();
+  useSurpriseBadgeSync();
+  useWellnessCloudSync();
 
   useEffect(() => {
     let sub: { remove: () => void } | null = null;
@@ -31,7 +42,7 @@ export default function AppStackLayout() {
   return (
     <AlarmOverlayProvider>
       <SleepProvider>
-        <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: COLORS.bg } }} />
+        <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: BACKGROUND.base } }} />
       </SleepProvider>
     </AlarmOverlayProvider>
   );

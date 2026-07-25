@@ -43,3 +43,20 @@ export async function saveRecoverySession(
     // ignore — local copy already saved
   }
 }
+
+/**
+ * Count of recovery sessions completed today, from the local cache written
+ * by saveRecoverySession — shared by Mind Score and Achievements so neither
+ * duplicates this AsyncStorage read/parse.
+ */
+export async function loadRecoverySessionsToday(uid?: string): Promise<number> {
+  try {
+    const raw = await AsyncStorage.getItem(recoveryCacheKey(uid ?? 'guest'));
+    if (!raw) return 0;
+    const sessions: RecoverySessionData[] = JSON.parse(raw);
+    const todayKey = new Date().toLocaleDateString('sv');
+    return sessions.filter((s) => new Date(s.completedAt).toLocaleDateString('sv') === todayKey).length;
+  } catch {
+    return 0;
+  }
+}

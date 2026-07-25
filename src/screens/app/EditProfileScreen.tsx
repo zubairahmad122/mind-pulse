@@ -9,25 +9,32 @@ import {
   StyleSheet,
   Switch,
   Text,
+  View,
 } from 'react-native';
 import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import Input from '@/components/ui/Input';
-import { PrimaryButton } from '@/components/ui/PrimaryButton';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { colors } from '@/constants/colors';
+import { SURFACE } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { useAuth } from '@/context/AuthContext';
 
+// The app's generic brand purple, not a pillar color — Profile isn't pillar-scoped.
+const ACCENT = SURFACE.purple;
+
 export default function EditProfileScreen() {
   const { user } = useAuth();
-  const [name, setName] = useState(user?.displayName ?? '');
+  const initialName = user?.displayName ?? '';
+  const initialReminders = true;
+  const [name, setName] = useState(initialName);
   const [email] = useState(user?.email ?? '');
-  const [sleepGoal, setSleepGoal] = useState('8');
-  const [reminders, setReminders] = useState(true);
+  const [reminders, setReminders] = useState(initialReminders);
   const [loading, setLoading] = useState(false);
+  const hasChanges = name.trim() !== initialName.trim() || reminders !== initialReminders;
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -58,13 +65,11 @@ export default function EditProfileScreen() {
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <GlassCard style={styles.form}>
             <Input label="Name" value={name} onChangeText={setName} placeholder="Your name" />
-            <Input label="Email" value={email} onChangeText={() => {}} editable={false} />
-            <Input
-              label="Sleep goal (hours)"
-              value={sleepGoal}
-              onChangeText={setSleepGoal}
-              keyboardType="numeric"
-            />
+            {/* Read-only — changing the Auth email needs its own verification
+                flow; editing it here would silently desync from Firebase Auth. */}
+            <View style={styles.readOnlyField}>
+              <Input label="Email" value={email} onChangeText={() => {}} editable={false} />
+            </View>
           </GlassCard>
 
           <GlassCard style={styles.toggleRow}>
@@ -72,11 +77,16 @@ export default function EditProfileScreen() {
             <Switch
               value={reminders}
               onValueChange={setReminders}
-              trackColor={{ false: colors.text.tertiary, true: colors.accent.purple }}
+              trackColor={{ false: colors.text.tertiary, true: ACCENT }}
             />
           </GlassCard>
 
-          <PrimaryButton label="Save Changes" onPress={handleSave} loading={loading} />
+          <GradientCTA
+            label="Save Changes"
+            onPress={() => void handleSave()}
+            loading={loading}
+            disabled={!hasChanges}
+          />
         </ScrollView>
       </ScreenShell>
     </KeyboardAvoidingView>
@@ -86,6 +96,7 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   form: { gap: spacing.md, marginBottom: spacing.md },
+  readOnlyField: { opacity: 0.5 },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',

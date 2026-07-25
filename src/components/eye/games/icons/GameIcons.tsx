@@ -1,4 +1,5 @@
 import Svg, { Circle, Ellipse, Line, Path } from 'react-native-svg';
+import { PILLAR_COLORS } from '@/constants/designSystem';
 
 interface IconProps {
   size?: number;
@@ -69,7 +70,7 @@ export function CometTraceIcon({ size = 40, color = '#60a5fa' }: IconProps) {
 }
 
 // ─── 4th game — Spiral / Hypnotic ────────────────────────────────────────────
-export function SpiralIcon({ size = 40, color = '#22d3ee' }: IconProps) {
+export function SpiralIcon({ size = 40, color = PILLAR_COLORS.eye }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 40 40">
       {/* Outer glow ring */}
@@ -119,17 +120,20 @@ export const GAME_ICON_COLORS: Record<string, string> = {
   'saccade-sniper': '#e24b4a',
   'focus-sprint': '#6ee7b7',
   'comet-trace': '#60a5fa',
-  spiral: '#22d3ee',
-  'dichoptic-reaction': '#22d3ee',
+  spiral: PILLAR_COLORS.eye,
+  'dichoptic-reaction': PILLAR_COLORS.eye,
 };
 
 type EyeGameIconProps = {
   gameId: string;
   size?: number;
+  /** Overrides the per-game default color — pass this to keep every icon on
+   * a screen in the same accent family instead of each game's own hue. */
+  color?: string;
 };
 
-export function EyeGameIcon({ gameId, size = 36 }: EyeGameIconProps) {
-  const color = GAME_ICON_COLORS[gameId] ?? '#22d3ee';
+export function EyeGameIcon({ gameId, size = 36, color: colorOverride }: EyeGameIconProps) {
+  const color = colorOverride ?? GAME_ICON_COLORS[gameId] ?? PILLAR_COLORS.eye;
 
   switch (gameId) {
     case 'saccade-sniper':

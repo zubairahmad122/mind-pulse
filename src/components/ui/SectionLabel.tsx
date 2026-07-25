@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { spacing } from '@/constants/spacing';
+import { SPACING, TYPOGRAPHY } from '@/constants/designSystem';
 
 type Props = {
   children: ReactNode;
@@ -22,7 +22,7 @@ type Props = {
  */
 export function SectionLabel({ children, action, first = false, accent = '#60a5fa' }: Props) {
   return (
-    <View style={[styles.row, { marginTop: first ? spacing.xs : spacing.md }]}>
+    <View style={[styles.row, { marginTop: first ? 4 : SPACING.section }]}>
       <Text style={styles.label}>{children}</Text>
       <View style={styles.line} />
       {action && (
@@ -38,22 +38,23 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
+    gap: 8,
+    marginBottom: 10,
     marginLeft: 2,
   },
   label: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.8,
-    color: 'rgba(245,247,251,0.5)',
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+    fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
+    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+    textTransform: TYPOGRAPHY.sectionLabel.textTransform,
+    color: 'rgba(245,247,251,0.6)',
   },
   line: {
     flex: 1,
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.07)',
   },
-  actionWrap: { paddingLeft: spacing.xs },
+  actionWrap: { paddingLeft: 4 },
   action: {
     fontSize: 11,
     fontWeight: '700',

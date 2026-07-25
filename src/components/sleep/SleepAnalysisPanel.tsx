@@ -8,20 +8,25 @@ import { useSleep } from '@/context/SleepContext';
 import { useSleepSchedule } from '@/hooks/useSleepSchedule';
 import { useSleepScore } from '@/hooks/useSleepScore';
 import { AnalysisSkeleton } from '@/components/sleep/Skeletons';
+import { SectionLabel } from '@/components/ui/SectionLabel';
+import { FONTS, PILLAR_COLORS } from '@/constants/designSystem';
 import { formatDuration } from '@/utils/sleepUtils';
 import { SleepSummaryCard, type SleepSummaryData, type SleepStageData } from './SleepSummaryCard';
 import { estimateStages } from '@/utils/stageEstimator';
+
+// Same indigo as the rest of the Sleep tab (Tonight, Routine).
+const INDIGO = PILLAR_COLORS.sleep;
 
 // ── GlassPanel — flat glass card, matches the Home dashboard's language ─────
 
 function GlassPanel({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
   return (
     <View style={[{
-      borderRadius: 22, overflow: 'hidden',
-      borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+      borderRadius: 24, overflow: 'hidden',
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
     }, style]}>
       <BlurView intensity={32} tint="dark" style={StyleSheet.absoluteFill} />
-      <LinearGradient colors={['rgba(167,139,250,0.08)', 'rgba(10,14,28,0.5)']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['rgba(123,127,255,0.08)', 'rgba(10,14,28,0.5)']} style={StyleSheet.absoluteFill} />
       <LinearGradient
         colors={['rgba(255,255,255,0.07)', 'transparent']}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 40 }}
@@ -29,18 +34,6 @@ function GlassPanel({ children, style }: { children: React.ReactNode; style?: Vi
       />
       <View style={{ padding: 18 }}>{children}</View>
     </View>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <Text style={{
-      fontSize: 10, fontWeight: '600', letterSpacing: 2,
-      color: 'rgba(245,247,251,0.42)',
-      marginBottom: 11, marginLeft: 2,
-    }}>
-      {children}
-    </Text>
   );
 }
 
@@ -139,7 +132,7 @@ export function SleepAnalysisPanel({ onStartSession }: Props) {
       <GlassPanel style={{ paddingVertical: 14 }}>
         <View style={{ alignItems: 'center' }}>
           <View style={styles.emptyIcon}>
-            <MoonStar size={28} color="#a78bfa" />
+            <MoonStar size={28} color={INDIGO} />
           </View>
           <Text style={styles.emptyTitle}>No sleep tracked yet</Text>
           <Text style={styles.emptyDesc}>
@@ -148,16 +141,9 @@ export function SleepAnalysisPanel({ onStartSession }: Props) {
           <TouchableOpacity
             onPress={onStartSession}
             activeOpacity={0.85}
-            style={styles.emptyBtnWrap}
+            style={styles.emptyBtn}
           >
-            <LinearGradient
-              colors={['#8B5CF6', '#3B82F6']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.emptyBtn}
-            >
-              <Text style={styles.emptyBtnText}>Go to Tonight</Text>
-            </LinearGradient>
+            <Text style={styles.emptyBtnText}>Go to Tonight</Text>
           </TouchableOpacity>
         </View>
       </GlassPanel>
@@ -178,18 +164,18 @@ export function SleepAnalysisPanel({ onStartSession }: Props) {
 
       {/* Trends — only once there's enough history to be meaningful */}
       <View>
-        <SectionLabel>SLEEP TRENDS</SectionLabel>
+        <SectionLabel first>SLEEP TRENDS</SectionLabel>
         {daysWithData >= 3 ? (
           <GlassPanel>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
               <View>
-                <Text style={{ fontFamily: 'SpaceGrotesk_700Bold', fontSize: 16, color: '#f6f8fc' }}>
+                <Text style={{ fontFamily: FONTS.heading, fontSize: 16, color: '#f6f8fc' }}>
                   {formatDuration(avg7Min)}
                 </Text>
                 <Text style={{ fontSize: 10.5, color: 'rgba(245,247,251,0.5)', marginTop: 2 }}>7-day avg</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontFamily: 'SpaceGrotesk_700Bold', fontSize: 16, color: '#f6f8fc' }}>
+                <Text style={{ fontFamily: FONTS.heading, fontSize: 16, color: '#f6f8fc' }}>
                   {avg30Min > 0 ? formatDuration(avg30Min) : formatDuration(avg7Min)}
                 </Text>
                 <Text style={{ fontSize: 10.5, color: 'rgba(245,247,251,0.5)', marginTop: 2 }}>30-day avg</Text>
@@ -201,7 +187,7 @@ export function SleepAnalysisPanel({ onStartSession }: Props) {
                   key={i}
                   style={{
                     width: 22, height: Math.max(4, (min / max7) * 56),
-                    backgroundColor: '#a78bfa', borderRadius: 5,
+                    backgroundColor: INDIGO, borderRadius: 5,
                     opacity: min > 0 ? 0.9 : 0.15,
                   }}
                 />
@@ -225,15 +211,15 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(167,139,250,0.14)',
+    backgroundColor: 'rgba(123,127,255,0.14)',
     borderWidth: 1,
-    borderColor: 'rgba(167,139,250,0.3)',
+    borderColor: 'rgba(123,127,255,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
   emptyTitle: {
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: FONTS.heading,
     fontSize: 18,
     color: '#f6f8fc',
     marginBottom: 6,
@@ -245,17 +231,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 12,
   },
-  emptyBtnWrap: {
-    borderRadius: 14,
-    overflow: 'hidden',
-    marginTop: 18,
-  },
+  // Secondary action, not the primary CTA — outline + glass fill, no gradient.
   emptyBtn: {
     height: 48,
     paddingHorizontal: 28,
-    borderRadius: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 18,
   },
   emptyBtnText: {
     fontSize: 14,

@@ -144,15 +144,14 @@ export function usePersistedSleepTracker({ uid, defaultPreset }: Options) {
   }, [tracking, smartAlarmEnabled, wakeAt, alarmPastDue]);
 
   const startSleep = useCallback(
-    async (minutes: number, label: string, presetId: string) => {
+    async (wake: Date, label: string, presetId: string) => {
       if (busy) return false;
-      if (minutes < 1) {
-        Alert.alert('Invalid duration', 'Choose a sleep or nap duration.');
+      if (wake.getTime() <= Date.now()) {
+        Alert.alert('Invalid wake time', 'Choose a wake time in the future.');
         return false;
       }
 
       setBusy(true);
-      const wake = new Date(Date.now() + minutes * 60 * 1000);
       const start = new Date();
       const preset = getPresetById(presetId) ?? selectedPreset;
 

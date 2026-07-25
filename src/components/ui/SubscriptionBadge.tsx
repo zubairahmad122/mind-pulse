@@ -2,11 +2,13 @@ import { Crown } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, type ViewStyle } from 'react-native';
 import { COLORS, ROUTES } from '@/constants';
-import { colors } from '@/constants/colors';
-import { radius } from '@/constants/radius';
+import { PRO_GOLD, SURFACE } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { useSubscription } from '@/context/SubscriptionContext';
+
+// The app's generic brand purple (Profile module standard), not a pillar color.
+const ACCENT = SURFACE.purple;
 
 type Props = {
   style?: ViewStyle;
@@ -25,7 +27,7 @@ export function SubscriptionBadge({ style }: Props) {
       onPress={() => router.push(ROUTES.appPremium as never)}
       activeOpacity={0.8}
     >
-      <Crown size={12} color={isPremium ? COLORS.bg : colors.accent.purple} />
+      <Crown size={14} color={isPremium ? COLORS.bg : ACCENT} />
       <Text style={[styles.text, isPremium ? styles.proText : styles.freeText]}>
         {isPremium ? 'PRO' : 'FREE'}
       </Text>
@@ -40,15 +42,16 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
-    borderRadius: radius.pill,
   },
   pro: {
-    backgroundColor: COLORS.gold,
+    backgroundColor: PRO_GOLD,
+    borderRadius: 16,
   },
   free: {
-    backgroundColor: colors.accent.purpleLight,
+    backgroundColor: ACCENT + '1F',
     borderWidth: 1,
-    borderColor: colors.accent.purpleBorder,
+    borderColor: ACCENT + '59',
+    borderRadius: 16,
   },
   text: {
     ...typography.caption,
@@ -59,6 +62,7 @@ const styles = StyleSheet.create({
     color: COLORS.bg,
   },
   freeText: {
-    color: colors.accent.purple,
+    color: ACCENT,
+    fontWeight: '600',
   },
 });

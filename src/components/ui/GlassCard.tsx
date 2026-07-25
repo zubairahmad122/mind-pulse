@@ -1,5 +1,4 @@
-import { GLASS_CARD } from "@/constants/theme";
-import { usePillarTheme } from "@/context/PillarContext";
+import { GLASS_CARD, RADIUS, SHADOWS, SURFACE_TINT } from "@/constants/designSystem";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
@@ -9,14 +8,16 @@ interface GlassCardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   /**
-   * Optional card tint gradient — defaults to the app's default (mind-blue tint).
-   * Example: pass `['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']` for light-mode cards.
+   * Optional fill override — defaults to the frozen flat glass fill
+   * (`SURFACE_TINT.card`). Every "normal" card uses the same fill (spec:
+   * "No different card styles") — the one legitimate exception is the Hero
+   * card, which should pass `tint={SURFACE_TINT.hero}`.
    */
-  tint?: readonly [string, string];
+  tint?: readonly [string, string, ...string[]];
   /** Skip padding — useful when the children manage their own padding. */
   noPadding?: boolean;
   /**
-   * Lightweight variant: renders border + gradient only, no BlurView.
+   * Lightweight variant: renders border + fill only, no BlurView.
    * Use for list items (e.g. history session cards) where blur on every row
    * would hurt scroll performance.
    */
@@ -24,12 +25,10 @@ interface GlassCardProps {
 }
 
 /**
- * Premium glassmorphism card.
- *
- * Clean, modern glass: a full subtle border all the way around, a soft uniform
- * tint gradient fill, an optional frosted blur, and a gentle ambient glow — no
- * harsh top-only border line, no bright highlight edge, and no heavy inner
- * shadows (the old look read as a muddy double-layer card on the dark bg).
+ * The single canonical glass card — flat rgba(255,255,255,0.05) fill,
+ * rgba(255,255,255,0.08) border, a soft top highlight, and the frozen card
+ * shadow. Every card in the app should be built from this (or `HeroCard`
+ * for the one screen-level hero surface), never a one-off `StyleSheet`.
  *
  * Use `simple` for list items to skip the blur layer (better scroll perf).
  */
@@ -58,7 +57,15 @@ function splitCardStyle(style: StyleProp<ViewStyle>): {
   const outer: ViewStyle = {};
   const inner: ViewStyle = {};
   for (const key of Object.keys(flat) as (keyof ViewStyle)[]) {
-    if ((CHILD_LAYOUT_KEYS as readonly string[]).includes(key)) {
+    // `flex` sizes the card's own box (outer, against its parent) AND must
+    // also propagate to the inner content wrapper — otherwise a `flex: 1`
+    // card whose content is a `ScrollView` collapses to zero height, because
+    // the inner wrapper (which the ScrollView actually sits inside) never
+    // gets a bounded size to flex within.
+    if (key === 'flex') {
+      outer.flex = flat.flex;
+      inner.flex = flat.flex;
+    } else if ((CHILD_LAYOUT_KEYS as readonly string[]).includes(key)) {
       (inner as Record<string, unknown>)[key] = flat[key];
     } else {
       (outer as Record<string, unknown>)[key] = flat[key];
@@ -74,8 +81,7 @@ export function GlassCard({
   noPadding,
   simple,
 }: GlassCardProps) {
-  const pillar = usePillarTheme();
-  const colors = tint ?? pillar.cardTint;
+  const fill = tint ?? SURFACE_TINT.card;
   const { outer, inner } = splitCardStyle(style);
   return (
     <View style={[baseStyles.outer, outer]}>
@@ -87,27 +93,17 @@ export function GlassCard({
         />
       )}
       <LinearGradient
-        colors={colors}
+        colors={fill}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {/* Soft top inner highlight — a gentle light catch across the top edge
-          (subtle wash, NOT the old harsh 1.5px line). Gives the glass depth. */}
+      {/* Top highlight — the spec's single subtle light catch across the top edge. */}
       <LinearGradient
-        colors={["rgba(255,255,255,0.08)", "transparent"]}
+        colors={[GLASS_CARD.topHighlight, "transparent"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={baseStyles.topSheen}
-        pointerEvents="none"
-      />
-      {/* Soft bottom shade — grounds the glass with a faint inner shadow so the
-          card reads as raised, not flat. */}
-      <LinearGradient
-        colors={["transparent", "rgba(0,0,0,0.22)"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={baseStyles.bottomShade}
         pointerEvents="none"
       />
       <View style={[noPadding ? undefined : baseStyles.padding, inner]}>
@@ -119,17 +115,11 @@ export function GlassCard({
 
 const baseStyles = StyleSheet.create({
   outer: {
-    // Softer, more generous rounding for the premium "pill card" look.
-    borderRadius: 24,
+    borderRadius: RADIUS.card,
     overflow: "hidden",
-    // Clean full border all around — soft, even, no top-only edge.
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    // Gentle ambient glow for depth without the muddy inner-shadow look.
-    shadowColor: "rgba(124, 58, 237, 0.18)",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
+    borderColor: GLASS_CARD.border,
+    ...SHADOWS.card,
   },
   topSheen: {
     position: "absolute",
@@ -137,13 +127,6 @@ const baseStyles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 70,
-  },
-  bottomShade: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 48,
   },
   padding: {
     padding: 18,

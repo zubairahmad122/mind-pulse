@@ -1,8 +1,9 @@
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 import { COLORS } from '@/constants/colors';
+import { FONTS, GLASS_CARD, RADIUS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
-import { PrimaryButton } from './PrimaryButton';
+import { GradientCTA } from './GradientCTA';
 
 type Props = {
   visible: boolean;
@@ -40,7 +41,7 @@ export function SoftPaywallModal({
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
 
-          <PrimaryButton label={ctaLabel} onPress={onUpgrade} style={styles.upgradeBtn} />
+          <GradientCTA label={ctaLabel} onPress={onUpgrade} style={styles.upgradeBtn} />
 
           <TouchableOpacity onPress={onDismiss} activeOpacity={0.7}>
             <Text style={styles.dismissText}>Maybe later</Text>
@@ -59,8 +60,12 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: COLORS.surface,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: GLASS_CARD.border,
+    borderTopLeftRadius: RADIUS.card,
+    borderTopRightRadius: RADIUS.card,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xxl,
@@ -78,6 +83,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   title: {
+    fontFamily: FONTS.heading,
     color: '#fff',
     fontSize: 22,
     fontWeight: '800',

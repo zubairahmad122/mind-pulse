@@ -4,11 +4,13 @@ import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { OutlineButton } from '@/components/ui/OutlineButton';
-import { PrimaryButton } from '@/components/ui/PrimaryButton';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { PaywallGate } from '@/components/paywall/PaywallGate';
 import { colors } from '@/constants/colors';
+import { PILLAR_COLORS } from '@/constants/designSystem';
+import { ENTITLEMENTS } from '@/constants/entitlements';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import type { AudioTrack } from '@/types/audio.types';
@@ -21,6 +23,9 @@ type Props = {
 };
 
 export default function AudioPlayerContent({ track }: Props) {
+  const { isPremium } = useSubscription();
+  const locked = !isPremium && !!track.featureId && ENTITLEMENTS[track.featureId] === 'pro';
+
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sleepTimerOn, setSleepTimerOn] = useState(false);
 
@@ -76,7 +81,7 @@ export default function AudioPlayerContent({ track }: Props) {
     <View style={styles.center}>
       <GlassCard style={styles.art}>
         {isBuffering && !isPlaying ? (
-          <ActivityIndicator color={colors.accent.purple} size="large" />
+          <ActivityIndicator color={PILLAR_COLORS.mind} size="large" />
         ) : (
           <Text style={styles.artEmoji}>🎧</Text>
         )}
@@ -90,27 +95,36 @@ export default function AudioPlayerContent({ track }: Props) {
         <View style={[styles.progressFill, { width: `${progress}%` }]} />
       </View>
       <View style={styles.controls}>
-        <PrimaryButton
+        <GradientCTA
           label={isPlaying ? 'Pause' : 'Play'}
           onPress={togglePlay}
           style={styles.playBtn}
         />
-        <OutlineButton
+        <GradientCTA
           label={sleepTimerOn ? 'Cancel sleep timer' : 'Sleep timer · 15 min'}
           onPress={toggleSleepTimer}
+          variant="secondary"
         />
       </View>
     </View>
   );
 
+  // Locked tracks get the clean, upfront lock card — not the full player
+  // (with real-looking Play / sleep-timer buttons) rendered inert underneath
+  // a small corner badge, which reads as broken rather than locked.
+  if (locked) {
+    return (
+      <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
+        <ScreenHeader title={track.title} showBack />
+        <PaywallGate featureId={track.featureId!}>{null}</PaywallGate>
+      </ScreenShell>
+    );
+  }
+
   return (
     <ScreenShell scroll={false} safeBottom ambient={<AmbientBackground subtle />}>
       <ScreenHeader title={track.title} showBack />
-      {track.featureId ? (
-        <PaywallGate featureId={track.featureId}>{playerContent}</PaywallGate>
-      ) : (
-        playerContent
-      )}
+      {playerContent}
     </ScreenShell>
   );
 }
@@ -136,10 +150,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.accent.purpleLight,
+    backgroundColor: PILLAR_COLORS.mind + '26',
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: colors.accent.purple },
+  progressFill: { height: '100%', backgroundColor: PILLAR_COLORS.mind },
   controls: { width: '100%', gap: spacing.md, marginTop: spacing.lg },
   playBtn: { marginBottom: spacing.sm },
 });

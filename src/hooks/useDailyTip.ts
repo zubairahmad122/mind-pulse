@@ -18,7 +18,7 @@ const FALLBACK_TIPS = [
   'A consistent wake time matters more than a consistent bedtime for regulating your sleep cycle.',
   'Journaling for just 2 minutes can help you process emotions you didn\'t even notice.',
   'Natural morning light within 30 minutes of waking helps set your circadian rhythm.',
-  'Your eyes need a 15-second break every 10 minutes of screen time to reduce strain.',
+  'Try the 20-20-20 habit: every 20 minutes, look about 20 feet away for 20 seconds.',
   'Hydration affects your mood more than you think — aim for a glass of water every 2 hours.',
 ];
 

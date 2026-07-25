@@ -1,13 +1,15 @@
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { createContext, useContext } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MAIN_APP_TABS } from '@/constants';
+import { BOTTOM_NAV, ICON_SIZES, PILLAR_COLORS } from '@/constants/designSystem';
 
 /** Approximate height of the floating glass bar's content (excludes safe-area inset). */
-export const FLOATING_TAB_BAR_HEIGHT = 74;
+export const FLOATING_TAB_BAR_HEIGHT = BOTTOM_NAV.height;
 
 /**
  * The vertical space a tab screen should reserve at the bottom so its scroll
@@ -18,8 +20,9 @@ const TabBarSpaceContext = createContext(0);
 export const TabBarSpaceProvider = TabBarSpaceContext.Provider;
 export const useTabBarSpace = () => useContext(TabBarSpaceContext);
 
-const ACTIVE_COLOR = '#FFFFFF';
-const INACTIVE_COLOR = '#6B7280';
+// Global chrome, not per-pillar — the tab bar always uses the Home accent.
+const ACTIVE_COLOR = PILLAR_COLORS.mind;
+const INACTIVE_COLOR = 'rgba(255,255,255,0.7)';
 
 /**
  * Minimal structural type for the props expo-router's Tabs passes to `tabBar`.
@@ -63,7 +66,7 @@ export function GlassTabBar({ state, navigation }: GlassTabBarProps) {
     <View pointerEvents="box-none" style={styles.wrap}>
       <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) + 8 }]}>
         <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(15,15,26,0.95)' }} />
+        <View style={{ position: 'absolute', inset: 0, backgroundColor: BOTTOM_NAV.bg }} />
 
         {items.map(({ tab, routeIndex, route }) => {
           const isFocused = state.index === routeIndex;
@@ -92,9 +95,16 @@ export function GlassTabBar({ state, navigation }: GlassTabBarProps) {
               style={styles.item}
             >
               <View style={styles.iconWrap}>
-                {isFocused && <View style={styles.activeCircle} />}
+                {isFocused && (
+                  <LinearGradient
+                    colors={[ACTIVE_COLOR + '52', ACTIVE_COLOR + '1A']}
+                    start={{ x: 0.2, y: 0 }}
+                    end={{ x: 0.8, y: 1 }}
+                    style={[styles.activeCircle, { shadowColor: ACTIVE_COLOR }]}
+                  />
+                )}
                 <Icon
-                  size={22}
+                  size={ICON_SIZES.nav}
                   color={isFocused ? ACTIVE_COLOR : INACTIVE_COLOR}
                   strokeWidth={isFocused ? 2.2 : 1.8}
                 />
@@ -132,8 +142,8 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingHorizontal: 10,
     // Full-width bar — rounded on the top corners only.
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: BOTTOM_NAV.radius,
+    borderTopRightRadius: BOTTOM_NAV.radius,
     overflow: 'hidden',
     borderTopWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
@@ -143,13 +153,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.45,
     shadowRadius: 22,
     elevation: 16,
-  },
-  sheen: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 40,
   },
   item: {
     flex: 1,
@@ -167,10 +170,12 @@ const styles = StyleSheet.create({
   },
   activeCircle: {
     position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    width: 46,
+    height: 32,
+    borderRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.51,
+    shadowRadius: 9,
   },
   label: {
     fontSize: 10,

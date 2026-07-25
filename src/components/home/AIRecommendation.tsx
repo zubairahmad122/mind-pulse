@@ -11,8 +11,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { colors } from '@/constants/colors';
+import { PILLAR_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+
+// Same indigo accent + icon-container language as the Sleep tab's AI Insight
+// card, so the two "AI" surfaces in the app read as one design language.
+const INDIGO = PILLAR_COLORS.sleep;
 
 type Props = {
   message: string;
@@ -81,10 +86,6 @@ function SkeletonLine({ width, height = 14 }: { width: number | string; height?:
 function Shimmer() {
   return (
     <View style={styles.shimmerWrap}>
-      <View style={styles.shimmerBadge}>
-        <SkeletonLine width={16} height={16} />
-        <SkeletonLine width={120} height={12} />
-      </View>
       <SkeletonLine width="100%" height={14} />
       <SkeletonLine width="85%" height={14} />
     </View>
@@ -96,37 +97,52 @@ function Shimmer() {
 export function AIRecommendation({ message, loading }: Props) {
   return (
     <GlassCard style={styles.card}>
-      <View style={styles.badgeRow}>
-        <Sparkles size={14} color="#8B5CF6" strokeWidth={2} />
-        <Text style={styles.badge}>
-          {loading ? 'Generating your recommendation…' : 'AI Recommendation'}
-        </Text>
-        {loading && <PulsingDot />}
+      <View style={styles.row}>
+        <View style={styles.iconWrap}>
+          <Sparkles size={16} color={INDIGO} strokeWidth={2} />
+        </View>
+        <View style={styles.content}>
+          <View style={styles.badgeRow}>
+            <Text style={styles.badge}>
+              {loading ? 'GENERATING…' : 'AI RECOMMENDATION'}
+            </Text>
+            {loading && <PulsingDot />}
+          </View>
+          {loading ? (
+            <Shimmer />
+          ) : (
+            <Text style={styles.body} numberOfLines={2}>
+              {message}
+            </Text>
+          )}
+        </View>
       </View>
-      {loading ? (
-        <Shimmer />
-      ) : (
-        <Text style={styles.body} numberOfLines={2}>
-          {message}
-        </Text>
-      )}
     </GlassCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { marginBottom: spacing.md, gap: spacing.sm },
+  card: { marginBottom: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: INDIGO + '26',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: { flex: 1, gap: 6 },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  badge: { ...typography.label, color: '#8B5CF6' },
+  badge: { fontSize: 13, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: INDIGO },
   body: { ...typography.bodyLarge, color: colors.text.secondary, lineHeight: 22 },
   // Shimmer
   shimmerWrap: { gap: 8 },
-  shimmerBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 },
   pulsingDot: {
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: INDIGO,
     marginLeft: 'auto',
   },
 });

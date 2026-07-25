@@ -72,7 +72,7 @@ function shapeTriangle(t: number) {
 
 const SHAPES: ShapeDef[] = [
   { name: 'Circle',   color: '#4FC3F7', path: shapeCircle },
-  { name: 'Square',   color: '#22d3ee', path: shapeSquare },
+  { name: 'Square',   color: '#00E0FF', path: shapeSquare },
   { name: 'Triangle', color: '#6ee7b7', path: shapeTriangle },
 ];
 
@@ -222,7 +222,7 @@ export function CircularOrbitGuide({ active, singleShape }: Props) {
         <Defs>
           <RadialGradient id="cmNebula" cx="130" cy="130" r="100">
             <Stop offset="0%" stopColor={currentShape.color} stopOpacity="0.20" />
-            <Stop offset="60%" stopColor="#22d3ee" stopOpacity="0.06" />
+            <Stop offset="60%" stopColor="#00E0FF" stopOpacity="0.06" />
             <Stop offset="100%" stopColor="#0A0E1A" stopOpacity="0" />
           </RadialGradient>
         </Defs>
@@ -235,7 +235,7 @@ export function CircularOrbitGuide({ active, singleShape }: Props) {
         ))}
 
         <Circle cx={CENTER} cy={CENTER} r="3" fill="rgba(255,255,255,0.3)" />
-        <Circle cx={CENTER} cy={CENTER} r="18" stroke="rgba(34,211,238,0.14)" strokeWidth="1" fill="none" />
+        <Circle cx={CENTER} cy={CENTER} r="18" stroke="rgba(0,224,255,0.14)" strokeWidth="1" fill="none" />
 
         <G transform={`translate(${CENTER}, ${CENTER})`}>
           <Path d="M 0,-112 L 0,112" stroke="rgba(255,255,255,0.07)" strokeWidth="0.5" />

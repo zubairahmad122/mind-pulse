@@ -146,12 +146,12 @@ export function pulseScoreTheme(score: number): ScoreTheme {
 }
 
 // ──────────────────────────────────────────────
-// Eye Score (Phase 1 — no device screen-time permission required)
+// Eye Comfort & Habits Score (Phase 1 — no device screen-time permission required)
 //
 // Categories (weights sum to 100):
 //   Eye Breaks Taken    35%  — breaks logged today vs. daily target
 //   Eye Recovery        35%  — Eye Reset / CVS protocol sessions completed today
-//   Eye Training        15%  — eye training game played today
+//   Visual Activity     15%  — optional visual game played today
 //   Break Reminders     15%  — break-enforcer habit toggle
 // ──────────────────────────────────────────────
 
@@ -194,8 +194,8 @@ export function calculateEyeScore({
     ),
     item(
       'training',
-      'Eye Training',
-      gamePlayedToday ? 'Played an eye training game today' : 'No eye training game played today',
+      'Visual Activity',
+      gamePlayedToday ? 'Played a visual activity today' : 'No visual activity played today',
       trainingSub,
       15,
     ),

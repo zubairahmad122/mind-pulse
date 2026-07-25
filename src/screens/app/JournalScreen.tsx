@@ -15,7 +15,7 @@ import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PaywallGate } from '@/components/paywall/PaywallGate';
-import { PrimaryButton } from '@/components/ui/PrimaryButton';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
@@ -143,7 +143,7 @@ export default function JournalScreen() {
           </GlassCard>
         )}
 
-        <PrimaryButton label="Save Entry" onPress={handleSave} loading={saving} />
+        <GradientCTA label="Save Entry" onPress={() => void handleSave()} loading={saving} />
 
         <Text style={[styles.sectionTitle, styles.pastTitle]}>Past entries</Text>
         {loading ? (

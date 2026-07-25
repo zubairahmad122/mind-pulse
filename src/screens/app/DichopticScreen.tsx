@@ -7,7 +7,7 @@ import { ScreenShell } from '@/components/layout/ScreenShell';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GradientCTA } from '@/components/ui/GradientCTA';
-import { PILLAR_THEME } from '@/constants/theme';
+import { PILLAR_COLORS } from '@/constants/designSystem';
 import { DichopticReaction } from '@/components/eye/games/DichopticReaction';
 import {
   type DichopticColors,
@@ -26,7 +26,10 @@ import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { PaywallGate } from '@/components/paywall/PaywallGate';
 
-const EYES = PILLAR_THEME.eyes;
+// One accent for the whole Eyes feature — matches the Eye tab (was
+// PILLAR_THEME.eyes.accent, a different teal-cyan from the separate
+// onboarding theme file; this screen is core app, not onboarding).
+const EYE_COLOR = PILLAR_COLORS.eye;
 
 // ─── Color presets ────────────────────────────────────────────────────────────
 const LEFT_PRESETS = ['#FF3366', '#FF0044', '#FF5555', '#CC0044', '#FF2266'];
@@ -183,7 +186,7 @@ export default function DichopticScreen() {
         onPress={() => setShowCalHelp(!showCalHelp)}
         activeOpacity={0.7}
       >
-        <Ionicons name={showCalHelp ? 'eye' : 'eye-outline'} size={16} color={EYES.accent} />
+        <Ionicons name={showCalHelp ? 'eye' : 'eye-outline'} size={16} color={EYE_COLOR} />
         <Text style={cs.helpToggleText}>
           {showCalHelp ? 'Hide tips' : 'How to calibrate?'}
         </Text>
@@ -223,19 +226,17 @@ export default function DichopticScreen() {
 
       {/* Save + Play */}
       <TouchableOpacity style={cs.saveBtn} onPress={handleSave} activeOpacity={0.85}>
-        <Ionicons name="checkmark-circle" size={16} color={EYES.accent} />
+        <Ionicons name="checkmark-circle" size={16} color={EYE_COLOR} />
         <Text style={cs.saveBtnText}>Save Colors</Text>
       </TouchableOpacity>
 
       <GradientCTA
         label="Play Game"
         sublabel="Tap the matching color"
-        icon={<Ionicons name="play" size={16} color={EYES.buttonTextColor} />}
+        icon={<Ionicons name="play" size={16} color="#03212C" />}
         compact
         onPress={() => { setScreen('game'); setRunning(true); }}
-        colors={EYES.buttonGradient}
-        glowColor={EYES.buttonShadow}
-        textColor={EYES.buttonTextColor}
+        textColor="#03212C"
         letterSpacing={1}
         style={cs.playCta}
       />
@@ -258,11 +259,11 @@ const cs = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     alignSelf: 'flex-start', marginBottom: spacing.sm,
   },
-  helpToggleText: { fontSize: 12, fontWeight: '700', color: EYES.accent },
+  helpToggleText: { fontSize: 12, fontWeight: '700', color: EYE_COLOR },
   helpCard: {
     backgroundColor: colors.background.card,
     borderRadius: 12,
-    borderWidth: 0.5, borderColor: 'rgba(34,211,238,0.3)',
+    borderWidth: 0.5, borderColor: 'rgba(0,224,255,0.3)',
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -308,13 +309,13 @@ const cs = StyleSheet.create({
   /* Buttons */
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
-    backgroundColor: 'rgba(34,211,238,0.12)',
-    borderWidth: 1, borderColor: 'rgba(34,211,238,0.3)',
+    backgroundColor: 'rgba(0,224,255,0.12)',
+    borderWidth: 1, borderColor: 'rgba(0,224,255,0.3)',
     borderRadius: 100,
     paddingVertical: 14,
     marginBottom: spacing.sm,
   },
-  saveBtnText: { fontSize: 14, fontWeight: '700', color: EYES.accent },
+  saveBtnText: { fontSize: 14, fontWeight: '700', color: EYE_COLOR },
 
   playCta: { marginBottom: spacing.sm },
 

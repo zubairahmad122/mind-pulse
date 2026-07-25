@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
 import { getFirestore, collection, doc, getDocs, addDoc, updateDoc, query, orderBy, serverTimestamp } from '@react-native-firebase/firestore';
-
-const db = getFirestore();
 import { getJournalInsight } from '@/services/gemini';
 import { getCachedInsight, setCachedInsight } from '@/services/journalInsightCache';
 import { JournalEntry, Mood, StressTrigger } from '@/types/journal.types';
+
+const db = getFirestore();
 
 const STORAGE_PREFIX = '@mindpulse/journal';
 

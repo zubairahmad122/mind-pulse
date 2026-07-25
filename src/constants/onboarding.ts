@@ -10,7 +10,7 @@ export const ONBOARDING_SLIDES: OnboardingSlide[] = [
   {
     icon: 'eyes',
     title: 'Your Eyes Blink\n66% Less at Screens',
-    desc: 'Digital eye strain affects millions. Our guided exercises protect your vision in just 2 minutes a day.',
+    desc: 'Build healthier screen habits with guided breaks, blinking, and comfortable distance viewing.',
     accent: '#22d3ee',
     category: 'EYE WELLNESS',
   },

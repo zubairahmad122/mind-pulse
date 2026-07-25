@@ -1,6 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
+import { loadJournalDateKeys } from '@/services/journalPersistence';
 import { loadStressSettings } from '@/services/mindScorePersistence';
+import { loadRecoverySessionsToday } from '@/services/recoveryPersistence';
 import { calculateMindScore, consecutiveDayStreak, ScoreResult } from '@/utils/scoring';
 
 function todayKey(): string {
@@ -38,28 +39,13 @@ export function useMindScore(uid?: string) {
           ? settings.lastStressLevel
           : null;
 
-        const recoveryKey = `@mindpulse/recovery:${uid ?? 'guest'}`;
-        const journalKey = `@mindpulse/journal:${uid ?? 'guest'}`;
-        const [recoveryRaw, journalRaw] = await Promise.all([
-          AsyncStorage.getItem(recoveryKey),
-          AsyncStorage.getItem(journalKey),
+        const [recoveryCount, dateKeys] = await Promise.all([
+          loadRecoverySessionsToday(uid),
+          loadJournalDateKeys(uid),
         ]);
-
-        if (recoveryRaw) {
-          try {
-            const sessions: { completedAt: number }[] = JSON.parse(recoveryRaw);
-            recoveryToday = sessions.filter(s => isToday(s.completedAt)).length;
-          } catch { /* ignore */ }
-        }
-
-        if (journalRaw) {
-          try {
-            const entries: { date: string }[] = JSON.parse(journalRaw);
-            const dateKeys = entries.map(e => new Date(e.date).toLocaleDateString('sv'));
-            journalToday = dateKeys.filter(d => d === todayKey()).length;
-            journalStreakDays = consecutiveDayStreak(dateKeys);
-          } catch { /* ignore */ }
-        }
+        recoveryToday = recoveryCount;
+        journalToday = dateKeys.filter(d => d === todayKey()).length;
+        journalStreakDays = consecutiveDayStreak(dateKeys);
       } catch {
         // data unavailable — fall through with "no activity yet" defaults
       }

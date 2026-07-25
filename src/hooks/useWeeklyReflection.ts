@@ -14,7 +14,7 @@ const CACHE_KEY_DATE = '@mindpulse/weekly-reflection-date';
 function fallbackReflection(eyeScore: number, sleepScore: number, mindScore: number): string {
   const lowest = Math.min(eyeScore, sleepScore, mindScore);
   if (lowest === eyeScore) {
-    return 'Your eye score could use some attention this week. Try taking more frequent breaks and doing the Eye Reset Protocol to build consistency.';
+    return 'Your eye-care habits could use some attention this week. Try taking more frequent breaks and using Eye Reset to build consistency.';
   }
   if (lowest === sleepScore) {
     return 'Your sleep patterns have room to grow. Setting a consistent bedtime and winding down without screens can make a noticeable difference this coming week.';

@@ -20,6 +20,7 @@ import Animated, {
   useSharedValue,
   type SharedValue,
 } from 'react-native-reanimated';
+import { PILLAR_COLORS } from '@/constants/designSystem';
 
 const ITEM_HEIGHT = 54;
 const VIEWPORT_HEIGHT = ITEM_HEIGHT * 3; // one row above + selected + one row below
@@ -194,7 +195,7 @@ type Props = {
   accent?: string;
 };
 
-export function WheelTimePicker({ value, onChange, accent = '#8B5CF6' }: Props) {
+export function WheelTimePicker({ value, onChange, accent = PILLAR_COLORS.sleep }: Props) {
   const [h, m] = value.split(':').map(Number);
   const hour12 = h % 12 === 0 ? 12 : h % 12;
   const hourIndex = hour12 - 1;

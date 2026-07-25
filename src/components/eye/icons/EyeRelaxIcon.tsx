@@ -4,6 +4,10 @@ import { RecoverySessionIcon } from '@/components/eye/icons/RecoveryIcons';
 type EyeRelaxIconProps = {
   id: string;
   size?: number;
+  /** Overrides the per-activity default color — pass this to keep every
+   * icon on a screen in the same accent family instead of each activity's
+   * own hue. */
+  color?: string;
 };
 
 const GAME_IDS = new Set([
@@ -16,31 +20,12 @@ const GAME_IDS = new Set([
 
 const RECOVERY_IDS = new Set(['cvs-protocol', 'comet-trace']);
 
-export function gameIconBg(gameId: string): string {
-  const hex = GAME_ICON_COLORS[gameId] ?? '#a78bfa';
-  return hexToRgba(hex, 0.14);
-}
-
-function hexToRgba(hex: string, alpha: number): string {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-export function EyeRelaxIcon({ id, size = 36 }: EyeRelaxIconProps) {
+export function EyeRelaxIcon({ id, size = 36, color }: EyeRelaxIconProps) {
   if (RECOVERY_IDS.has(id)) {
-    return <RecoverySessionIcon sessionId={id} size={size} />;
+    return <RecoverySessionIcon sessionId={id} size={size} color={color} />;
   }
   if (GAME_IDS.has(id) || id in GAME_ICON_COLORS) {
-    return <EyeGameIcon gameId={id} size={size} />;
+    return <EyeGameIcon gameId={id} size={size} color={color} />;
   }
-  return <EyeGameIcon gameId="saccade-sniper" size={size} />;
-}
-
-export function eyeRelaxIconBg(id: string): string {
-  if (id === 'cvs-protocol') return 'rgba(123, 97, 255, 0.15)';
-  if (id === 'comet-trace') return 'rgba(52, 211, 153, 0.15)';
-  return gameIconBg(id);
+  return <EyeGameIcon gameId="saccade-sniper" size={size} color={color} />;
 }

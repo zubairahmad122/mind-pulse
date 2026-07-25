@@ -28,7 +28,7 @@ const POSITIONS: GazePos[] = [
 ];
 
 const MUSCLE_COLORS: Record<string, string> = {
-  'Sup. Rectus': '#4FC3F7', 'Sup. Oblique': '#22d3ee', 'Lat. Rectus': '#6ee7b7',
+  'Sup. Rectus': '#4FC3F7', 'Sup. Oblique': '#00E0FF', 'Lat. Rectus': '#6ee7b7',
   'Inf. Oblique': '#fb7185', 'Inf. Rectus': '#fbbf24', 'Med. Rectus': '#f97316',
 };
 
@@ -124,7 +124,7 @@ export function CardinalGazesGuide({ active }: Props) {
         <Defs>
           <RadialGradient id="cgBg" cx="130" cy="130" r="130">
             <Stop offset="0%" stopColor={currentColor} stopOpacity="0.10" />
-            <Stop offset="60%" stopColor="#22d3ee" stopOpacity="0.04" />
+            <Stop offset="60%" stopColor="#00E0FF" stopOpacity="0.04" />
             <Stop offset="100%" stopColor="#0A0E1A" stopOpacity="0" />
           </RadialGradient>
         </Defs>

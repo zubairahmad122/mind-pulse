@@ -39,3 +39,21 @@ export function formatElapsed(seconds: number): string {
   const s = seconds % 60;
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
+
+/**
+ * The next Date matching a "HH:MM" wall-clock time — today if that time
+ * hasn't passed yet, otherwise tomorrow. Used so a fixed wake-time alarm
+ * always fires at the same clock time regardless of when sleep tracking
+ * actually started (a duration-based `now + plannedHours` calculation would
+ * push the alarm later on a late start, contradicting the fixed time the
+ * Tonight/Routine tabs display).
+ */
+export function nextOccurrenceOfTime(hhmm: string, from: Date = new Date()): Date {
+  const [h, m] = hhmm.split(':').map(Number);
+  const candidate = new Date(from);
+  candidate.setHours(h, m, 0, 0);
+  if (candidate.getTime() <= from.getTime()) {
+    candidate.setDate(candidate.getDate() + 1);
+  }
+  return candidate;
+}

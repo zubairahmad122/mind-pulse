@@ -33,7 +33,7 @@ export const STEP_COPY: Record<string, Record<RoastLevel, StepCopy>> = {
     },
     savage: {
       what: 'Look away from your phone. YES. AWAY. Something 20 feet away. You remember the real world?',
-      tip: 'Your eye\'s focusing muscle has been stuck in a cramp for hours. This is the only cure. Do it.',
+      tip: 'Give your near-focus system a break by looking comfortably into the distance.',
     },
   },
   orbit: {
@@ -52,8 +52,8 @@ export const STEP_COPY: Record<string, Record<RoastLevel, StepCopy>> = {
       tip: 'This is a stretch for your eye\'s focusing muscle. Slow is better.',
     },
     savage: {
-      what: 'Near. Far. Near. Far. Your focusing muscle is atrophied from scrolling. This is rehab.',
-      tip: 'Your ciliary muscle forgot how to function from screen addiction. This exercise is physical therapy for your face.',
+      what: 'Near. Far. Near. Far. Shift gently without forcing clarity.',
+      tip: 'This is a comfort activity, not physical therapy. Stop if vision blurs or doubles.',
     },
   },
   cooldown: {

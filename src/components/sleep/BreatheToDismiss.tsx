@@ -1,14 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Reanimated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
+import { ScreenShell } from '@/components/layout/ScreenShell';
 import { colors } from '@/constants/colors';
+import { FONTS, PILLAR_COLORS, RADIUS, STATUS_COLORS, TYPOGRAPHY } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
-import { typography } from '@/constants/typography';
 import { startAccelerometerSensing, stopAccelerometerSensing } from '@/services/accelerometerSleepTracker';
 
 type Props = {
@@ -22,6 +26,18 @@ const INHALE_DURATION = 4000;
 const HOLD_DURATION = 2000;
 const EXHALE_DURATION = 6000;
 const MOVEMENT_THRESHOLD = 0.08; // Acceleration delta G-force threshold
+
+// This is a Sleep-pillar screen — same frozen indigo as the rest of the
+// Sleep tab. `colors.accent.purple` (the old identity color here) is
+// actually blue (#1A8FFF), the same mislabeled token fixed elsewhere.
+const ACCENT = PILLAR_COLORS.sleep;
+const PHASE_COLOR: Record<BreathingPhase, string> = {
+  idle: ACCENT,
+  inhale: colors.accent.blue,
+  hold: STATUS_COLORS.warning,
+  exhale: ACCENT,
+  completed: STATUS_COLORS.success,
+};
 
 export function BreatheToDismiss({ onComplete, onEmergencySkip }: Props) {
   const [phase, setPhase] = useState<BreathingPhase>('idle');
@@ -185,28 +201,28 @@ export function BreatheToDismiss({ onComplete, onEmergencySkip }: Props) {
       case 'inhale':
         return (
           <View style={styles.textWrap}>
-            <Text style={[styles.instructionTitle, { color: colors.accent.blue }]}>Inhale Slowly</Text>
+            <Text style={[styles.instructionTitle, { color: PHASE_COLOR.inhale }]}>Inhale Slowly</Text>
             <Text style={styles.instructionSub}>Feel your lungs expand... ({Math.ceil(msRemaining / 1000)}s)</Text>
           </View>
         );
       case 'hold':
         return (
           <View style={styles.textWrap}>
-            <Text style={[styles.instructionTitle, { color: colors.status.warning }]}>Hold</Text>
+            <Text style={[styles.instructionTitle, { color: PHASE_COLOR.hold }]}>Hold</Text>
             <Text style={styles.instructionSub}>Maintain the stillness... ({Math.ceil(msRemaining / 1000)}s)</Text>
           </View>
         );
       case 'exhale':
         return (
           <View style={styles.textWrap}>
-            <Text style={[styles.instructionTitle, { color: colors.accent.purple }]}>Exhale Fully</Text>
+            <Text style={[styles.instructionTitle, { color: PHASE_COLOR.exhale }]}>Exhale Fully</Text>
             <Text style={styles.instructionSub}>Let go of all tension... ({Math.ceil(msRemaining / 1000)}s)</Text>
           </View>
         );
       case 'completed':
         return (
           <View style={styles.textWrap}>
-            <Text style={[styles.instructionTitle, { color: colors.status.success }]}>Peacefully Awake</Text>
+            <Text style={[styles.instructionTitle, { color: PHASE_COLOR.completed }]}>Peacefully Awake</Text>
             <Text style={styles.instructionSub}>Your day has started with clarity.</Text>
           </View>
         );
@@ -214,10 +230,19 @@ export function BreatheToDismiss({ onComplete, onEmergencySkip }: Props) {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header Info */}
+    <ScreenShell
+      pillar="sleep"
+      scroll={false}
+      safeBottom
+      contentStyle={styles.container}
+      ambient={<AmbientBackground />}
+    >
+      {/* Header — same uppercase eyebrow label as every other section title */}
       <View style={styles.header}>
-        <Text style={styles.title}>AuraSync Reset</Text>
+        <View style={styles.titleRow}>
+          <Ionicons name="moon" size={13} color={ACCENT} />
+          <Text style={styles.title}>MORNING RESET</Text>
+        </View>
         {phase !== 'idle' && phase !== 'completed' && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>BREATH {cycle} / 3</Text>
@@ -227,23 +252,43 @@ export function BreatheToDismiss({ onComplete, onEmergencySkip }: Props) {
 
       {/* Main Interactive Circle */}
       <View style={styles.circleContainer}>
-        <Reanimated.View style={[styles.glowHalo, animatedGlowStyle]} />
-        <Reanimated.View style={[styles.outerCircle, animatedCircleStyle]}>
-          <View style={styles.innerCircle}>
-            {phase === 'idle' ? (
-              <TouchableOpacity onPress={startBreathing} style={styles.startBtn}>
+        <Reanimated.View style={[styles.glowHalo, { backgroundColor: PHASE_COLOR[phase] }, animatedGlowStyle]} />
+        <Reanimated.View
+          style={[
+            styles.outerCircle,
+            { backgroundColor: PHASE_COLOR[phase] + '20', borderColor: PHASE_COLOR[phase] + '4D' },
+            animatedCircleStyle,
+          ]}
+        >
+          {phase === 'idle' ? (
+            <TouchableOpacity onPress={startBreathing} style={styles.startBtnShell} activeOpacity={0.9}>
+              <LinearGradient
+                colors={[colors.accent.blue, ACCENT]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.innerCircle}
+              >
+                <LinearGradient
+                  pointerEvents="none"
+                  colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={styles.sheen}
+                />
                 <Text style={styles.startEmoji}>🌬️</Text>
                 <Text style={styles.startBtnText}>BEGIN</Text>
-              </TouchableOpacity>
-            ) : (
+              </LinearGradient>
+            </TouchableOpacity>
+          ) : (
+            <View style={[styles.innerCircle, { backgroundColor: PHASE_COLOR[phase], shadowColor: PHASE_COLOR[phase] }]}>
               <Text style={styles.phaseEmoji}>
                 {phase === 'inhale' && '🌸'}
                 {phase === 'hold' && '⏳'}
                 {phase === 'exhale' && '🍃'}
                 {phase === 'completed' && '☀️'}
               </Text>
-            )}
-          </View>
+            </View>
+          )}
         </Reanimated.View>
       </View>
 
@@ -252,45 +297,48 @@ export function BreatheToDismiss({ onComplete, onEmergencySkip }: Props) {
 
       {/* Emergency Bypass */}
       {phase !== 'completed' && onEmergencySkip && (
-        <TouchableOpacity style={styles.bypassBtn} onPress={onEmergencySkip}>
+        <TouchableOpacity style={styles.bypassBtn} onPress={onEmergencySkip} hitSlop={8}>
           <Text style={styles.bypassText}>Skip breathing (Emergency)</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0E1A',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.xxl,
-    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxl,
   },
   header: {
     alignItems: 'center',
     gap: spacing.sm,
-    marginTop: spacing.xl,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   title: {
-    ...typography.headingMedium,
-    color: colors.text.primary,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+    fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
+    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+    textTransform: TYPOGRAPHY.sectionLabel.textTransform,
+    color: 'rgba(255,255,255,0.6)',
   },
   badge: {
-    backgroundColor: colors.accent.purpleLight,
+    backgroundColor: ACCENT + '26',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: 20,
-    borderWidth: 0.5,
-    borderColor: colors.accent.purpleBorder,
+    borderRadius: RADIUS.chip,
+    borderWidth: 1,
+    borderColor: ACCENT + '59',
   },
   badgeText: {
-    ...typography.label,
-    color: colors.accent.purple,
+    fontSize: 11,
+    color: ACCENT,
     fontWeight: '700',
     letterSpacing: 1.2,
   },
@@ -305,15 +353,12 @@ const styles = StyleSheet.create({
     width: 260,
     height: 260,
     borderRadius: 130,
-    backgroundColor: colors.accent.purple,
   },
   outerCircle: {
     width: 110,
     height: 110,
     borderRadius: 55,
-    backgroundColor: 'rgba(123, 97, 255, 0.2)',
     borderWidth: 1.5,
-    borderColor: colors.accent.purpleBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -321,26 +366,37 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: colors.accent.purple,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.accent.purple,
+    overflow: 'hidden',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 8,
   },
-  startBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    height: '100%',
+  startBtnShell: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    shadowColor: ACCENT,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  sheen: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '55%',
   },
   startEmoji: {
-    fontSize: 28,
+    fontSize: 26,
   },
   startBtnText: {
-    color: '#fff',
+    fontFamily: FONTS.bodyBold,
+    color: '#03212C',
     fontWeight: '800',
     fontSize: 12,
     letterSpacing: 2,
@@ -360,14 +416,15 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   instructionTitle: {
-    ...typography.headingLarge,
-    color: colors.text.primary,
-    fontSize: 28,
+    fontSize: TYPOGRAPHY.screenTitle.fontSize,
+    fontWeight: TYPOGRAPHY.screenTitle.fontWeight,
+    color: TYPOGRAPHY.screenTitle.color,
     textAlign: 'center',
   },
   instructionSub: {
-    ...typography.body,
-    color: colors.text.secondary,
+    fontSize: TYPOGRAPHY.subtitle.fontSize,
+    fontWeight: TYPOGRAPHY.subtitle.fontWeight,
+    color: TYPOGRAPHY.subtitle.color,
     textAlign: 'center',
     lineHeight: 20,
     maxWidth: 300,
@@ -377,12 +434,12 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   warningText: {
-    ...typography.headingMedium,
-    color: colors.status.warning,
+    fontSize: 18,
     fontWeight: '700',
+    color: STATUS_COLORS.warning,
   },
   warningSub: {
-    ...typography.body,
+    fontSize: TYPOGRAPHY.subtitle.fontSize,
     color: colors.text.secondary,
     textAlign: 'center',
   },
@@ -391,7 +448,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   bypassText: {
-    ...typography.caption,
+    fontSize: 13,
     color: colors.text.tertiary,
     textDecorationLine: 'underline',
   },

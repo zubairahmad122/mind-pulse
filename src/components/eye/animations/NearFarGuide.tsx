@@ -147,7 +147,7 @@ export function NearFarGuide({ active }: Props) {
             <Stop offset="100%" stopColor="#03080b" />
           </RadialGradient>
           <RadialGradient id="nfHaze" cx="130" cy="50" r="120">
-            <Stop offset="0%" stopColor="#22d3ee" stopOpacity="0.16" />
+            <Stop offset="0%" stopColor="#00E0FF" stopOpacity="0.16" />
             <Stop offset="100%" stopColor="#03080b" stopOpacity="0" />
           </RadialGradient>
         </Defs>

@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useRef, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
-import { FONTS } from '@/constants/theme';
+import { BUTTON, FONTS, SHADOWS } from '@/constants/designSystem';
 
 type Props = {
   label: string;
@@ -13,9 +13,15 @@ type Props = {
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
-  /** Gradient colours (2 or more stops). Defaults to the app's blue→violet→pink sweep. */
+  /**
+   * `primary` (default): the frozen spec gradient (#48D9FF → #54A8FF).
+   * `secondary`: transparent fill with the spec outline border — use for
+   * secondary actions instead of a second gradient CTA.
+   */
+  variant?: 'primary' | 'secondary';
+  /** Gradient colours (2 or more stops). Overrides `variant="primary"`'s default gradient. */
   colors?: readonly [string, string, ...string[]];
-  /** Glow/shadow colour. Defaults to a soft blue. */
+  /** Glow/shadow colour. Defaults to the frozen button shadow. */
   glowColor?: string;
   /** Text colour. Defaults to white. */
   textColor?: string;
@@ -25,17 +31,23 @@ type Props = {
   compact?: boolean;
   /** Keep full opacity while disabled — for status-style CTAs ("Following…"). */
   keepBright?: boolean;
+  /**
+   * Override the button's min-height (default `BUTTON.height`, 56 — the same
+   * value every other CTA in the app uses). Only pass this when a screen has
+   * an explicit, repeated design need for a taller button; leaving it unset
+   * keeps the app-wide default untouched.
+   */
+  height?: number;
   style?: ViewStyle;
 };
 
-const DEFAULT_COLORS = ['#3b82f6', '#7c3aed', '#c026d3'] as const;
-const DEFAULT_GLOW = 'rgba(124,58,237,0.45)';
+const DEFAULT_GLOW = 'rgba(84,168,255,0.45)';
 
 /**
- * Premium gradient call-to-action button — the same look as the onboarding
- * screen's primary button (gradient fill, soft outer glow, press-scale spring,
- * optional leading icon and a small sublabel). Reusable across every module so
- * primary CTAs feel identical everywhere.
+ * The single canonical CTA button — frozen spec gradient, height 56, radius
+ * 18, soft outer glow, press-scale spring, optional leading icon and a small
+ * sublabel. Reusable across every module so primary CTAs feel identical
+ * everywhere. Pass `variant="secondary"` for the outline secondary button.
  */
 export function GradientCTA({
   label,
@@ -44,14 +56,18 @@ export function GradientCTA({
   onPress,
   disabled = false,
   loading = false,
-  colors = DEFAULT_COLORS,
+  variant = 'primary',
+  colors,
   glowColor = DEFAULT_GLOW,
   textColor = '#FFFFFF',
   letterSpacing = 1,
   compact = false,
   keepBright = false,
+  height,
   style,
 }: Props) {
+  const isSecondary = variant === 'secondary';
+  const fillColors = colors ?? BUTTON.primaryGradient;
   const scale = useRef(new Animated.Value(1)).current;
   const isDisabled = disabled || loading;
 
@@ -76,36 +92,56 @@ export function GradientCTA({
         activeOpacity={0.9}
         style={[
           styles.shell,
-          {
-            shadowColor: glowColor,
-            shadowOpacity: isDisabled ? 0 : 0.55,
-            opacity: isDisabled && !loading && !keepBright ? 0.55 : 1,
-          },
+          isSecondary
+            ? styles.shellSecondary
+            : {
+                shadowColor: glowColor,
+                shadowOpacity: isDisabled ? 0 : 0.55,
+                opacity: isDisabled && !loading && !keepBright ? 0.55 : 1,
+              },
         ]}
       >
-        <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.fill, compact && styles.fillCompact]}>
-          {/* Glossy top highlight — gives the fill a shiny, glass-like sheen */}
-          <LinearGradient
-            pointerEvents="none"
-            colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.sheen}
-          />
-          {loading ? (
-            <ActivityIndicator color={textColor} size="small" />
-          ) : (
-            <View style={styles.content}>
-              {icon}
-              <View style={styles.labels}>
-                <Text style={[styles.label, { color: textColor, letterSpacing }]}>{label}</Text>
-                {sublabel ? (
-                  <Text style={[styles.sublabel, { color: textColor }]}>{sublabel}</Text>
-                ) : null}
+        {isSecondary ? (
+          <View style={[styles.fill, compact && styles.fillCompact, height ? { minHeight: height } : null]}>
+            {loading ? (
+              <ActivityIndicator color={textColor} size="small" />
+            ) : (
+              <View style={styles.content}>
+                {icon}
+                <View style={styles.labels}>
+                  <Text style={[styles.label, { color: textColor, letterSpacing }]}>{label}</Text>
+                  {sublabel ? (
+                    <Text style={[styles.sublabel, { color: textColor }]}>{sublabel}</Text>
+                  ) : null}
+                </View>
               </View>
-            </View>
-          )}
-        </LinearGradient>
+            )}
+          </View>
+        ) : (
+          <LinearGradient colors={fillColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.fill, compact && styles.fillCompact, height ? { minHeight: height } : null]}>
+            {/* Glossy top highlight — gives the fill a shiny, glass-like sheen */}
+            <LinearGradient
+              pointerEvents="none"
+              colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.sheen}
+            />
+            {loading ? (
+              <ActivityIndicator color={textColor} size="small" />
+            ) : (
+              <View style={styles.content}>
+                {icon}
+                <View style={styles.labels}>
+                  <Text style={[styles.label, { color: textColor, letterSpacing }]}>{label}</Text>
+                  {sublabel ? (
+                    <Text style={[styles.sublabel, { color: textColor }]}>{sublabel}</Text>
+                  ) : null}
+                </View>
+              </View>
+            )}
+          </LinearGradient>
+        )}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -113,19 +149,24 @@ export function GradientCTA({
 
 const styles = StyleSheet.create({
   shell: {
-    borderRadius: 28,
+    borderRadius: BUTTON.radius,
     overflow: 'hidden',
     shadowOffset: { width: 0, height: 10 },
     shadowRadius: 22,
     elevation: 10,
   },
+  shellSecondary: {
+    borderWidth: 1,
+    borderColor: BUTTON.secondaryBorder,
+    ...SHADOWS.button,
+  },
   fill: {
-    minHeight: 56,
+    minHeight: BUTTON.height,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 15,
-    paddingHorizontal: 20,
+    paddingHorizontal: 28,
   },
   fillCompact: {
     minHeight: 44,
@@ -148,8 +189,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: FONTS.bodyBold,
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 17,
+    fontWeight: '700',
     letterSpacing: 1,
   },
   sublabel: {

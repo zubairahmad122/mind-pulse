@@ -1,6 +1,6 @@
 import { Activity, BarChart3, Eye, Flame, Moon, Share2, Sparkles, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -13,6 +13,8 @@ import { ScoreTrendChart } from '@/components/report/ScoreTrendChart';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { AmbientBackground } from '@/components/ui/AmbientBackground';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { GradientCTA } from '@/components/ui/GradientCTA';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
@@ -26,7 +28,7 @@ import { ScoreBreakdownCard } from '@/components/ui/ScoreBreakdownCard';
 import { ScreenTransition } from '@/components/ui/ScreenTransition';
 import { PaywallGate } from '@/components/paywall/PaywallGate';
 import { getLastNDayScores } from '@/services/dailyScorePersistence';
-import { calculateStreak } from '@/utils/sleepUtils';
+import { useWellnessStore } from '@/stores/useWellnessStore';
 import {
   calculateMindPulseScore,
   getFocusArea,
@@ -142,7 +144,7 @@ export default function ReportScreen() {
   const mindResult = useMindScore(user?.uid ?? undefined);
   const sleepResult = useSleepScore(user?.uid ?? undefined, user?.isAnonymous ?? true);
 
-  const streak = calculateStreak(sessions);
+  const streak = useWellnessStore((s) => s.streak);
   const anyLoading = eyeResult.loading || mindResult.loading || sleepResult.loading;
   const eyes = eyeResult.loading ? 0 : eyeResult.score;
   const sleepScore = sleepResult.loading ? 0 : sleepResult.score;
@@ -175,8 +177,7 @@ export default function ReportScreen() {
   return (
     <ScreenShell ambient={<AmbientBackground subtle />}>
       <ScreenTransition>
-      <Text style={styles.header}>Today's Reality Report</Text>
-      <Text style={styles.date}>{today}</Text>
+      <ScreenHeader title="Today's Reality Report" subtitle={today} />
 
       {/* Stats list */}
       <GlassCard style={{ marginBottom: spacing.md }}>
@@ -251,7 +252,7 @@ export default function ReportScreen() {
       </View>
 
       {/* Focus area callout */}
-      <View style={styles.worstCard}>
+      <GlassCard style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md }}>
         <View style={styles.worstIconWrap}>
           {(() => {
             const FocusIcon = FOCUS_AREA_ICON[focusArea];
@@ -262,7 +263,7 @@ export default function ReportScreen() {
           <Text style={styles.worstTitle}>{focusArea} could use some love today</Text>
           <Text style={styles.worstSub}>Focus your recovery on this for the biggest boost</Text>
         </View>
-      </View>
+      </GlassCard>
 
       {/* Why this score? — full transparency breakdowns */}
       {!anyLoading && (
@@ -274,36 +275,20 @@ export default function ReportScreen() {
       )}
 
       {/* Share button */}
-      <TouchableOpacity style={styles.shareBtn} onPress={handleShare} activeOpacity={0.85}>
-        <Share2 size={18} color={colors.background.primary} />
-        <Text style={styles.shareBtnText}>Share My Score</Text>
-      </TouchableOpacity>
+      <GradientCTA
+        label="Share My Score"
+        icon={<Share2 size={18} color={colors.background.primary} />}
+        colors={['#a78bfa', '#8b6cf0']}
+        textColor={colors.background.primary}
+        onPress={() => void handleShare()}
+        style={{ marginBottom: spacing.lg }}
+      />
       </ScreenTransition>
     </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  date: {
-    ...typography.body,
-    color: colors.text.secondary,
-    marginBottom: spacing.lg,
-  },
-  statsList: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: 16,
-    padding: spacing.md,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.accent.purpleBorder,
-  },
   statRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -427,17 +412,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.text.primary,
   },
-  worstCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.background.secondary,
-    borderRadius: 12,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.accent.purpleBorder,
-    marginBottom: spacing.md,
-  },
   worstIconWrap: {
     width: 52,
     height: 52,
@@ -453,15 +427,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   worstSub: { ...typography.body, color: colors.text.secondary },
-  reflectionCard: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: 16,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.accent.purpleBorder,
-    gap: spacing.sm,
-  },
   reflectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -476,20 +441,5 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text.secondary,
     lineHeight: 22,
-  },
-  shareBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: '#a78bfa',
-    borderRadius: 14,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  shareBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.background.primary,
   },
 });

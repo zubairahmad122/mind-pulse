@@ -8,7 +8,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { SLEEP_QUALITY_OPTIONS, type SleepQualityOption } from '@/constants/sleepQuality';
-import { COLORS } from '@/constants/colors';
+import { GradientCTA } from '@/components/ui/GradientCTA';
+import { FONTS, RADIUS, TYPOGRAPHY } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 
 type Props = {
@@ -19,6 +20,9 @@ type Props = {
   onSkip?: () => void;
 };
 
+// Same icon-circle + label shape as Relax's "How do you feel?" mood picker
+// (RelaxHome's MoodCell) — this is the same kind of interaction (pick one of
+// N qualitative states), so it should look like the same component family.
 function QualityButton({
   opt,
   active,
@@ -43,30 +47,32 @@ function QualityButton({
   };
 
   return (
-    <Animated.View style={animStyle}>
-      <TouchableOpacity
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        activeOpacity={0.85}
+    <TouchableOpacity
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      activeOpacity={0.85}
+      style={styles.option}
+    >
+      <Animated.View
         style={[
-          styles.option,
-          active && styles.optionActive,
+          styles.iconWrap,
+          animStyle,
+          active && { backgroundColor: opt.color + '1f', borderColor: opt.color },
         ]}
       >
-        {/* Active indicator bar */}
-        {active && <View style={[styles.activeBar, { backgroundColor: opt.color }]} />}
-
-        {/* Icon container */}
-        <View style={[styles.iconWrap, { backgroundColor: opt.color + '18', borderColor: opt.color + '35' }]}>
-          <Icon size={22} color={active ? opt.color : 'rgba(255,255,255,0.5)'} strokeWidth={1.5} />
-        </View>
-
-        <Text style={[styles.label, active && { color: '#fff', fontWeight: '700' }]}>
-          {opt.label}
-        </Text>
-      </TouchableOpacity>
-    </Animated.View>
+        <Icon size={19} color={active ? opt.color : 'rgba(255,255,255,0.5)'} strokeWidth={1.9} />
+      </Animated.View>
+      <Text
+        style={[styles.label, active && { color: opt.color, fontWeight: '700' }]}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+      >
+        {opt.label}
+      </Text>
+    </TouchableOpacity>
   );
 }
 
@@ -98,7 +104,7 @@ export function SleepQualityModal({ visible, selectedQuality, onSelectQuality, o
           {/* Handle bar */}
           <View style={styles.handleBar} />
 
-          {/* Title */}
+          {/* Title — same screenTitle/subtitle scale as every other screen header */}
           <Text style={styles.title}>How did you sleep?</Text>
           <Text style={styles.subtitle}>Rate your last sleep session</Text>
 
@@ -124,14 +130,13 @@ export function SleepQualityModal({ visible, selectedQuality, onSelectQuality, o
             </View>
           )}
 
-          {/* Save button */}
-          <TouchableOpacity
-            style={[styles.saveBtn, { opacity: closing ? 0.6 : 1 }]}
+          {/* Save button — same frozen primary-button gradient as every other screen */}
+          <GradientCTA
+            label="Save session"
             onPress={handleSave}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.saveText}>Save session</Text>
-          </TouchableOpacity>
+            loading={closing}
+            style={styles.saveBtn}
+          />
 
           {/* Skip — rating is optional */}
           <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} activeOpacity={0.7}>
@@ -149,10 +154,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
   },
+  // Same bottom-sheet tokens as the other sheets in the Sleep flow (Ringtone
+  // picker, alarm-window picker) — bg, radius, and border kept identical.
   sheet: {
-    backgroundColor: COLORS.surface,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    backgroundColor: '#11162a',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderBottomWidth: 0,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xxl,
@@ -162,22 +172,22 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     marginBottom: spacing.md,
   },
   title: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '800',
+    fontFamily: FONTS.heading,
+    fontSize: TYPOGRAPHY.screenTitle.fontSize,
+    fontWeight: TYPOGRAPHY.screenTitle.fontWeight,
+    color: TYPOGRAPHY.screenTitle.color,
     textAlign: 'center',
-    letterSpacing: -0.5,
   },
   subtitle: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.subtitle.fontSize,
+    fontWeight: TYPOGRAPHY.subtitle.fontWeight,
+    color: TYPOGRAPHY.subtitle.color,
     textAlign: 'center',
-    marginTop: spacing.xs,
+    marginTop: 2,
     marginBottom: spacing.lg,
   },
   row: {
@@ -190,41 +200,22 @@ const styles = StyleSheet.create({
   option: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xs,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    gap: spacing.sm,
-    overflow: 'hidden',
-  },
-  optionActive: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  activeBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    gap: 5,
   },
   iconWrap: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.035)',
   },
   label: {
-    color: 'rgba(255,255,255,0.5)',
     fontSize: 10,
     fontWeight: '600',
-    letterSpacing: 0.3,
+    color: 'rgba(255,255,255,0.5)',
   },
   selectedHint: {
     flexDirection: 'row',
@@ -232,7 +223,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    borderRadius: 12,
+    borderRadius: RADIUS.chip,
     borderWidth: 1,
     backgroundColor: 'rgba(255,255,255,0.03)',
     marginBottom: spacing.lg,
@@ -249,21 +240,6 @@ const styles = StyleSheet.create({
   },
   saveBtn: {
     width: '100%',
-    backgroundColor: COLORS.purple,
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: '#a78bfa',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  saveText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-    letterSpacing: 0.5,
   },
   skipBtn: {
     marginTop: spacing.sm,

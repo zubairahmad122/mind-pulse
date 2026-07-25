@@ -5,6 +5,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { STATUS_COLORS } from '@/constants/designSystem';
 
 interface Props {
   visible: boolean;
@@ -37,7 +38,7 @@ export function SessionCompleteOverlay({ visible, onDone }: Props) {
         <Text style={styles.title}>Session Complete</Text>
         <View style={styles.divider} />
         <View style={styles.rows}>
-          <Text style={styles.row}>Eye strain reduced ↓</Text>
+          <Text style={styles.row}>Guided screen break complete</Text>
           <Text style={styles.row}>Recovery +12%</Text>
           <Text style={styles.rowMuted}>MindPulse improving</Text>
         </View>
@@ -59,14 +60,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.045)',
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: '#6ee7b7',
+    borderColor: STATUS_COLORS.success,
     padding: 28,
     alignItems: 'center',
     gap: 12,
   },
-  check: { fontSize: 40, color: '#6ee7b7' },
+  check: { fontSize: 40, color: STATUS_COLORS.success },
   title: { fontSize: 20, fontWeight: '800', color: '#fff' },
-  divider: { height: 1, width: '100%', backgroundColor: 'rgba(110,231,183,0.2)' },
+  divider: { height: 1, width: '100%', backgroundColor: 'rgba(50,213,131,0.2)' },
   rows: { gap: 8, alignItems: 'center' },
   row: { fontSize: 14, fontWeight: '600', color: '#fff' },
   rowMuted: { fontSize: 13, color: 'rgba(255,255,255,0.5)' },

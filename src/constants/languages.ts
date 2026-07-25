@@ -62,7 +62,7 @@ export const VOICE_SCRIPTS: Record<LangCode, VoiceScript> = {
     saccadeIntro:
       'Watch the glowing dot and tap it as fast as you can. Keep your head still — move only your eyes.',
     focusIntro:
-      'Shift your focus between near and far when the display changes. This trains your ciliary muscle and prevents screen fatigue.',
+      'Shift your attention between near and far when the display changes. Keep the focus change comfortable.',
     focusNear: 'Focus on the close text. Read it clearly.',
     focusFar:  'Now look far. Relax your eyes completely.',
     radarIntro:
@@ -83,7 +83,7 @@ export const VOICE_SCRIPTS: Record<LangCode, VoiceScript> = {
     rotatorFigure8:
       'Trace the infinity symbol. Let your eyes flow naturally.',
     rotatorDone:
-      'Excellent. All five eye movement patterns complete. Your eye muscles are fully exercised.',
+      'Excellent. All five visual movement patterns are complete. Let your eyes rest.',
     breatheIn:    'Breathe in slowly',
     holdBreath:   'Hold',
     breatheOut:   'Breathe out. Let it all go',
@@ -101,7 +101,7 @@ export const VOICE_SCRIPTS: Record<LangCode, VoiceScript> = {
     bodyScanIntro:
       'Beginning body scan. Find a comfortable position and close your eyes.',
     cvsIntro:
-      'Starting your CVS daily protocol. This session will guide your eyes through six therapeutic steps.',
+      'Starting your guided Eye Reset. Stop if you notice discomfort, blur, or double vision.',
     sessionComplete: 'Session complete. Great work today.',
     newRecord: 'New personal record. Outstanding.',
     wellDone:  'Well done.',
@@ -112,7 +112,7 @@ export const VOICE_SCRIPTS: Record<LangCode, VoiceScript> = {
     saccadeIntro:
       'Chamakte nuqte ko dekhein aur jald se jald tap karein. Sar sabit rakhein — sirf aankhein hilayein.',
     focusIntro:
-      'Jab display badle to focus badlein. Ye aankhon ke muscles ko mazboot karta hai aur screen thakan se bachata hai.',
+      'Jab display badle to qareeb aur door tawajjo badlein. Harkat ko aaram-deh rakhein.',
     focusNear: 'Qareebi text par tawajjo dein. Saaf saaf parhein.',
     focusFar:  'Ab door dekhein. Aankhon ko mukammal aaram dein.',
     radarIntro:
@@ -127,7 +127,7 @@ export const VOICE_SCRIPTS: Record<LangCode, VoiceScript> = {
     rotatorClockwise: 'Clockwise dayre. Aahista aur hamwar.',
     rotatorCounter:   'Ab ulti taraf. Harkat hamwar rakhein.',
     rotatorFigure8:   'Infinity ke nishaan ko follow karein. Qudrati harkat.',
-    rotatorDone:      'Shandaar! Paanchon eye movement patterns mukammal. Aapki aankhon ki poori warzish ho gayi.',
+    rotatorDone:      'Shandaar! Paanchon visual movement patterns mukammal. Ab aankhon ko aaram dein.',
     breatheIn:    'Aahista saans lein',
     holdBreath:   'Rokein',
     breatheOut:   'Saans chhorein. Sab jaane dein',
@@ -145,7 +145,7 @@ export const VOICE_SCRIPTS: Record<LangCode, VoiceScript> = {
     bodyScanIntro:
       'Body scan shuru. Aaram se baith jayein aur aankhein band karein.',
     cvsIntro:
-      'Aapka CVS daily protocol shuru. Ye session aapki aankhon ko chhe steps se guzarega.',
+      'Aapka guided Eye Reset shuru. Takleef, dhundla-pan, ya double nazar aaye to ruk jayein.',
     sessionComplete: 'Session mukammal. Aaj bohat acha kaam.',
     newRecord: 'Naya personal record. Shandaar.',
     wellDone:  'Shabash.',

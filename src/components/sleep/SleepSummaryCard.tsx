@@ -11,8 +11,8 @@
  */
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ROUTES } from '@/constants';
-import { FONTS } from '@/constants/theme';
-import { usePillarTheme } from '@/context/PillarContext';
+import { FONTS, PILLAR_COLORS } from '@/constants/designSystem';
+import { usePillarAccent } from '@/context/PillarContext';
 import { useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -57,11 +57,14 @@ export interface SleepSummaryCardProps {
 }
 
 // ── Per-stage colour tokens (locked inside the card) ─────────────────────────
+// Same three colors as the Tonight tab's live stage badge (SLEEP_STAGE_STYLE
+// in SleepScreen.tsx) — these two "which sleep stage is this" surfaces used
+// to disagree (this card still had the old purple for REM).
 
 const STAGE_COLORS = {
-  light: '#60a5fa',   // blue-400
-  rem:   '#a78bfa',   // purple-400
-  deep:  '#34d399',   // emerald-400
+  light: '#32D583',
+  rem:   '#38BDF8',
+  deep:  PILLAR_COLORS.sleep,
 } as const;
 
 const STAGE_LABELS = {
@@ -197,8 +200,8 @@ export function SleepSummaryCard({
   onViewReport,
 }: SleepSummaryCardProps) {
   const router = useRouter();
-  const pillar = usePillarTheme();
-  const accent = accentOverride ?? pillar.accent;
+  const pillarAccent = usePillarAccent();
+  const accent = accentOverride ?? pillarAccent;
 
   const stageItems = buildStages(stages);
 

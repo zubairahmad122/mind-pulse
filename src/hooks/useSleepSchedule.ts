@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore, doc, getDoc, setDoc } from '@react-native-firebase/firestore';
-
-const db = getFirestore();
 import { useCallback, useEffect, useState } from 'react';
 import { SleepSchedule } from '@/types/sleep.types';
 import { withTimeout } from '@/utils/withTimeout';
+
+const db = getFirestore();
 
 const STORAGE_KEY = '@mindpulse/sleep-schedule';
 const FIRESTORE_DOC = 'sleepSchedule';

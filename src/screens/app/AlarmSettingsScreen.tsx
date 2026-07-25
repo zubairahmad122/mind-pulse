@@ -1,9 +1,7 @@
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -18,137 +16,37 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { Bell, BellRing, ChevronRight, Clock, Heart, Maximize2, Moon, Play, Sparkles, Sun, Volume2, Waves, X } from 'lucide-react-native';
+import { Bell, BellRing, ChevronRight, Clock, Heart, Maximize2, Play, Sparkles, Volume2, Waves, X } from 'lucide-react-native';
+import { ScreenShell } from '@/components/layout/ScreenShell';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { AmbientBackground } from '@/components/ui/AmbientBackground';
-import { PillarProvider } from '@/context/PillarContext';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { HeroCard } from '@/components/ui/HeroCard';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 import { ALARM_RINGTONES, SNOOZE_DURATIONS, SMART_ALARM_WINDOWS, VIBRATION_PATTERNS, getRingtoneRequire, type AlarmRingtoneOption, type VibrationPatternOption } from '@/constants/alarmSounds';
 import { useAlarmSettings } from '@/hooks/useAlarmSettings';
 import { colors } from '@/constants/colors';
+import { FONTS, PILLAR_COLORS, SPACING, TYPOGRAPHY } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 
-// ─── Theme ────────────────────────────────────────────────────────────────────
-
-interface ThemeColors {
-  bg: string;
-  surface: string;
-  surfaceHi: string;
-  border: string;
-  borderHi: string;
-  text: string;
-  textSecondary: string;
-  textTertiary: string;
-  textDim: string;
-  skeleton: string;
-  trackBg: string;
-  trackBorder: string;
-  inputBg: string;
-  inputBorder: string;
-  glowPurple: string;
-  glowBlue: string;
-  pillLabel: string;
-  playIcon: string;
-  previewBg: string;
-  previewBorder: string;
-  previewText: string;
-  barInactive: string;
-  iconMuted: string;
-  iconDim: string;
-  smartIconOff: string;
-  bellMuted: string;
-  titleDim: string;
-  divider: string;
-  glassSkeletonBg: string;
-  glassSkeletonBorder: string;
-  thumbColor: string;
-}
-
-type Theme = ThemeColors;
-
-const DARK: ThemeColors = {
-  bg: '#0A0E1A',
-  surface: 'rgba(255,255,255,0.05)',
-  surfaceHi: 'rgba(255,255,255,0.08)',
-  border: 'rgba(255,255,255,0.1)',
-  borderHi: 'rgba(255,255,255,0.15)',
-  text: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.6)',
-  textTertiary: 'rgba(255,255,255,0.35)',
-  textDim: 'rgba(255,255,255,0.2)',
-  skeleton: 'rgba(255,255,255,0.07)',
-  trackBg: 'rgba(255,255,255,0.06)',
-  trackBorder: 'rgba(255,255,255,0.1)',
-  inputBg: 'rgba(255,255,255,0.05)',
-  inputBorder: 'rgba(255,255,255,0.12)',
-  glowPurple: 'rgba(123, 97, 255, 0.06)',
-  glowBlue: 'rgba(79, 195, 247, 0.04)',
-  pillLabel: 'rgba(255,255,255,0.6)',
-  playIcon: 'rgba(255,255,255,0.5)',
-  previewBg: 'rgba(255,255,255,0.06)',
-  previewBorder: 'rgba(255,255,255,0.1)',
-  previewText: 'rgba(255,255,255,0.5)',
-  barInactive: 'rgba(255,255,255,0.08)',
-  iconMuted: 'rgba(255,255,255,0.4)',
-  iconDim: 'rgba(255,255,255,0.04)',
-  smartIconOff: 'rgba(255,255,255,0.04)',
-  bellMuted: 'rgba(255,255,255,0.3)',
-  titleDim: 'rgba(255,255,255,0.5)',
-  divider: 'rgba(123, 97, 255, 0.12)',
-  glassSkeletonBg: 'rgba(255,255,255,0.03)',
-  glassSkeletonBorder: 'rgba(255,255,255,0.06)',
-  thumbColor: '#fff',
-};
-
-const LIGHT: ThemeColors = {
-  bg: '#F5F6FA',
-  surface: '#FFFFFF',
-  surfaceHi: '#F0F1F4',
-  border: 'rgba(0,0,0,0.08)',
-  borderHi: 'rgba(0,0,0,0.12)',
-  text: '#1A1A2E',
-  textSecondary: 'rgba(0,0,0,0.55)',
-  textTertiary: 'rgba(0,0,0,0.3)',
-  textDim: 'rgba(0,0,0,0.15)',
-  skeleton: 'rgba(0,0,0,0.06)',
-  trackBg: 'rgba(0,0,0,0.06)',
-  trackBorder: 'rgba(0,0,0,0.1)',
-  inputBg: '#F0F1F4',
-  inputBorder: 'rgba(0,0,0,0.1)',
-  glowPurple: 'rgba(123, 97, 255, 0.04)',
-  glowBlue: 'rgba(79, 195, 247, 0.03)',
-  pillLabel: 'rgba(0,0,0,0.5)',
-  playIcon: 'rgba(0,0,0,0.4)',
-  previewBg: '#EEEEF0',
-  previewBorder: 'rgba(0,0,0,0.08)',
-  previewText: 'rgba(0,0,0,0.4)',
-  barInactive: 'rgba(0,0,0,0.08)',
-  iconMuted: 'rgba(0,0,0,0.4)',
-  iconDim: 'rgba(0,0,0,0.04)',
-  smartIconOff: '#EEEEF0',
-  bellMuted: 'rgba(0,0,0,0.3)',
-  titleDim: 'rgba(0,0,0,0.4)',
-  divider: 'rgba(123, 97, 255, 0.15)',
-  glassSkeletonBg: 'rgba(0,0,0,0.02)',
-  glassSkeletonBorder: 'rgba(0,0,0,0.06)',
-  thumbColor: '#fff',
-};
+// This page belongs to the Sleep pillar — same frozen indigo accent as the
+// Sleep tab, Routine, Analysis, and the Set Bedtime/Wake Time sheet. (It used
+// to run its own light/dark theme with `colors.accent.purple`, which despite
+// the name is actually blue #1A8FFF — the one screen in the app out of step
+// with the rest of the design system.)
+const ACCENT = PILLAR_COLORS.sleep;
 
 // ─── Toggle Switch ────────────────────────────────────────────────────────────
 
-function ToggleSwitch({ value, onToggle, color = colors.accent.purple, theme }: { value: boolean; onToggle: () => void; color?: string; theme: Theme }) {
+function ToggleSwitch({ value, onToggle, color = ACCENT }: { value: boolean; onToggle: () => void; color?: string }) {
   return (
     <TouchableOpacity
       onPress={onToggle}
       activeOpacity={0.8}
-      style={[
-        toggleStyles.track,
-        { backgroundColor: theme.trackBg, borderColor: theme.trackBorder },
-        value && { backgroundColor: color, borderColor: color },
-      ]}
+      style={[toggleStyles.track, { backgroundColor: value ? color : '#252542' }]}
     >
-      <View style={[toggleStyles.thumb, { backgroundColor: theme.thumbColor }, value && toggleStyles.thumbOn]} />
+      <View style={[toggleStyles.thumb, value && toggleStyles.thumbOn]} />
     </TouchableOpacity>
   );
 }
@@ -165,6 +63,7 @@ const toggleStyles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
+    backgroundColor: '#FFFFFF',
   },
   thumbOn: {
     alignSelf: 'flex-end',
@@ -177,12 +76,10 @@ function PillGrid<T extends { value: any; label: string }>({
   options,
   selected,
   onSelect,
-  theme,
 }: {
   options: readonly T[];
   selected: T['value'];
   onSelect: (value: T['value']) => void;
-  theme: Theme;
 }) {
   return (
     <View style={pillStyles.row}>
@@ -198,11 +95,18 @@ function PillGrid<T extends { value: any; label: string }>({
             activeOpacity={0.7}
             style={[
               pillStyles.pill,
-              { backgroundColor: theme.surface, borderColor: theme.border },
-              active && { backgroundColor: 'rgba(123, 97, 255, 0.2)', borderColor: colors.accent.purple, shadowColor: colors.accent.purple, shadowOffset: { width: 0, height: 0 }, shadowRadius: 8, shadowOpacity: 0.3, elevation: 4 },
+              active && {
+                backgroundColor: ACCENT + '22',
+                borderColor: ACCENT,
+                shadowColor: ACCENT,
+                shadowOffset: { width: 0, height: 0 },
+                shadowRadius: 8,
+                shadowOpacity: 0.3,
+                elevation: 4,
+              },
             ]}
           >
-            <Text style={[pillStyles.label, { color: theme.pillLabel }, active && { color: '#fff', fontWeight: '800' as const }]}>
+            <Text style={[pillStyles.label, active && { color: '#fff', fontWeight: '800' as const }]}>
               {opt.label}
             </Text>
           </TouchableOpacity>
@@ -216,17 +120,20 @@ const pillStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.sm + 2,
   },
   pill: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
     borderRadius: 20,
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   label: {
     ...typography.caption,
     fontWeight: '600',
+    color: 'rgba(255,255,255,0.6)',
   },
 });
 
@@ -238,14 +145,12 @@ function RingtoneCard({
   isPreviewing,
   onSelect,
   onPlayPreview,
-  theme,
 }: {
   ringtone: AlarmRingtoneOption;
   selected: boolean;
   isPreviewing: boolean;
   onSelect: () => void;
   onPlayPreview: () => void;
-  theme: Theme;
 }) {
   const scale = useSharedValue(1);
   const pulseOpacity = useSharedValue(0.4);
@@ -286,18 +191,17 @@ function RingtoneCard({
         activeOpacity={0.85}
         style={[
           ringtoneStyles.card,
-          { backgroundColor: theme.surface, borderColor: theme.border },
-          selected && { backgroundColor: 'rgba(123, 97, 255, 0.08)', borderColor: 'rgba(123, 97, 255, 0.35)' },
+          selected && { backgroundColor: ACCENT + '14', borderColor: ACCENT + '55' },
         ]}
       >
         <View style={[ringtoneStyles.iconWrap, { backgroundColor: ringtone.color + '18', borderColor: ringtone.color + '30' }]}>
           <RingIcon size={20} color={ringtone.color} strokeWidth={1.8} />
         </View>
         <View style={ringtoneStyles.textWrap}>
-          <Text style={[ringtoneStyles.label, { color: theme.text }, selected && { color: '#fff', fontWeight: '700' as const }]}>
+          <Text style={[ringtoneStyles.label, selected && { color: '#fff', fontWeight: '700' as const }]}>
             {ringtone.label}
           </Text>
-          <Text style={[ringtoneStyles.subtitle, { color: theme.textTertiary }]}>{ringtone.subtitle}</Text>
+          <Text style={ringtoneStyles.subtitle}>{ringtone.subtitle}</Text>
         </View>
 
         {/* Preview play button */}
@@ -311,7 +215,6 @@ function RingtoneCard({
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={[
             ringtoneStyles.playBtn,
-            { backgroundColor: theme.previewBg, borderColor: theme.previewBorder },
             isPreviewing && { backgroundColor: ringtone.color + '25', borderColor: ringtone.color },
           ]}
         >
@@ -319,10 +222,10 @@ function RingtoneCard({
             {isPreviewing ? (
               <Volume2 size={14} color={ringtone.color} strokeWidth={2.5} />
             ) : (
-              <Play size={14} color={theme.playIcon} strokeWidth={2.5} />
+              <Play size={14} color="rgba(255,255,255,0.5)" strokeWidth={2.5} />
             )}
           </Animated.View>
-          <Text style={[ringtoneStyles.playLabel, { color: theme.previewText }, isPreviewing && { color: ringtone.color }]}>
+          <Text style={[ringtoneStyles.playLabel, isPreviewing && { color: ringtone.color }]}>
             {isPreviewing ? 'Playing' : 'Preview'}
           </Text>
         </TouchableOpacity>
@@ -346,6 +249,8 @@ const ringtoneStyles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: 16,
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   iconWrap: {
     width: 44,
@@ -362,9 +267,11 @@ const ringtoneStyles = StyleSheet.create({
   label: {
     ...typography.bodyLarge,
     fontWeight: '600',
+    color: '#FFFFFF',
   },
   subtitle: {
     ...typography.caption,
+    color: 'rgba(255,255,255,0.3)',
   },
   check: {
     width: 22,
@@ -381,11 +288,14 @@ const ringtoneStyles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 8,
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   playLabel: {
     ...typography.caption,
     fontWeight: '600',
     fontSize: 10,
+    color: 'rgba(255,255,255,0.5)',
   },
 });
 
@@ -396,13 +306,11 @@ function SelectedRingtoneRow({
   isPreviewing,
   onPlayPreview,
   onPress,
-  theme,
 }: {
   ringtone: AlarmRingtoneOption;
   isPreviewing: boolean;
   onPlayPreview: () => void;
   onPress: () => void;
-  theme: Theme;
 }) {
   const pulseOpacity = useSharedValue(0.4);
   const RingIcon = ringtone.icon;
@@ -426,14 +334,14 @@ function SelectedRingtoneRow({
         onPress();
       }}
       activeOpacity={0.85}
-      style={[selectedRingtoneStyles.row, { backgroundColor: theme.surfaceHi, borderColor: theme.border }]}
+      style={selectedRingtoneStyles.row}
     >
       <View style={[selectedRingtoneStyles.iconWrap, { backgroundColor: ringtone.color + '18', borderColor: ringtone.color + '30' }]}>
         <RingIcon size={20} color={ringtone.color} strokeWidth={1.8} />
       </View>
       <View style={selectedRingtoneStyles.textWrap}>
-        <Text style={[selectedRingtoneStyles.label, { color: theme.text }]}>{ringtone.label}</Text>
-        <Text style={[selectedRingtoneStyles.subtitle, { color: theme.textTertiary }]}>{ringtone.subtitle}</Text>
+        <Text style={selectedRingtoneStyles.label}>{ringtone.label}</Text>
+        <Text style={selectedRingtoneStyles.subtitle}>{ringtone.subtitle}</Text>
       </View>
       <TouchableOpacity
         onPress={e => {
@@ -445,7 +353,6 @@ function SelectedRingtoneRow({
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         style={[
           selectedRingtoneStyles.playBtn,
-          { backgroundColor: theme.previewBg, borderColor: theme.previewBorder },
           isPreviewing && { backgroundColor: ringtone.color + '25', borderColor: ringtone.color },
         ]}
       >
@@ -453,11 +360,11 @@ function SelectedRingtoneRow({
           {isPreviewing ? (
             <Volume2 size={15} color={ringtone.color} strokeWidth={2.5} />
           ) : (
-            <Play size={15} color={theme.playIcon} strokeWidth={2.5} />
+            <Play size={15} color="rgba(255,255,255,0.5)" strokeWidth={2.5} />
           )}
         </Animated.View>
       </TouchableOpacity>
-      <ChevronRight size={18} color={theme.textTertiary} strokeWidth={2} />
+      <ChevronRight size={18} color="rgba(255,255,255,0.3)" strokeWidth={2} />
     </TouchableOpacity>
   );
 }
@@ -467,10 +374,12 @@ const selectedRingtoneStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: spacing.md,
     borderRadius: 16,
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   iconWrap: {
     width: 44,
@@ -487,9 +396,11 @@ const selectedRingtoneStyles = StyleSheet.create({
   label: {
     ...typography.bodyLarge,
     fontWeight: '600',
+    color: '#FFFFFF',
   },
   subtitle: {
     ...typography.caption,
+    color: 'rgba(255,255,255,0.3)',
   },
   playBtn: {
     width: 34,
@@ -498,6 +409,8 @@ const selectedRingtoneStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
 });
 
@@ -511,7 +424,6 @@ function RingtonePickerModal({
   onSelect,
   onPlayPreview,
   onClose,
-  theme,
 }: {
   visible: boolean;
   ringtones: AlarmRingtoneOption[];
@@ -520,7 +432,6 @@ function RingtonePickerModal({
   onSelect: (id: string) => void;
   onPlayPreview: (id: string) => void;
   onClose: () => void;
-  theme: Theme;
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -529,17 +440,17 @@ function RingtonePickerModal({
         <Animated.View
           entering={FadeInUp.springify().damping(20).stiffness(150)}
           exiting={FadeOutDown.duration(200)}
-          style={[pickerStyles.sheet, { backgroundColor: theme.bg, borderColor: theme.border }]}
+          style={pickerStyles.sheet}
         >
-          <View style={[pickerStyles.handleBar, { backgroundColor: theme.borderHi }]} />
+          <View style={pickerStyles.handleBar} />
           <View style={pickerStyles.header}>
-            <Text style={[pickerStyles.title, { color: theme.text }]}>Alarm Sound</Text>
+            <Text style={pickerStyles.title}>Alarm Sound</Text>
             <TouchableOpacity
               onPress={onClose}
               activeOpacity={0.7}
-              style={[pickerStyles.closeBtn, { backgroundColor: theme.surfaceHi, borderColor: theme.borderHi }]}
+              style={pickerStyles.closeBtn}
             >
-              <X size={18} color={theme.textSecondary} />
+              <X size={18} color="rgba(255,255,255,0.6)" />
             </TouchableOpacity>
           </View>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={pickerStyles.list}>
@@ -551,7 +462,6 @@ function RingtonePickerModal({
                 isPreviewing={previewingId === r.id}
                 onSelect={() => onSelect(r.id)}
                 onPlayPreview={() => onPlayPreview(r.id)}
-                theme={theme}
               />
             ))}
             <View style={{ height: spacing.lg }} />
@@ -569,9 +479,11 @@ const pickerStyles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
+    backgroundColor: '#11162a',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
     borderBottomWidth: 0,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
@@ -581,6 +493,7 @@ const pickerStyles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignSelf: 'center',
     marginBottom: spacing.sm,
   },
@@ -595,6 +508,7 @@ const pickerStyles = StyleSheet.create({
     ...typography.headingMedium,
     fontSize: 18,
     fontWeight: '800',
+    color: '#FFFFFF',
   },
   closeBtn: {
     width: 32,
@@ -603,6 +517,8 @@ const pickerStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.14)',
   },
   list: {
     gap: spacing.sm,
@@ -612,47 +528,51 @@ const pickerStyles = StyleSheet.create({
 
 // ─── Section Header ───────────────────────────────────────────────────────────
 
-function SectionTitle({ icon: Icon, label, theme }: { icon: any; label: string; theme: Theme }) {
+function SectionTitle({ icon: Icon, label }: { icon: any; label: string }) {
   return (
     <View style={sectionStyles.row}>
-      <View style={[sectionStyles.iconBox, { backgroundColor: 'rgba(123, 97, 255, 0.15)' }]}>
-        <Icon size={16} color={colors.accent.purple} strokeWidth={1.8} />
+      <View style={sectionStyles.iconBox}>
+        <Icon size={18} color={ACCENT} strokeWidth={1.8} />
       </View>
-      <Text style={[sectionStyles.label, { color: theme.text }]}>{label}</Text>
+      <Text style={sectionStyles.label}>{label}</Text>
     </View>
   );
 }
 
+// Same 40×40/radius-14 icon container as the app's other card headers (e.g.
+// the AI Recommendation/Insight cards) — the old 28×28/radius-10 box read as
+// noticeably smaller than the Smart Alarm card's 44×44 icon right above it.
 const sectionStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
     marginBottom: spacing.md,
   },
   iconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: ACCENT + '26',
   },
   label: {
-    ...typography.headingSmall,
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: TYPOGRAPHY.cardTitle.fontSize,
+    fontWeight: TYPOGRAPHY.cardTitle.fontWeight,
+    color: '#FFFFFF',
   },
 });
 
 // ─── Volume Slider ────────────────────────────────────────────────────────────
 
-function VolumeSlider({ value, onChange, theme }: { value: number; onChange: (v: number) => void; theme: Theme }) {
+function VolumeSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const bars = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   const activeBars = Math.round(value * 10);
 
   return (
     <View style={volumeStyles.wrap}>
-      <Volume2 size={16} color={theme.iconMuted} />
+      <Volume2 size={16} color="rgba(255,255,255,0.4)" />
       <View style={volumeStyles.barRow}>
         {bars.map((_, i) => (
           <TouchableOpacity
@@ -662,7 +582,7 @@ function VolumeSlider({ value, onChange, theme }: { value: number; onChange: (v:
             style={[
               volumeStyles.bar,
               {
-                backgroundColor: i < activeBars ? colors.accent.purple : theme.barInactive,
+                backgroundColor: i < activeBars ? ACCENT : 'rgba(255,255,255,0.08)',
                 height: 6 + (i % 3) * 4,
               },
             ]}
@@ -700,13 +620,11 @@ function VibrationRow({
   selected,
   onSelect,
   onPreview,
-  theme,
 }: {
   pattern: VibrationPatternOption;
   selected: boolean;
   onSelect: () => void;
   onPreview: () => void;
-  theme: Theme;
 }) {
   return (
     <TouchableOpacity
@@ -714,35 +632,34 @@ function VibrationRow({
       activeOpacity={0.8}
       style={[
         vibStyles.row,
-        { backgroundColor: theme.surface, borderColor: theme.border },
-        selected && { backgroundColor: 'rgba(123, 97, 255, 0.1)', borderColor: 'rgba(123, 97, 255, 0.35)' },
+        selected && { backgroundColor: ACCENT + '1A', borderColor: ACCENT + '55' },
       ]}
     >
-      <View style={[vibStyles.iconWrap, { backgroundColor: theme.iconDim }]}>
+      <View style={vibStyles.iconWrap}>
         {pattern.id === 'heartbeat' ? (
-          <Heart size={18} color={selected ? colors.accent.purple : theme.iconMuted} strokeWidth={1.8} />
+          <Heart size={18} color={selected ? ACCENT : 'rgba(255,255,255,0.4)'} strokeWidth={1.8} />
         ) : pattern.id === 'gentle' ? (
-          <Waves size={18} color={selected ? colors.accent.purple : theme.iconMuted} strokeWidth={1.8} />
+          <Waves size={18} color={selected ? ACCENT : 'rgba(255,255,255,0.4)'} strokeWidth={1.8} />
         ) : pattern.id === 'none' ? (
-          <BellRing size={18} color={selected ? colors.accent.purple : theme.iconMuted} strokeWidth={1.8} />
+          <BellRing size={18} color={selected ? ACCENT : 'rgba(255,255,255,0.4)'} strokeWidth={1.8} />
         ) : (
-          <Bell size={18} color={selected ? colors.accent.purple : theme.iconMuted} strokeWidth={1.8} />
+          <Bell size={18} color={selected ? ACCENT : 'rgba(255,255,255,0.4)'} strokeWidth={1.8} />
         )}
       </View>
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={[vibStyles.label, { color: theme.text }, selected && { color: '#fff', fontWeight: '700' as const }]}>
+        <Text style={[vibStyles.label, selected && { color: '#fff', fontWeight: '700' as const }]}>
           {pattern.label}
         </Text>
-        <Text style={[vibStyles.desc, { color: theme.textTertiary }]}>{pattern.description}</Text>
+        <Text style={vibStyles.desc}>{pattern.description}</Text>
       </View>
       {pattern.id !== 'none' && (
         <TouchableOpacity
           onPress={onPreview}
           activeOpacity={0.7}
-          style={[vibStyles.previewBtn, { backgroundColor: theme.previewBg, borderColor: theme.previewBorder }]}
+          style={vibStyles.previewBtn}
         >
-          <Sparkles size={14} color={theme.iconMuted} />
-          <Text style={[vibStyles.previewText, { color: theme.previewText }]}>Test</Text>
+          <Sparkles size={14} color="rgba(255,255,255,0.4)" />
+          <Text style={vibStyles.previewText}>Test</Text>
         </TouchableOpacity>
       )}
     </TouchableOpacity>
@@ -754,10 +671,12 @@ const vibStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: spacing.md,
     borderRadius: 14,
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   iconWrap: {
     width: 36,
@@ -765,13 +684,16 @@ const vibStyles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
   label: {
     ...typography.bodyLarge,
     fontWeight: '600',
+    color: '#FFFFFF',
   },
   desc: {
     ...typography.caption,
+    color: 'rgba(255,255,255,0.3)',
   },
   previewBtn: {
     flexDirection: 'row',
@@ -781,27 +703,30 @@ const vibStyles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   previewText: {
     ...typography.caption,
     fontWeight: '600',
     fontSize: 10,
+    color: 'rgba(255,255,255,0.5)',
   },
 });
 
 // ─── Alarm Label Input ────────────────────────────────────────────────────────
 
-function AlarmLabelInput({ value, onChange, theme }: { value: string; onChange: (v: string) => void; theme: Theme }) {
+function AlarmLabelInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <View style={labelStyles.wrap}>
       <TextInput
         value={value}
         onChangeText={onChange}
         placeholder="Wake up"
-        placeholderTextColor={theme.textDim}
-        style={[labelStyles.input, { color: theme.text, backgroundColor: theme.inputBg, borderColor: theme.inputBorder }]}
+        placeholderTextColor="rgba(255,255,255,0.2)"
+        style={labelStyles.input}
       />
-      <Text style={[labelStyles.hint, { color: theme.textTertiary }]}>This label shows on the alarm overlay</Text>
+      <Text style={labelStyles.hint}>This label shows on the alarm overlay</Text>
     </View>
   );
 }
@@ -812,6 +737,9 @@ const labelStyles = StyleSheet.create({
   },
   input: {
     ...typography.bodyLarge,
+    color: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: spacing.md,
@@ -820,13 +748,88 @@ const labelStyles = StyleSheet.create({
   },
   hint: {
     ...typography.caption,
+    color: 'rgba(255,255,255,0.3)',
     paddingLeft: 4,
   },
 });
 
+// ─── Hero — same "Today's Journey" language as Home's hero card ──────────────
+
+function AlarmHeroCard({
+  smartAlarm,
+  smartAlarmWindow,
+  ringtoneLabel,
+  alarmVolume,
+  isTestingAlarm,
+  onTestAlarm,
+}: {
+  smartAlarm: boolean;
+  smartAlarmWindow: number;
+  ringtoneLabel: string;
+  alarmVolume: number;
+  isTestingAlarm: boolean;
+  onTestAlarm: () => void;
+}) {
+  const message = smartAlarm
+    ? `Wakes you gently during light sleep, within ${smartAlarmWindow} min of your alarm.`
+    : `${ringtoneLabel} at ${Math.round(alarmVolume * 100)}% volume.`;
+
+  return (
+    <HeroCard style={styles.heroCard}>
+      <View style={styles.heroInner}>
+        <View style={styles.heroHeaderRow}>
+          <Text style={styles.heroLabel}>ALARM SETUP</Text>
+          <Text style={styles.heroBadge}>{smartAlarm ? 'SMART' : 'FIXED'}</Text>
+        </View>
+
+        <Text style={styles.heroMessage}>{message}</Text>
+
+        <View style={styles.heroCta}>
+          <GradientCTA
+            label={isTestingAlarm ? 'Stop Test' : 'Test Alarm'}
+            icon={<Volume2 size={17} color="#03212C" strokeWidth={2.5} />}
+            textColor="#03212C"
+            onPress={onTestAlarm}
+          />
+        </View>
+      </View>
+    </HeroCard>
+  );
+}
+
 // ─── Skeleton Loading ─────────────────────────────────────────────────────────
 
-function AlarmSettingsSkeleton({ theme }: { theme: Theme }) {
+function SkeletonBlock({ w, h, r = 12, pulseStyle, style }: { w: number | string; h: number; r?: number; pulseStyle: object; style?: any }) {
+  return (
+    <Animated.View
+      style={[{
+        // Reanimated animated styles need `as any` because RN Web types
+        // don't allow animated values in the `width` property.
+        width: w as any,
+        height: h,
+        borderRadius: r,
+        backgroundColor: 'rgba(255,255,255,0.07)',
+      }, pulseStyle, style]}
+    />
+  );
+}
+
+function SkeletonGlassCard({ children, style }: { children: React.ReactNode; style?: any }) {
+  return (
+    <View style={[{
+      backgroundColor: 'rgba(255,255,255,0.03)',
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.06)',
+      padding: 16,
+      gap: 12,
+    }, style]}>
+      {children}
+    </View>
+  );
+}
+
+function AlarmSettingsSkeleton() {
   const pulseSV = useSharedValue(0.3);
 
   useEffect(() => {
@@ -842,113 +845,62 @@ function AlarmSettingsSkeleton({ theme }: { theme: Theme }) {
     opacity: pulseSV.value,
   }));
 
-  function Block({ w, h, r = 12, style }: { w: number | string; h: number; r?: number; style?: any }) {
-    return (
-      <Animated.View
-        style={[{
-          // Reanimated animated styles need `as any` because RN Web types
-          // don't allow animated values in the `width` property.
-          width: w as any,
-          height: h,
-          borderRadius: r,
-          backgroundColor: theme.skeleton,
-        }, pulseAnim, style]}
-      />
-    );
-  }
-
-  function Circle({ size }: { size: number }) {
-    return (
-      <Animated.View
-        style={[{
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: theme.skeleton,
-        }, pulseAnim]}
-      />
-    );
-  }
-
-  function GlassSkeleton({ children, style }: { children: React.ReactNode; style?: any }) {
-    return (
-      <View style={[{
-        backgroundColor: theme.glassSkeletonBg,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: theme.glassSkeletonBorder,
-        padding: 16,
-        gap: 12,
-      }, style]}>
-        {children}
-      </View>
-    );
-  }
-
   return (
-    <View style={{ paddingHorizontal: spacing.md }}>
-      {/* Header skeleton */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingBottom: spacing.sm }}>
-        <Circle size={40} />
-        <View style={{ gap: 6, flex: 1 }}>
-          <Block w={140} h={20} r={6} />
-          <Block w={200} h={12} r={4} />
-        </View>
-      </View>
+    <View>
+      {/* Hero skeleton */}
+      <SkeletonBlock pulseStyle={pulseAnim} w="100%" h={150} r={30} style={{ marginBottom: SPACING.section }} />
 
       {/* Smart Alarm card */}
-      <GlassSkeleton>
+      <SkeletonGlassCard>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-          <Circle size={44} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={44} h={44} r={14} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Block w={130} h={14} r={4} />
-            <Block w={180} h={10} r={3} />
+            <SkeletonBlock pulseStyle={pulseAnim} w={130} h={14} r={4} />
+            <SkeletonBlock pulseStyle={pulseAnim} w={180} h={10} r={3} />
           </View>
-          <Block w={48} h={28} r={14} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={48} h={28} r={14} />
         </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-          <Block w={80} h={32} r={20} />
-          <Block w={80} h={32} r={20} />
-          <Block w={90} h={32} r={20} />
-          <Block w={80} h={32} r={20} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={80} h={32} r={20} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={80} h={32} r={20} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={90} h={32} r={20} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={80} h={32} r={20} />
         </View>
-      </GlassSkeleton>
+      </SkeletonGlassCard>
 
       {/* Alarm Label card */}
-      <GlassSkeleton style={{ marginTop: spacing.md }}>
+      <SkeletonGlassCard style={{ marginTop: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <Block w={28} h={28} r={8} />
-          <Block w={90} h={14} r={4} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={28} h={28} r={10} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={90} h={14} r={4} />
         </View>
-        <Block w="100%" h={50} r={14} />
-      </GlassSkeleton>
+        <SkeletonBlock pulseStyle={pulseAnim} w="100%" h={50} r={14} />
+      </SkeletonGlassCard>
 
       {/* Ringtone card */}
-      <GlassSkeleton style={{ marginTop: spacing.md }}>
+      <SkeletonGlassCard style={{ marginTop: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <Block w={28} h={28} r={8} />
-          <Block w={70} h={14} r={4} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={28} h={28} r={10} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={70} h={14} r={4} />
         </View>
-        {[1, 2, 3].map(i => (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-            <Block w={44} h={44} r={14} />
-            <View style={{ flex: 1, gap: 4 }}>
-              <Block w={100 + i * 20} h={13} r={4} />
-              <Block w={60 + i * 15} h={9} r={3} />
-            </View>
-            <Block w={60} h={28} r={8} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+          <SkeletonBlock pulseStyle={pulseAnim} w={44} h={44} r={14} />
+          <View style={{ flex: 1, gap: 4 }}>
+            <SkeletonBlock pulseStyle={pulseAnim} w={120} h={13} r={4} />
+            <SkeletonBlock pulseStyle={pulseAnim} w={75} h={9} r={3} />
           </View>
-        ))}
-      </GlassSkeleton>
+          <SkeletonBlock pulseStyle={pulseAnim} w={60} h={28} r={8} />
+        </View>
+      </SkeletonGlassCard>
 
       {/* Volume card */}
-      <GlassSkeleton style={{ marginTop: spacing.md }}>
+      <SkeletonGlassCard style={{ marginTop: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <Block w={28} h={28} r={8} />
-          <Block w={100} h={14} r={4} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={28} h={28} r={10} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={100} h={14} r={4} />
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <Block w={16} h={16} r={8} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={16} h={16} r={8} />
           <View style={{ flex: 1, flexDirection: 'row', gap: 4, alignItems: 'flex-end' }}>
             {[1,2,3,4,5,6,7,8,9,10].map(i => (
               <Animated.View
@@ -957,46 +909,46 @@ function AlarmSettingsSkeleton({ theme }: { theme: Theme }) {
                   flex: 1,
                   height: 6 + (i % 3) * 4,
                   borderRadius: 3,
-                  backgroundColor: theme.skeleton,
+                  backgroundColor: 'rgba(255,255,255,0.07)',
                 }, pulseAnim]}
               />
             ))}
           </View>
         </View>
-      </GlassSkeleton>
+      </SkeletonGlassCard>
 
       {/* Vibration card */}
-      <GlassSkeleton style={{ marginTop: spacing.md }}>
+      <SkeletonGlassCard style={{ marginTop: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <Block w={28} h={28} r={8} />
-          <Block w={120} h={14} r={4} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={28} h={28} r={10} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={120} h={14} r={4} />
         </View>
         {[1, 2, 3].map(i => (
           <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-            <Block w={36} h={36} r={10} />
+            <SkeletonBlock pulseStyle={pulseAnim} w={36} h={36} r={10} />
             <View style={{ flex: 1, gap: 3 }}>
-              <Block w={80 + i * 30} h={12} r={4} />
-              <Block w={140} h={9} r={3} />
+              <SkeletonBlock pulseStyle={pulseAnim} w={80 + i * 30} h={12} r={4} />
+              <SkeletonBlock pulseStyle={pulseAnim} w={140} h={9} r={3} />
             </View>
-            <Block w={60} h={28} r={8} />
+            <SkeletonBlock pulseStyle={pulseAnim} w={60} h={28} r={8} />
           </View>
         ))}
-      </GlassSkeleton>
+      </SkeletonGlassCard>
 
       {/* Snooze card */}
-      <GlassSkeleton style={{ marginTop: spacing.md }}>
+      <SkeletonGlassCard style={{ marginTop: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <Block w={28} h={28} r={8} />
-          <Block w={100} h={14} r={4} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={28} h={28} r={10} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={100} h={14} r={4} />
         </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-          <Block w={60} h={32} r={20} />
-          <Block w={70} h={32} r={20} />
-          <Block w={65} h={32} r={20} />
-          <Block w={75} h={32} r={20} />
-          <Block w={65} h={32} r={20} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={60} h={32} r={20} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={70} h={32} r={20} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={65} h={32} r={20} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={75} h={32} r={20} />
+          <SkeletonBlock pulseStyle={pulseAnim} w={65} h={32} r={20} />
         </View>
-      </GlassSkeleton>
+      </SkeletonGlassCard>
 
       {/* Spacer */}
       <View style={{ height: 40 }} />
@@ -1007,9 +959,6 @@ function AlarmSettingsSkeleton({ theme }: { theme: Theme }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function AlarmSettingsScreen() {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-
   // ── Persisted State (AsyncStorage) ─────────────────────────────────────────
   const {
     smartAlarm,
@@ -1019,7 +968,6 @@ export default function AlarmSettingsScreen() {
     smartAlarmWindow,
     alarmVolume,
     alarmLabel,
-    darkMode,
     loaded,
     setSmartAlarm,
     setSelectedRingtone,
@@ -1028,11 +976,7 @@ export default function AlarmSettingsScreen() {
     setSmartAlarmWindow,
     setAlarmVolume,
     setAlarmLabel,
-    setDarkMode,
   } = useAlarmSettings();
-
-  // ── Theme ───────────────────────────────────────────────────────────────────
-  const theme = darkMode ? DARK : LIGHT;
 
   // ── Selected ringtone ──────────────────────────────────────────────────────
   const selectedRingtoneOption = ALARM_RINGTONES.find(r => r.id === selectedRingtone) ?? ALARM_RINGTONES[0];
@@ -1099,166 +1043,148 @@ export default function AlarmSettingsScreen() {
     }, 200);
   }, []);
 
+  // Hero "Test Alarm" — plays the real selected ringtone + vibration pattern,
+  // the same preview the Ringtone/Vibration cards trigger individually.
+  const isTestingAlarm = previewingId === selectedRingtoneOption.id;
+  const handleTestAlarm = useCallback(() => {
+    if (isTestingAlarm) {
+      handleStopPreview();
+      return;
+    }
+    playRingtonePreview(selectedRingtoneOption.id);
+    if (selectedVibration !== 'none') handlePreviewVibration();
+  }, [isTestingAlarm, handleStopPreview, playRingtonePreview, selectedRingtoneOption.id, selectedVibration, handlePreviewVibration]);
+
   return (
-    <View style={[styles.screen, { paddingTop: insets.top, backgroundColor: theme.bg }]}>
-      {/* Ambient glow decoration */}
-      <View style={[styles.glowTop, { backgroundColor: theme.glowPurple }]} />
-      <View style={[styles.glowBottom, { backgroundColor: theme.glowBlue }]} />
-
-      {/* Pillar-based ambient glow, beams, and particles */}
-      <PillarProvider pillar="mind">
-        <AmbientBackground />
-      </PillarProvider>
-
-      {/* Header — shared across every stack/modal screen */}
-      <ScreenHeader
-        onBack={() => router.back()}
-        title="Alarm Settings"
-        subtitle={loaded ? 'Configure your wake-up experience' : 'Loading your settings…'}
-        textColor={theme.text}
-        subtitleColor={theme.textTertiary}
-        badgeBg={theme.surfaceHi}
-        badgeBorder={theme.borderHi}
-        right={
-          <TouchableOpacity
-            onPress={() => setDarkMode(!darkMode)}
-            activeOpacity={0.7}
-            style={[styles.backBtn, { backgroundColor: theme.surfaceHi, borderColor: theme.borderHi }]}
-          >
-            {darkMode ? (
-              <Sun size={18} color={theme.textSecondary} strokeWidth={1.8} />
-            ) : (
-              <Moon size={18} color={theme.textSecondary} strokeWidth={1.8} />
-            )}
-          </TouchableOpacity>
-        }
-      />
+    <ScreenShell safeBottom pillar="sleep" ambient={<AmbientBackground />}>
+      <ScreenHeader title="Alarm Settings" subtitle="Configure your wake-up experience" showBack />
 
       {!loaded ? (
-        <AlarmSettingsSkeleton theme={theme} />
+        <AlarmSettingsSkeleton />
       ) : (
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* ── Smart Alarm ──────────────────────────────────────────────────── */}
-        <Animated.View entering={FadeInUp.delay(100).springify()} layout={Layout.springify().damping(15)}>
-          <GlassCard style={styles.smartCard} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
-            <View style={styles.smartHeader}>
-              <View style={[styles.smartIcon, { backgroundColor: theme.smartIconOff }, !smartAlarm && { opacity: 0.6 }]}>
-                <BellRing size={22} color={smartAlarm ? colors.accent.purple : theme.bellMuted} strokeWidth={1.8} />
-              </View>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={[styles.smartTitle, { color: theme.text }, !smartAlarm && { color: theme.titleDim }]}>Smart Stage Alarm</Text>
-                <Text style={[styles.smartSub, { color: theme.textTertiary }]}>
-                  Wakes you during light sleep for a natural feel
-                </Text>
-              </View>
-              <ToggleSwitch
-                value={smartAlarm}
-                onToggle={() => setSmartAlarm(!smartAlarm)}
-                theme={theme}
-              />
-            </View>
+        <>
+          <AlarmHeroCard
+            smartAlarm={smartAlarm}
+            smartAlarmWindow={smartAlarmWindow}
+            ringtoneLabel={selectedRingtoneOption.label}
+            alarmVolume={alarmVolume}
+            isTestingAlarm={isTestingAlarm}
+            onTestAlarm={handleTestAlarm}
+          />
 
-            {smartAlarm && (
-              <Animated.View
-                entering={FadeInDown.duration(250).springify().damping(16)}
-                exiting={FadeOutUp.duration(200)}
-                layout={Layout.springify().damping(18)}
-                style={{ marginTop: spacing.md, gap: spacing.sm }}
-              >
-                {/* Divider */}
-                <View style={{ height: 1, backgroundColor: theme.divider, borderRadius: 1 }} />
-
-                <View style={styles.smartDetail}>
-                  <Text style={[styles.smartDetailLabel, { color: theme.textSecondary }]}>Wake window</Text>
-                  <Text style={[styles.smartDetailValue, { color: colors.accent.purple }]}>
-                    {smartAlarmWindow} min before alarm
+          {/* ── Smart Alarm ──────────────────────────────────────────────────── */}
+          <Animated.View entering={FadeInUp.delay(100).springify()} layout={Layout.springify().damping(15)}>
+            <GlassCard style={styles.smartCard}>
+              <View style={styles.smartHeader}>
+                <View style={[styles.smartIcon, !smartAlarm && { opacity: 0.5 }]}>
+                  <BellRing size={22} color={smartAlarm ? ACCENT : 'rgba(255,255,255,0.3)'} strokeWidth={1.8} />
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={[styles.smartTitle, !smartAlarm && { color: 'rgba(255,255,255,0.5)' }]}>Smart Stage Alarm</Text>
+                  <Text style={styles.smartSub}>
+                    Wakes you during light sleep for a natural feel
                   </Text>
                 </View>
-                <PillGrid
-                  options={SMART_ALARM_WINDOWS}
-                  selected={smartAlarmWindow}
-                  onSelect={v => setSmartAlarmWindow(v)}
-                  theme={theme}
+                <ToggleSwitch
+                  value={smartAlarm}
+                  onToggle={() => setSmartAlarm(!smartAlarm)}
                 />
-                <Text style={[styles.smartNote, { color: theme.textTertiary }]}>
-                  Your alarm will fire anytime within the window when you're in light sleep.
-                </Text>
-              </Animated.View>
-            )}
-          </GlassCard>
-        </Animated.View>
+              </View>
 
-        {/* ── Alarm Label ──────────────────────────────────────────────────── */}
-        <Animated.View entering={FadeInUp.delay(200).springify()}>
-          <GlassCard style={{ gap: spacing.sm }} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
-            <SectionTitle icon={Bell} label="Alarm Label" theme={theme} />
-            <AlarmLabelInput value={alarmLabel} onChange={setAlarmLabel} theme={theme} />
-          </GlassCard>
-        </Animated.View>
+              {smartAlarm && (
+                <Animated.View
+                  entering={FadeInDown.duration(250).springify().damping(16)}
+                  exiting={FadeOutUp.duration(200)}
+                  layout={Layout.springify().damping(18)}
+                  style={{ marginTop: spacing.md, gap: spacing.sm }}
+                >
+                  {/* Divider */}
+                  <View style={styles.divider} />
 
-        {/* ── Ringtone ──────────────────────────────────────────────────────── */}
-        <Animated.View entering={FadeInUp.delay(300).springify()}>
-          <GlassCard style={{ gap: spacing.sm }} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
-            <SectionTitle icon={Volume2} label="Ringtone" theme={theme} />
-            <SelectedRingtoneRow
-              ringtone={selectedRingtoneOption}
-              isPreviewing={previewingId === selectedRingtoneOption.id}
-              onPlayPreview={() => {
-                if (previewingId === selectedRingtoneOption.id) handleStopPreview();
-                else playRingtonePreview(selectedRingtoneOption.id);
-              }}
-              onPress={() => setRingtonePickerVisible(true)}
-              theme={theme}
-            />
-          </GlassCard>
-        </Animated.View>
+                  <View style={styles.smartDetail}>
+                    <Text style={styles.smartDetailLabel}>Wake window</Text>
+                    <Text style={styles.smartDetailValue}>
+                      {smartAlarmWindow} min before alarm
+                    </Text>
+                  </View>
+                  <PillGrid
+                    options={SMART_ALARM_WINDOWS}
+                    selected={smartAlarmWindow}
+                    onSelect={v => setSmartAlarmWindow(v)}
+                  />
+                  <Text style={styles.smartNote}>
+                    Your alarm will fire anytime within the window when you&apos;re in light sleep.
+                  </Text>
+                </Animated.View>
+              )}
+            </GlassCard>
+          </Animated.View>
 
-        {/* ── Volume ─────────────────────────────────────────────────────────── */}
-        <Animated.View entering={FadeInUp.delay(400).springify()}>
-          <GlassCard style={{ gap: spacing.sm }} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
-            <SectionTitle icon={Volume2} label="Alarm Volume" theme={theme} />
-            <VolumeSlider value={alarmVolume} onChange={setAlarmVolume} theme={theme} />
-          </GlassCard>
-        </Animated.View>
+          {/* ── Alarm Label ──────────────────────────────────────────────────── */}
+          <Animated.View entering={FadeInUp.delay(200).springify()}>
+            <GlassCard style={{ gap: spacing.sm, marginTop: SPACING.section }}>
+              <SectionTitle icon={Bell} label="Alarm Label" />
+              <AlarmLabelInput value={alarmLabel} onChange={setAlarmLabel} />
+            </GlassCard>
+          </Animated.View>
 
-        {/* ── Vibration & Snooze ─────────────────────────────────────────────── */}
-        <Animated.View entering={FadeInUp.delay(500).springify()}>
-          <GlassCard style={{ gap: spacing.sm }} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
-            <SectionTitle icon={Maximize2} label="Vibration Pattern" theme={theme} />
-            <View style={{ gap: spacing.sm }}>
-              {VIBRATION_PATTERNS.map(p => (
-                <VibrationRow
-                  key={p.id}
-                  pattern={p}
-                  selected={selectedVibration === p.id}
-                  onSelect={() => setSelectedVibration(p.id)}
-                  onPreview={handlePreviewVibration}
-                  theme={theme}
-                />
-              ))}
-            </View>
-          </GlassCard>
-        </Animated.View>
+          {/* ── Ringtone ──────────────────────────────────────────────────────── */}
+          <Animated.View entering={FadeInUp.delay(300).springify()}>
+            <GlassCard style={{ gap: spacing.sm, marginTop: SPACING.section }}>
+              <SectionTitle icon={Volume2} label="Ringtone" />
+              <SelectedRingtoneRow
+                ringtone={selectedRingtoneOption}
+                isPreviewing={previewingId === selectedRingtoneOption.id}
+                onPlayPreview={() => {
+                  if (previewingId === selectedRingtoneOption.id) handleStopPreview();
+                  else playRingtonePreview(selectedRingtoneOption.id);
+                }}
+                onPress={() => setRingtonePickerVisible(true)}
+              />
+            </GlassCard>
+          </Animated.View>
 
-        {/* ── Snooze ─────────────────────────────────────────────────────────── */}
-        <Animated.View entering={FadeInUp.delay(600).springify()}>
-          <GlassCard style={{ gap: spacing.sm }} tint={darkMode ? undefined : ['rgba(245,245,250,0.85)', 'rgba(255,255,255,0.95)']}>
-            <SectionTitle icon={Clock} label="Snooze Duration" theme={theme} />
-            <PillGrid
-              options={SNOOZE_DURATIONS}
-              selected={snoozeDuration}
-              onSelect={v => setSnoozeDuration(v)}
-              theme={theme}
-            />
-          </GlassCard>
-        </Animated.View>
+          {/* ── Volume ─────────────────────────────────────────────────────────── */}
+          <Animated.View entering={FadeInUp.delay(400).springify()}>
+            <GlassCard style={{ gap: spacing.sm, marginTop: SPACING.section }}>
+              <SectionTitle icon={Volume2} label="Alarm Volume" />
+              <VolumeSlider value={alarmVolume} onChange={setAlarmVolume} />
+            </GlassCard>
+          </Animated.View>
 
-        {/* Bottom spacer */}
-        <View style={{ height: 40 }} />
-      </ScrollView>
+          {/* ── Vibration & Snooze ─────────────────────────────────────────────── */}
+          <Animated.View entering={FadeInUp.delay(500).springify()}>
+            <GlassCard style={{ gap: spacing.sm, marginTop: SPACING.section }}>
+              <SectionTitle icon={Maximize2} label="Vibration Pattern" />
+              <View style={{ gap: spacing.sm }}>
+                {VIBRATION_PATTERNS.map(p => (
+                  <VibrationRow
+                    key={p.id}
+                    pattern={p}
+                    selected={selectedVibration === p.id}
+                    onSelect={() => setSelectedVibration(p.id)}
+                    onPreview={handlePreviewVibration}
+                  />
+                ))}
+              </View>
+            </GlassCard>
+          </Animated.View>
+
+          {/* ── Snooze ─────────────────────────────────────────────────────────── */}
+          <Animated.View entering={FadeInUp.delay(600).springify()}>
+            <GlassCard style={{ gap: spacing.sm, marginTop: SPACING.section }}>
+              <SectionTitle icon={Clock} label="Snooze Duration" />
+              <PillGrid
+                options={SNOOZE_DURATIONS}
+                selected={snoozeDuration}
+                onSelect={v => setSnoozeDuration(v)}
+              />
+            </GlassCard>
+          </Animated.View>
+
+          {/* Bottom spacer */}
+          <View style={{ height: 40 }} />
+        </>
       )}
 
       <RingtonePickerModal
@@ -1279,67 +1205,46 @@ export default function AlarmSettingsScreen() {
           handleStopPreview();
           setRingtonePickerVisible(false);
         }}
-        theme={theme}
       />
-    </View>
+    </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
+  heroCard: {
+    marginBottom: SPACING.section,
   },
-  header: {
+  heroInner: {
+    padding: SPACING.cardPadding,
+  },
+  heroHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    paddingBottom: spacing.sm,
+    justifyContent: 'space-between',
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+  heroLabel: {
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+    fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
+    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+    textTransform: TYPOGRAPHY.sectionLabel.textTransform,
+    color: 'rgba(255,255,255,0.5)',
   },
-  headerTitle: {
-    ...typography.headingMedium,
+  heroBadge: {
+    fontFamily: FONTS.heading,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: ACCENT,
+  },
+  heroMessage: {
+    fontSize: TYPOGRAPHY.body.fontSize,
+    lineHeight: 20,
     color: colors.text.primary,
-    fontSize: 20,
+    fontWeight: TYPOGRAPHY.body.fontWeight,
+    marginTop: 6,
   },
-  headerSub: {
-    ...typography.caption,
-    color: colors.text.tertiary,
-    marginTop: 1,
-  },
-  glowTop: {
-    position: 'absolute',
-    top: -60,
-    right: -40,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(123, 97, 255, 0.06)',
-  },
-  glowBottom: {
-    position: 'absolute',
-    bottom: -80,
-    left: -60,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: 'rgba(79, 195, 247, 0.04)',
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    gap: spacing.md,
+  heroCta: {
+    marginTop: SPACING.titleGap + 10,
   },
   smartCard: {
     gap: spacing.sm,
@@ -1353,7 +1258,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: colors.accent.purpleLight,
+    backgroundColor: ACCENT + '26',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1367,6 +1272,11 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     lineHeight: 16,
   },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(123,127,255,0.12)',
+    borderRadius: 1,
+  },
   smartDetail: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1378,7 +1288,7 @@ const styles = StyleSheet.create({
   },
   smartDetailValue: {
     ...typography.label,
-    color: colors.accent.purple,
+    color: ACCENT,
     fontWeight: '700',
   },
   smartNote: {

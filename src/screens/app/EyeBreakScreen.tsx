@@ -3,17 +3,17 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ScreenShell } from '@/components/layout/ScreenShell';
 import { AmbientBackground } from '@/components/ui/AmbientBackground';
-import { PillarProvider } from '@/context/PillarContext';
 import { ExpandingCircleGuide } from '@/components/eye/animations/ExpandingCircleGuide';
 import { useAuth } from '@/context/AuthContext';
 import { incrementBreaksTaken } from '@/services/dailyEyeGoalsPersistence';
 import { recordBreakTaken } from '@/services/lastBreakPersistence';
 import { colors } from '@/constants/colors';
+import { STATUS_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 
 const DURATION = 20;
 
@@ -38,14 +38,7 @@ export default function EyeBreakScreen() {
   }, [secondsLeft, done]);
 
   return (
-    <SafeAreaView style={styles.root}>
-      <LinearGradient
-        colors={['#0B1920', '#071216', '#03080B']}
-        style={StyleSheet.absoluteFill}
-      />
-      <PillarProvider pillar="eyes">
-        <AmbientBackground subtle />
-      </PillarProvider>
+    <ScreenShell scroll={false} pillar="eye" contentStyle={styles.root} ambient={<AmbientBackground subtle />}>
       <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
         <Ionicons name="close" size={18} color={colors.text.secondary} />
       </TouchableOpacity>
@@ -59,25 +52,22 @@ export default function EyeBreakScreen() {
         </>
       ) : (
         <>
-          <Ionicons name="checkmark-circle" size={56} color="#6ee7b7" />
+          <Ionicons name="checkmark-circle" size={56} color={STATUS_COLORS.success} />
           <Text style={styles.title}>Break complete</Text>
-          <TouchableOpacity style={styles.doneBtn} onPress={() => router.back()} activeOpacity={0.85}>
-            <Text style={styles.doneBtnText}>Done</Text>
-          </TouchableOpacity>
+          <GradientCTA label="Done" onPress={() => router.back()} textColor="#03212C" style={styles.doneCta} />
         </>
       )}
-    </SafeAreaView>
+    </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.xl, paddingHorizontal: spacing.lg },
+  root: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.xl },
   closeBtn: { position: 'absolute', top: spacing.xl, right: spacing.lg, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
   topLabel: { fontSize: 14, color: colors.text.secondary, fontWeight: '600', letterSpacing: 1 },
   timer: { fontSize: 48, fontWeight: '900', color: colors.text.primary },
   guideWrap: {},
   instruction: { fontSize: 15, color: 'rgba(255,255,255,0.45)', textAlign: 'center' },
   title: { ...typography.headingMedium, color: colors.text.primary, textAlign: 'center' },
-  doneBtn: { backgroundColor: colors.accent.purple, paddingHorizontal: spacing.xxl, paddingVertical: spacing.md, borderRadius: 100 },
-  doneBtnText: { ...typography.bodyLarge, color: '#FFFFFF', fontWeight: '700' },
+  doneCta: { minWidth: 200 },
 });

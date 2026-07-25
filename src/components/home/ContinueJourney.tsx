@@ -20,8 +20,8 @@ type LastFeature = {
 };
 
 const FEATURE_MAP: Record<string, LastFeature> = {
-  'eye-exercise': { id: 'eye-exercise', label: 'Eye Training', subtitle: 'Protect your vision', route: ROUTES.appEyeRelax, color: '#6ee7b7' },
-  'eye-game':     { id: 'eye-game',     label: 'Eye Games',    subtitle: 'Train your reflexes', route: ROUTES.appEyeRelax, color: '#22d3ee' },
+  'eye-exercise': { id: 'eye-exercise', label: 'Eye Comfort', subtitle: 'Take a guided screen break', route: ROUTES.appEyeRelax, color: '#6ee7b7' },
+  'eye-game':     { id: 'eye-game',     label: 'Visual Games', subtitle: 'Play a short coordination activity', route: ROUTES.appEyeRelax, color: '#22d3ee' },
   'relax':        { id: 'relax',        label: 'Relaxation',   subtitle: 'Unwind and breathe', route: ROUTES.appRelax, color: '#4FC3F7' },
   'mind':         { id: 'mind',         label: 'Mind & Breath', subtitle: 'Stress relief', route: ROUTES.appBoxBreathing, color: '#60a5fa' },
   'sleep':        { id: 'sleep',        label: 'Sleep',        subtitle: 'Track tonight', route: ROUTES.appSleep, color: '#a78bfa' },
@@ -45,8 +45,8 @@ function getWeeklyCount(featureId: string, weekly: { eye: number; eyeGames: numb
   }
 }
 
-export const ContinueJourney = memo(function ContinueJourney() {
-  const router = useRouter();
+/** The last feature the user interacted with, plus whether they've already done it again this week. */
+export function useLastFeature(): { last: LastFeature | null; isCompleted: boolean } {
   const [last, setLast] = useState<LastFeature | null>(null);
   const weeklySessions = useProgressStore((s) => s.weeklySessions);
 
@@ -60,6 +60,13 @@ export const ContinueJourney = memo(function ContinueJourney() {
     if (!last) return false;
     return getWeeklyCount(last.id, weeklySessions) > 0;
   }, [last, weeklySessions]);
+
+  return { last, isCompleted };
+}
+
+export const ContinueJourney = memo(function ContinueJourney() {
+  const router = useRouter();
+  const { last, isCompleted } = useLastFeature();
 
   if (!last) return null;
 

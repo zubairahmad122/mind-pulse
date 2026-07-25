@@ -6,7 +6,9 @@ import AnimatedBackground from '@/components/AnimatedBackground';
 import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { colors } from '@/constants/colors';
+import { BACKGROUND, STATUS_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { radius } from '@/constants/radius';
 import { typography } from '@/constants/typography';
@@ -131,7 +133,7 @@ export default function RecoveryScreen() {
 
           {done ? (
             <View style={styles.doneWrap}>
-              <CheckCircle size={80} color="#6ee7b7" />
+              <CheckCircle size={80} color={STATUS_COLORS.success} />
               <Text style={styles.doneText}>Done! Great work.</Text>
             </View>
           ) : (
@@ -156,8 +158,7 @@ export default function RecoveryScreen() {
   return (
     <ScreenShell ambient={<AmbientBackground subtle />}>
       <ScreenTransition>
-      <Text style={styles.header}>Recovery Mode</Text>
-      <Text style={styles.subtitle}>Small actions. Real impact.</Text>
+      <ScreenHeader title="Recovery Mode" subtitle="Small actions. Real impact." showBack />
 
       {OPTIONS.map(opt => {
         const OptIcon = opt.icon;
@@ -191,17 +192,6 @@ export default function RecoveryScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.text.secondary,
-    marginBottom: spacing.lg,
-  },
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -239,7 +229,7 @@ const styles = StyleSheet.create({
   // Timer full-screen
   timerScreen: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: BACKGROUND.base,
   },
   timerContent: {
     flex: 1,
@@ -286,7 +276,7 @@ const styles = StyleSheet.create({
   doneText: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#6ee7b7',
+    color: STATUS_COLORS.success,
   },
   cancelBtn: {
     backgroundColor: colors.background.card,

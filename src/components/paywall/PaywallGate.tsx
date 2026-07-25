@@ -1,14 +1,17 @@
-import { Crown, Lock } from 'lucide-react-native';
+import { Check, Crown, Lock } from 'lucide-react-native';
 import { Children, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { glassCard } from '@/constants/glassCard';
-import { COLORS, colors } from '@/constants/colors';
-import { ENTITLEMENTS, FEATURE_NAMES, type FeatureId } from '@/constants/entitlements';
+import { colors } from '@/constants/colors';
+import { ENTITLEMENTS, FEATURE_DESCRIPTIONS, FEATURE_NAMES, type FeatureId } from '@/constants/entitlements';
 import { radius } from '@/constants/radius';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+import { FONTS, GLASS_CARD, PRO_GOLD, RADIUS, SHADOWS } from '@/constants/designSystem';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { usePaywall } from '@/hooks/usePaywall';
+import { GradientCTA } from '@/components/ui/GradientCTA';
+
+const BENEFITS = ['Unlimited sessions', 'Track your weekly progress', 'Advanced insights', 'Full premium toolkit'];
 
 type Props = {
   featureId: FeatureId;
@@ -39,17 +42,35 @@ export function PaywallGate({ featureId, children }: Props) {
 
   if (Children.count(children) === 0) {
     return (
-      <Pressable onPress={() => showPaywall(featureId)} style={styles.lockedCard}>
+      <View style={styles.lockedCard}>
+        <View style={styles.lockedTopBadge}>
+          <Crown size={12} color={colors.background.primary} />
+          <Text style={styles.lockedTopBadgeText}>MindPulse Pro</Text>
+        </View>
+
         <View style={styles.lockedIconWrap}>
-          <Lock size={22} color={colors.accent.purple} />
+          <Lock size={30} color={colors.accent.purple} />
         </View>
+
         <Text style={styles.lockedTitle}>{FEATURE_NAMES[featureId]}</Text>
-        <Text style={styles.lockedSubtitle}>This is a Pro feature</Text>
-        <View style={styles.badge}>
-          <Lock size={14} color={colors.text.primary} />
-          <Text style={styles.badgeLabel}>Unlock with Pro</Text>
+        <Text style={styles.lockedSubtitle}>{FEATURE_DESCRIPTIONS[featureId]}</Text>
+
+        <GradientCTA
+          label="Unlock with Pro"
+          onPress={() => showPaywall(featureId)}
+          textColor="#03212C"
+          style={styles.lockedCta}
+        />
+
+        <View style={styles.lockedBenefits}>
+          {BENEFITS.map(b => (
+            <View key={b} style={styles.lockedBenefitRow}>
+              <Check size={14} color={colors.text.secondary} strokeWidth={2.5} />
+              <Text style={styles.lockedBenefitText}>{b}</Text>
+            </View>
+          ))}
         </View>
-      </Pressable>
+      </View>
     );
   }
 
@@ -57,7 +78,7 @@ export function PaywallGate({ featureId, children }: Props) {
     <Pressable onPress={() => showPaywall(featureId)} style={styles.wrapper}>
       <View pointerEvents="none">{children}</View>
       <View style={styles.cornerBadge}>
-        <Crown size={10} color={COLORS.bg} />
+        <Crown size={10} color={colors.background.primary} />
         <Text style={styles.cornerBadgeText}>PRO</Text>
       </View>
     </Pressable>
@@ -78,46 +99,86 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: radius.pill,
-    backgroundColor: COLORS.gold,
+    backgroundColor: PRO_GOLD,
     borderWidth: 2,
     borderColor: colors.background.primary,
   },
   cornerBadgeText: {
     ...typography.caption,
     fontSize: 10,
-    color: COLORS.bg,
+    color: colors.background.primary,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   lockedCard: {
-    ...glassCard,
+    backgroundColor: GLASS_CARD.bg,
+    borderWidth: 1,
+    borderColor: GLASS_CARD.border,
+    borderRadius: RADIUS.card,
+    padding: spacing.xl,
     alignItems: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.lg,
+    ...SHADOWS.card,
+  },
+  lockedTopBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: PRO_GOLD,
+    marginBottom: spacing.xs,
+  },
+  lockedTopBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.background.primary,
+    letterSpacing: 0.4,
   },
   lockedIconWrap: {
-    width: 44,
-    height: 44,
+    width: 64,
+    height: 64,
     borderRadius: radius.pill,
     backgroundColor: colors.accent.purpleLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xs,
+    shadowColor: colors.accent.purple,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  lockedTitle: { ...typography.headingSmall, color: colors.text.primary },
-  lockedSubtitle: { ...typography.body, color: colors.text.secondary, marginBottom: spacing.xs },
-  badge: {
+  lockedTitle: {
+    fontFamily: FONTS.heading,
+    fontSize: 30,
+    fontWeight: '800',
+    color: colors.text.primary,
+    textAlign: 'center',
+  },
+  lockedSubtitle: {
+    ...typography.body,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+  lockedCta: {
+    alignSelf: 'stretch',
+    marginTop: spacing.xs,
+  },
+  lockedBenefits: {
+    alignSelf: 'stretch',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  lockedBenefitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    backgroundColor: colors.accent.purple,
+    gap: spacing.sm,
   },
-  badgeLabel: {
-    ...typography.label,
-    color: colors.text.primary,
-    fontWeight: '700',
+  lockedBenefitText: {
+    ...typography.body,
+    color: colors.text.secondary,
   },
 });

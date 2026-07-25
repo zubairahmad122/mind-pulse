@@ -6,17 +6,20 @@ import { SleepAnalysisPanel } from "@/components/sleep/SleepAnalysisPanel";
 import { SleepDial } from "@/components/sleep/SleepDial";
 import { SleepQualityModal } from "@/components/sleep/SleepQualityModal";
 import { SleepRoutinePanel } from "@/components/sleep/SleepRoutinePanel";
+import { SleepSoundButton } from "@/components/sleep/SleepSoundButton";
 import { SleepTimePickerSheet } from "@/components/sleep/SleepTimePickerSheet";
 import { AmbientBackground } from "@/components/ui";
 import { ActionCard } from "@/components/ui/ActionCard";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { GradientCTA } from "@/components/ui/GradientCTA";
+import { HeroCard } from "@/components/ui/HeroCard";
+import { SectionLabel } from "@/components/ui/SectionLabel";
+import { WeeklyProgressRow } from "@/components/ui/WeeklyProgressRow";
 import { Shimmer, ShimmerCircle } from "@/components/sleep/Skeletons";
 import { getPresetById, NIGHT_PRESETS, ROUTES } from "@/constants";
-import { PILLAR_THEME } from "@/constants/theme";
+import { FONTS, PILLAR_COLORS, RADIUS, SHADOWS, SPACING, SURFACE_TINT, TYPOGRAPHY } from "@/constants/designSystem";
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Haptics from "expo-haptics";
-import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   BarChart3,
@@ -46,14 +49,6 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-
-// Enable smooth height animations (e.g. AI insight expand) on Android.
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 import Animated, {
   cancelAnimation,
   Easing,
@@ -86,7 +81,16 @@ import {
   calculateStreak,
   formatDuration,
   formatElapsed,
+  nextOccurrenceOfTime,
 } from "@/utils/sleepUtils";
+
+// Enable smooth height animations (e.g. AI insight expand) on Android.
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -130,15 +134,16 @@ function timeDiffMinutes(from: string, to: string): number {
   return diff;
 }
 
-// ── Sleep pillar theme tokens ──────────────────────────────────────────────────
-const SLEEP = PILLAR_THEME.sleep;
+// ── Sleep pillar accent — the frozen spec token (section 16: Sleep = Indigo) ──
+const SLEEP_ACCENT = PILLAR_COLORS.sleep;
 
-// ── Sleep goal cards ──────────────────────────────────────────────────────────
+// ── Sleep goal cards — all one indigo accent (spec: "only one accent color
+// per screen"), so no per-goal `color` field here anymore. ──────────────────
 const SLEEP_GOALS = [
-  { hours: 7, label: "Minimum", icon: Moon, color: "#60a5fa" },
-  { hours: 7.5, label: "Recommended", icon: Star, color: "#a78bfa" },
-  { hours: 8, label: "Optimal", icon: Sparkles, color: "#34d399" },
-  { hours: 9, label: "Recovery", icon: Bed, color: "#f59e0b" },
+  { hours: 7, label: "Minimum", icon: Moon },
+  { hours: 7.5, label: "Recommended", icon: Star },
+  { hours: 8, label: "Optimal", icon: Sparkles },
+  { hours: 9, label: "Recovery", icon: Bed },
 ] as const;
 
 // ── ReadinessRing — compact circular gauge for the header indicator ───────────
@@ -202,11 +207,15 @@ function ReadinessRing({
   );
 }
 
-function stageBadgeClass(stage: SleepStage): string {
-  if (stage === "light") return "bg-emerald-500/20 border-emerald-500/40";
-  if (stage === "rem") return "bg-sky-400/20 border-sky-400/40";
-  return "bg-purple-500/20 border-purple-500/40";
-}
+// Inline colors, not Tailwind classes — the old `bg-purple-500` for "deep"
+// was the same off-brand-purple bug as the toggle/dismiss-button fixes.
+// Same bg/border/text-color shape as the SMART/On badges elsewhere on this
+// screen (colored text on a light tint, not white text on a mid tint).
+const SLEEP_STAGE_STYLE: Record<SleepStage, { bg: string; border: string; text: string }> = {
+  light: { bg: "rgba(50,213,131,0.15)", border: "rgba(50,213,131,0.35)", text: "#32D583" },
+  rem: { bg: "rgba(56,189,248,0.15)", border: "rgba(56,189,248,0.35)", text: "#38BDF8" },
+  deep: { bg: "rgba(123,127,255,0.15)", border: "rgba(123,127,255,0.35)", text: PILLAR_COLORS.sleep },
+};
 
 // ─── Toggle Switch ────────────────────────────────────────────────────────────
 
@@ -221,11 +230,13 @@ function ToggleSwitch({
     <TouchableOpacity
       onPress={onToggle}
       activeOpacity={0.8}
-      className={`w-12 h-7 rounded-full p-0.5 justify-center border ${
-        value
-          ? "bg-app-purple border-app-purple"
-          : "bg-white/[0.06] border-white/10"
-      }`}
+      className="w-12 h-7 rounded-full p-0.5 justify-center border"
+      style={{
+        // Inline, not a `bg-app-purple` className — that Tailwind token is
+        // #8B5CF6, a brighter purple than the frozen Sleep indigo.
+        backgroundColor: value ? SLEEP_ACCENT : "rgba(255,255,255,0.06)",
+        borderColor: value ? SLEEP_ACCENT : "rgba(255,255,255,0.1)",
+      }}
     >
       <View
         className={`w-[22px] h-[22px] rounded-full bg-white shadow-sm ${value ? "self-end" : "self-start"}`}
@@ -353,7 +364,7 @@ function TestAlarmModal({
               width: 260,
               height: 260,
               borderRadius: 130,
-              backgroundColor: ringtone?.color ?? "#a78bfa",
+              backgroundColor: ringtone?.color ?? SLEEP_ACCENT,
               top: "22%",
             },
             pulseAnim,
@@ -370,7 +381,7 @@ function TestAlarmModal({
             borderRadius: 200,
             borderTopLeftRadius: 0,
             borderTopRightRadius: 0,
-            backgroundColor: (ringtone?.color ?? "#a78bfa") + "08",
+            backgroundColor: (ringtone?.color ?? SLEEP_ACCENT) + "08",
           }}
         />
 
@@ -378,14 +389,14 @@ function TestAlarmModal({
         <View
           className="w-24 h-24 rounded-full items-center justify-center mb-5"
           style={{
-            backgroundColor: (ringtone?.color ?? "#a78bfa") + "15",
+            backgroundColor: (ringtone?.color ?? SLEEP_ACCENT) + "15",
             borderWidth: 1,
-            borderColor: (ringtone?.color ?? "#a78bfa") + "30",
+            borderColor: (ringtone?.color ?? SLEEP_ACCENT) + "30",
           }}
         >
           <RingIcon
             size={44}
-            color={ringtone?.color ?? "#a78bfa"}
+            color={ringtone?.color ?? SLEEP_ACCENT}
             strokeWidth={1.5}
           />
         </View>
@@ -418,7 +429,7 @@ function TestAlarmModal({
                   height: 4 + (i % 3) * 3,
                   backgroundColor:
                     i < Math.round(alarmVolume * 10)
-                      ? (ringtone?.color ?? "#a78bfa")
+                      ? (ringtone?.color ?? SLEEP_ACCENT)
                       : "rgba(255,255,255,0.08)",
                 }}
               />
@@ -430,9 +441,10 @@ function TestAlarmModal({
         <TouchableOpacity
           onPress={handleDismiss}
           activeOpacity={0.85}
-          className="mt-12 w-full max-w-xs flex-row items-center justify-center gap-2.5 py-4 rounded-2xl bg-app-purple"
+          className="mt-12 w-full max-w-xs flex-row items-center justify-center gap-2.5 py-4 rounded-2xl"
           style={{
-            shadowColor: "#a78bfa",
+            backgroundColor: SLEEP_ACCENT,
+            shadowColor: SLEEP_ACCENT,
             shadowOffset: { width: 0, height: 0 },
             shadowRadius: 20,
             shadowOpacity: 0.5,
@@ -492,10 +504,10 @@ function SkeletonRow({ trailing }: { trailing: React.ReactNode }) {
         paddingVertical: 16,
       }}
     >
-      <Shimmer w={42} h={42} r={13} />
+      <Shimmer w={48} h={48} r={24} />
       <View style={{ flex: 1, gap: 6 }}>
-        <Shimmer w={90} h={14} r={4} />
-        <Shimmer w={140} h={10} r={3} />
+        <Shimmer w={90} h={16} r={4} />
+        <Shimmer w={140} h={12} r={3} />
       </View>
       {trailing}
     </View>
@@ -504,11 +516,14 @@ function SkeletonRow({ trailing }: { trailing: React.ReactNode }) {
 
 function SleepSkeleton() {
   return (
-    <ScreenShell safeBottom pillar="sleep" ambient={<AmbientBackground />}>
-      <View className="px-1 pt-1 pb-4">
-        {/* Header — title + readiness pill + gear (no greeting) */}
-        <View className="mb-6 flex-row items-center justify-between">
-          <Shimmer w={110} h={32} r={8} />
+    <ScreenShell pillar="sleep" ambient={<AmbientBackground />}>
+      <View>
+        {/* Header — title + subtitle, readiness pill + gear */}
+        <View className="flex-row items-center justify-between">
+          <View style={{ gap: 2 }}>
+            <Shimmer w={110} h={32} r={8} />
+            <Shimmer w={160} h={16} r={4} />
+          </View>
           <View className="flex-row items-center gap-2">
             <Shimmer w={104} h={34} r={17} />
             <ShimmerCircle size={36} />
@@ -520,58 +535,61 @@ function SleepSkeleton() {
           style={{
             flexDirection: "row",
             gap: 4,
-            padding: 5,
-            borderRadius: 18,
-            backgroundColor: "rgba(12,8,28,0.5)",
-            borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.08)",
-            marginBottom: 20,
+            padding: 4,
+            marginTop: SPACING.section,
+            borderRadius: 24,
+            backgroundColor: "rgba(255,255,255,0.05)",
           }}
         >
-          <Shimmer h={36} r={12} style={{ flex: 1 }} />
-          <Shimmer h={36} r={12} style={{ flex: 1 }} />
-          <Shimmer h={36} r={12} style={{ flex: 1 }} />
+          <Shimmer h={38} r={16} style={{ flex: 1 }} />
+          <Shimmer h={38} r={16} style={{ flex: 1 }} />
+          <Shimmer h={38} r={16} style={{ flex: 1 }} />
         </View>
 
-        {/* Main card — mirrors the live Tonight card */}
-        <GlassCard noPadding>
-          {/* Circular sleep dial */}
+        {/* Hero — 24h sleep dial card */}
+        <GlassCard noPadding style={{ marginTop: SPACING.section, borderRadius: RADIUS.card, ...SHADOWS.medium }}>
           <View style={{ alignItems: "center", paddingVertical: 24 }}>
+            <Shimmer w={140} h={13} r={4} style={{ marginBottom: 16 }} />
             <ShimmerCircle size={220} />
           </View>
+        </GlassCard>
 
-          <SkeletonDivider />
+        {/* Bedtime / Wake Up card */}
+        <GlassCard noPadding style={{ marginTop: SPACING.section, borderRadius: RADIUS.card, ...SHADOWS.medium }}>
           <SkeletonRow trailing={<Shimmer w={70} h={20} r={5} />} />
           <SkeletonDivider />
           <SkeletonRow trailing={<Shimmer w={70} h={20} r={5} />} />
-          <SkeletonDivider />
+        </GlassCard>
 
-          {/* Goal chips */}
-          <View
-            style={{ flexDirection: "row", gap: 10, padding: 16 }}
-          >
+        {/* Sleep Goal — label above a plain chip row */}
+        <View style={{ gap: 12, marginTop: SPACING.section }}>
+          <Shimmer w={100} h={13} r={4} />
+          <View style={{ flexDirection: "row", gap: 10 }}>
             {[0, 1, 2, 3].map((i) => (
-              <View key={i} style={{ flex: 1, alignItems: "center", gap: 8 }}>
-                <Shimmer w="100%" h={64} r={16} />
+              <View key={i} style={{ flex: 1, gap: 8 }}>
+                <Shimmer w="100%" h={76} r={18} />
+                <Shimmer w="70%" h={11} r={3} style={{ alignSelf: "center" }} />
               </View>
             ))}
           </View>
+        </View>
 
-          <SkeletonDivider />
-          {/* Smart alarm row */}
+        {/* Start Sleep CTA */}
+        <Shimmer h={56} r={18} style={{ marginTop: SPACING.section }} />
+
+        {/* Smart Alarm card */}
+        <GlassCard noPadding style={{ marginTop: SPACING.section, borderRadius: RADIUS.card, ...SHADOWS.medium }}>
           <SkeletonRow trailing={<Shimmer w={48} h={28} r={14} />} />
-          <SkeletonDivider />
-
-          {/* AI insight */}
-          <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
-            <Shimmer h={84} r={18} />
-          </View>
-
-          {/* Start sleep CTA */}
-          <View style={{ padding: 16 }}>
-            <Shimmer h={56} r={18} />
-          </View>
         </GlassCard>
+
+        {/* AI Insight card */}
+        <Shimmer h={100} r={RADIUS.card} style={{ marginTop: SPACING.section }} />
+
+        {/* Weekly Sleep */}
+        <View style={{ gap: 12, marginTop: SPACING.section }}>
+          <Shimmer w={120} h={13} r={4} />
+          <Shimmer h={40} r={12} />
+        </View>
       </View>
     </ScreenShell>
   );
@@ -678,6 +696,36 @@ export default function SleepScreen() {
     };
   }, [tracking, startTime, hydrated]);
 
+  // ── Night dimming — auto-dim everything but the clock/moon after 30s idle,
+  // any touch anywhere restores it. Pure in-app opacity, not system
+  // brightness/keep-awake (that would need new native permissions); this is
+  // the cross-platform-safe version of the same idea.
+  const DIM_IDLE_MS = 30000;
+  const dimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dimOpacity = useSharedValue(1);
+
+  const registerTrackingActivity = useCallback(() => {
+    if (dimTimerRef.current) clearTimeout(dimTimerRef.current);
+    dimOpacity.value = withTiming(1, { duration: 300 });
+    dimTimerRef.current = setTimeout(() => {
+      dimOpacity.value = withTiming(0.3, { duration: 900 });
+    }, DIM_IDLE_MS);
+  }, [dimOpacity]);
+
+  useEffect(() => {
+    if (!tracking) {
+      if (dimTimerRef.current) clearTimeout(dimTimerRef.current);
+      dimOpacity.value = 1;
+      return;
+    }
+    registerTrackingActivity();
+    return () => {
+      if (dimTimerRef.current) clearTimeout(dimTimerRef.current);
+    };
+  }, [tracking, registerTrackingActivity, dimOpacity]);
+
+  const dimStyle = useAnimatedStyle(() => ({ opacity: dimOpacity.value }));
+
   // Live clock parts for the tracking hero.
   const clockHour24 = clockNow.getHours();
   const clockHm = `${String(clockHour24 % 12 === 0 ? 12 : clockHour24 % 12).padStart(2, "0")} : ${String(clockNow.getMinutes()).padStart(2, "0")}`;
@@ -777,11 +825,13 @@ export default function SleepScreen() {
   const handleStartSleep = useCallback(async () => {
     if (actionBusyRef.current || busy) return;
     actionBusyRef.current = true;
-    // Use the slider's actual wake time instead of the preset duration
-    const sliderMinutes = timeDiffMinutes(sliderBedtime, sliderWakeTime);
+    // Fixed wake clock-time (e.g. always 6:30 AM), not "now + duration" — a
+    // late start shouldn't push the alarm later than the time Routine/this
+    // tab both display as the plan.
+    const wakeAt = nextOccurrenceOfTime(sliderWakeTime);
     const wakeTimeLabel = `Sleep until ${formatTimeAmPm(sliderWakeTime)}`;
     const ok = await startSleep(
-      sliderMinutes,
+      wakeAt,
       wakeTimeLabel,
       selectedPreset.id,
     );
@@ -789,7 +839,7 @@ export default function SleepScreen() {
     if (ok) {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-  }, [busy, sliderBedtime, sliderWakeTime, selectedPreset, startSleep]);
+  }, [busy, sliderWakeTime, selectedPreset, startSleep]);
 
   const handleStop = useCallback(async () => {
     if (actionBusyRef.current || busy) return;
@@ -877,6 +927,8 @@ export default function SleepScreen() {
   const streak = calculateStreak(sessions);
   const avg = avgDuration(sessions);
   const lastSession = sessions[0];
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const nightsThisWeek = sessions.filter((s) => s.startTime > oneWeekAgo).length;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -900,9 +952,9 @@ export default function SleepScreen() {
         <Svg width={320} height={320} viewBox="0 0 380 380">
           <Defs>
             <SvgRadialGradient id="sleepBgGlow" cx="50%" cy="50%" r="50%">
-              <Stop offset="0%" stopColor={SLEEP.accent} stopOpacity={0.25} />
-              <Stop offset="55%" stopColor={SLEEP.accent} stopOpacity={0.08} />
-              <Stop offset="100%" stopColor={SLEEP.accent} stopOpacity={0} />
+              <Stop offset="0%" stopColor={SLEEP_ACCENT} stopOpacity={0.25} />
+              <Stop offset="55%" stopColor={SLEEP_ACCENT} stopOpacity={0.08} />
+              <Stop offset="100%" stopColor={SLEEP_ACCENT} stopOpacity={0} />
             </SvgRadialGradient>
           </Defs>
           <Circle cx={190} cy={190} r={190} fill="url(#sleepBgGlow)" />
@@ -912,7 +964,7 @@ export default function SleepScreen() {
   }
 
   return (
-    <ScreenShell safeBottom pillar="sleep" ambient={<AmbientBackground />}>
+    <ScreenShell pillar="sleep" ambient={<AmbientBackground />}>
       <ScreenTransition>
         <View className="px-1 pt-1 pb-4">
           {/* Header */}
@@ -921,13 +973,23 @@ export default function SleepScreen() {
             <View>
               <Text
                 style={{
-                  fontSize: 30,
-                  fontWeight: "800",
-                  color: "#FFFFFF",
-                  letterSpacing: -0.5,
+                  fontFamily: FONTS.heading,
+                  fontSize: TYPOGRAPHY.screenTitle.fontSize,
+                  fontWeight: TYPOGRAPHY.screenTitle.fontWeight,
+                  color: TYPOGRAPHY.screenTitle.color,
                 }}
               >
                 Sleep
+              </Text>
+              <Text
+                style={{
+                  fontSize: TYPOGRAPHY.subtitle.fontSize,
+                  fontWeight: TYPOGRAPHY.subtitle.fontWeight,
+                  color: TYPOGRAPHY.subtitle.color,
+                  marginTop: 2,
+                }}
+              >
+                Rest deeply, wake fresh
               </Text>
             </View>
             <View className="flex-row items-center gap-2">
@@ -1026,18 +1088,16 @@ export default function SleepScreen() {
             )}
           </View>
 
-          {/* Tab toggle — premium segmented control with gradient active pill */}
+          {/* Tab toggle — segmented control, solid indigo active pill */}
           {!tracking && (
             <View
               style={{
                 flexDirection: "row",
                 gap: 4,
-                marginBottom: 20,
-                padding: 5,
-                borderRadius: 18,
-                backgroundColor: "rgba(12,8,28,0.6)",
-                borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.1)",
+                marginBottom: SPACING.section,
+                padding: 4,
+                borderRadius: 24,
+                backgroundColor: "rgba(255,255,255,0.05)",
               }}
             >
               {[
@@ -1063,60 +1123,33 @@ export default function SleepScreen() {
                       setSegment(tab.id);
                     }}
                     activeOpacity={0.85}
-                    style={{ flex: 1, borderRadius: 14, overflow: "hidden" }}
+                    style={{
+                      flex: 1,
+                      borderRadius: 16,
+                      overflow: "hidden",
+                      backgroundColor: active ? SLEEP_ACCENT : "transparent",
+                    }}
                   >
-                    {active ? (
-                      <LinearGradient
-                        colors={["#3b82f6", "#7c3aed"]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        paddingVertical: 11,
+                      }}
+                    >
+                      <TabIcon size={15} color={active ? "#FFFFFF" : "rgba(255,255,255,0.65)"} />
+                      <Text
                         style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 6,
-                          paddingVertical: 11,
-                          shadowColor: "#3b82f6",
-                          shadowOffset: { width: 0, height: 4 },
-                          shadowOpacity: 0.45,
-                          shadowRadius: 10,
-                          elevation: 6,
+                          fontSize: 14,
+                          fontWeight: active ? "600" : "500",
+                          color: active ? "#FFFFFF" : "rgba(255,255,255,0.65)",
                         }}
                       >
-                        <TabIcon size={15} color="#fff" />
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            fontWeight: "800",
-                            color: "#FFFFFF",
-                            letterSpacing: 0.2,
-                          }}
-                        >
-                          {tab.label}
-                        </Text>
-                      </LinearGradient>
-                    ) : (
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 6,
-                          paddingVertical: 11,
-                        }}
-                      >
-                        <TabIcon size={15} color="rgba(255,255,255,0.4)" />
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            fontWeight: "700",
-                            color: "rgba(255,255,255,0.45)",
-                          }}
-                        >
-                          {tab.label}
-                        </Text>
-                      </View>
-                    )}
+                        {tab.label}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
@@ -1125,11 +1158,11 @@ export default function SleepScreen() {
 
           {/* ── TRACKING STATE ─────────────────────────────────────────────────── */}
           {tracking ? (
-            <View className="gap-6 pt-2">
+            <View className="gap-6 pt-2" onTouchStart={registerTrackingActivity}>
               {/* Ambient glow behind the clock/moon area */}
               <TrackingGlow frame={0} />
 
-              {/* Live device clock */}
+              {/* Live device clock — stays full brightness during night dimming */}
               <View className="items-center">
                 <View className="flex-row items-end">
                   <Text
@@ -1167,130 +1200,163 @@ export default function SleepScreen() {
                 </Text>
               </View>
 
-              {/* Moon + drifting golden wave */}
+              {/* Moon + drifting golden wave — stays full brightness during night dimming */}
               <MoonWave width={Math.min(width - 48, 340)} />
 
-              {/* Time asleep */}
-              <View className="items-center">
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontWeight: "800",
-                    letterSpacing: 2.5,
-                    color: "rgba(255,255,255,0.35)",
-                  }}
-                >
-                  TIME ASLEEP
-                </Text>
-                <Animated.View style={timerScaleAnim}>
+              {/* Everything below fades to 0.3 opacity after 30s idle (night
+                  dimming) — any touch anywhere restores it instantly. */}
+              <Animated.View style={[{ gap: 24 }, dimStyle]}>
+                {/* Time asleep */}
+                <View className="items-center">
                   <Text
                     style={{
-                      fontSize: 34,
-                      fontWeight: "800",
-                      color: "#FFFFFF",
-                      fontVariant: ["tabular-nums"],
-                      letterSpacing: 1,
-                      marginTop: 4,
+                      fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+                      fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
+                      letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+                      textTransform: TYPOGRAPHY.sectionLabel.textTransform,
+                      color: "rgba(255,255,255,0.5)",
                     }}
                   >
-                    {formatElapsed(elapsed)}
+                    TIME ASLEEP
                   </Text>
-                </Animated.View>
-              </View>
+                  <Animated.View style={timerScaleAnim}>
+                    <Text
+                      style={{
+                        fontSize: 34,
+                        fontWeight: "800",
+                        color: "#FFFFFF",
+                        fontVariant: ["tabular-nums"],
+                        letterSpacing: 1,
+                        marginTop: 4,
+                      }}
+                    >
+                      {formatElapsed(elapsed)}
+                    </Text>
+                  </Animated.View>
+                </View>
 
-              {/* Alarm + Sounds list cards — shared ActionCard */}
-              <View>
-                <ActionCard
-                  icon={Clock}
-                  title="Alarm"
-                  description={
-                    wakeAt
-                      ? alarmPastDue
-                        ? "Passed — wake when ready"
-                        : `${formatWakeTime(wakeAt)} · in ${formatAlarmCountdown(wakeAt)}`
-                      : "—"
-                  }
-                  accent="#a78bfa"
-                  descriptionColor={alarmPastDue ? "#FF9800" : undefined}
-                  trailing={
-                    smartAlarmEnabled ? (
-                      <View
-                        className={`px-2.5 py-0.5 rounded-full border ${stageBadgeClass(sleepStage)}`}
-                      >
-                        <Text
+                {/* Alarm + Sounds list cards — shared ActionCard */}
+                <View>
+                  <ActionCard
+                    icon={Clock}
+                    title="Alarm"
+                    description={
+                      wakeAt
+                        ? alarmPastDue
+                          ? "Passed — wake when ready"
+                          : `${formatWakeTime(wakeAt)} · in ${formatAlarmCountdown(wakeAt)}`
+                        : "—"
+                    }
+                    accent={SLEEP_ACCENT}
+                    descriptionColor={alarmPastDue ? "#FF9800" : undefined}
+                    trailing={
+                      smartAlarmEnabled ? (
+                        <View
                           style={{
-                            fontSize: 10,
-                            color: "#FFFFFF",
-                            fontWeight: "700",
-                            letterSpacing: 0.3,
+                            paddingHorizontal: 10,
+                            paddingVertical: 2,
+                            borderRadius: RADIUS.chip,
+                            borderWidth: 1,
+                            backgroundColor: SLEEP_STAGE_STYLE[sleepStage].bg,
+                            borderColor: SLEEP_STAGE_STYLE[sleepStage].border,
                           }}
                         >
-                          {sleepStage}
-                        </Text>
-                      </View>
-                    ) : null
-                  }
-                />
-                <ActionCard
-                  icon={Music}
-                  title="Sounds & Music"
-                  description="Ringtone & alarm volume"
-                  accent="#4FC3F7"
-                  onPress={() => router.push(ROUTES.appAlarmSettings)}
-                />
-              </View>
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              color: SLEEP_STAGE_STYLE[sleepStage].text,
+                              fontWeight: "700",
+                              letterSpacing: 0.3,
+                            }}
+                          >
+                            {sleepStage}
+                          </Text>
+                        </View>
+                      ) : null
+                    }
+                  />
+                  <ActionCard
+                    icon={Music}
+                    title="Sounds & Music"
+                    description="Ringtone & alarm volume"
+                    accent={SLEEP_ACCENT}
+                    onPress={() => router.push(ROUTES.appAlarmSettings)}
+                  />
+                </View>
 
-              {/* Snooze (only when alarm is past due) */}
-              {alarmPastDue && snoozeCount < 3 && (
-                <TouchableOpacity
-                  onPress={handleSnooze}
-                  disabled={busy}
-                  activeOpacity={0.75}
-                  className="self-center flex-row items-center gap-2 px-6 py-3 rounded-full border border-white/10 bg-white/[0.04]"
-                >
-                  <Bell size={16} color="rgba(255,255,255,0.6)" />
+                {/* Ambient sleep sound — a looping play/pause, separate from the
+                    alarm/ringtone settings above. */}
+                <SleepSoundButton />
+
+                {/* Snooze (only when alarm is past due) */}
+                {alarmPastDue && snoozeCount < 3 && (
+                  <TouchableOpacity
+                    onPress={handleSnooze}
+                    disabled={busy}
+                    activeOpacity={0.75}
+                    className="self-center flex-row items-center gap-2 px-6 py-3 rounded-full border border-white/10 bg-white/[0.04]"
+                  >
+                    <Bell size={16} color="rgba(255,255,255,0.6)" />
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "700",
+                        color: "rgba(255,255,255,0.7)",
+                      }}
+                    >
+                      Snooze 10 min ({3 - snoozeCount} left)
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Wake up — hold to confirm */}
+                <View className="items-center">
+                  <HoldButton
+                    label="Wake up"
+                    onComplete={handleStop}
+                    disabled={busy}
+                    bg="rgba(255,255,255,0.08)"
+                    borderColor="rgba(255,255,255,0.15)"
+                    borderWidth={1}
+                    height={56}
+                    radius={18}
+                  />
                   <Text
                     style={{
-                      fontSize: 14,
-                      fontWeight: "700",
-                      color: "rgba(255,255,255,0.7)",
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: "rgba(255,255,255,0.4)",
+                      marginTop: 10,
                     }}
                   >
-                    Snooze 10 min ({3 - snoozeCount} left)
+                    Hold to wake up
                   </Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Wake up — hold to confirm */}
-              <View className="items-center">
-                <HoldButton
-                  label="Wake up"
-                  onComplete={handleStop}
-                  disabled={busy}
-                  bg="#0E1116"
-                />
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "600",
-                    color: "rgba(255,255,255,0.4)",
-                    marginTop: 10,
-                  }}
-                >
-                  Hold to wake up
-                </Text>
-              </View>
+                </View>
+              </Animated.View>
             </View>
           ) : segment === "tonight" ? (
-            <View className="gap-5">
-              {/* ── Main Sleep Setup Card — matches HomeDashboard aesthetic ── */}
-              <GlassCard noPadding tint={SLEEP.cardTint}>
+            <View>
+              {/* ── Hero — the 24h sleep dial, same card + gradient as Home's hero ── */}
+              <HeroCard>
+                <Text
+                  style={{
+                    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+                    fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
+                    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+                    textTransform: TYPOGRAPHY.sectionLabel.textTransform,
+                    color: "rgba(255,255,255,0.6)",
+                    textAlign: "center",
+                    paddingTop: SPACING.cardPadding,
+                  }}
+                >
+                  TONIGHT&apos;S SLEEP
+                </Text>
                 {/* 24h sleep dial */}
                 <View
                   style={{
                     alignItems: "center",
-                    paddingTop: 20,
-                    paddingBottom: 16,
+                    paddingTop: 12,
+                    paddingBottom: SPACING.cardPadding,
                   }}
                 >
                   <SleepDial
@@ -1302,9 +1368,10 @@ export default function SleepScreen() {
                     onWakeTimeChange={setSliderWakeTime}
                   />
                 </View>
+              </HeroCard>
 
-                <View className="h-px bg-white/[0.06]" />
-
+              {/* ── Bedtime / Wake Up — its own card ── */}
+              <GlassCard noPadding tint={SURFACE_TINT.card} style={{ marginTop: SPACING.section, borderRadius: RADIUS.card, ...SHADOWS.medium }}>
                 {/* Bedtime row */}
                 <TouchableOpacity
                   onPress={() => setEditingTime("bedtime")}
@@ -1315,30 +1382,35 @@ export default function SleepScreen() {
                   <View
                     className="items-center justify-center"
                     style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 13,
-                      backgroundColor: "rgba(96,165,250,0.14)",
+                      width: 48,
+                      height: 48,
+                      borderRadius: 24,
+                      backgroundColor: SLEEP_ACCENT + "18",
                       borderWidth: 1,
-                      borderColor: "rgba(96,165,250,0.28)",
+                      borderColor: SLEEP_ACCENT + "28",
+                      shadowColor: SLEEP_ACCENT,
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 7,
                     }}
                   >
-                    <Moon size={18} color="#60a5fa" fill="#60a5fa" />
+                    <Moon size={22} color={SLEEP_ACCENT} fill={SLEEP_ACCENT} />
                   </View>
                   <View className="flex-1">
                     <Text
                       style={{
-                        fontSize: 14,
-                        fontWeight: "700",
-                        color: "#f6f8fc",
+                        fontSize: TYPOGRAPHY.cardTitle.fontSize,
+                        fontWeight: TYPOGRAPHY.cardTitle.fontWeight,
+                        color: "#FFFFFF",
                       }}
                     >
                       Bedtime
                     </Text>
                     <Text
                       style={{
-                        fontSize: 11,
-                        color: "rgba(245,247,251,0.4)",
+                        fontSize: TYPOGRAPHY.meta.fontSize,
+                        fontWeight: TYPOGRAPHY.meta.fontWeight,
+                        color: TYPOGRAPHY.meta.color,
                         marginTop: 1,
                       }}
                     >
@@ -1356,9 +1428,9 @@ export default function SleepScreen() {
                   <View className="items-end">
                     <Text
                       style={{
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: "800",
-                        color: "#60a5fa",
+                        color: SLEEP_ACCENT,
                       }}
                     >
                       {formatTimeAmPm(sliderBedtime)}
@@ -1378,30 +1450,35 @@ export default function SleepScreen() {
                   <View
                     className="items-center justify-center"
                     style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 13,
-                      backgroundColor: "rgba(167,139,250,0.14)",
+                      width: 48,
+                      height: 48,
+                      borderRadius: 24,
+                      backgroundColor: SLEEP_ACCENT + "18",
                       borderWidth: 1,
-                      borderColor: "rgba(167,139,250,0.28)",
+                      borderColor: SLEEP_ACCENT + "28",
+                      shadowColor: SLEEP_ACCENT,
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 7,
                     }}
                   >
-                    <Bell size={18} color="#a78bfa" fill="#a78bfa" />
+                    <Bell size={22} color={SLEEP_ACCENT} fill={SLEEP_ACCENT} />
                   </View>
                   <View className="flex-1">
                     <Text
                       style={{
-                        fontSize: 14,
-                        fontWeight: "700",
-                        color: "#f6f8fc",
+                        fontSize: TYPOGRAPHY.cardTitle.fontSize,
+                        fontWeight: TYPOGRAPHY.cardTitle.fontWeight,
+                        color: "#FFFFFF",
                       }}
                     >
                       Wake Up
                     </Text>
                     <Text
                       style={{
-                        fontSize: 11,
-                        color: "rgba(245,247,251,0.4)",
+                        fontSize: TYPOGRAPHY.meta.fontSize,
+                        fontWeight: TYPOGRAPHY.meta.fontWeight,
+                        color: TYPOGRAPHY.meta.color,
                         marginTop: 1,
                       }}
                     >
@@ -1411,52 +1488,61 @@ export default function SleepScreen() {
                   <View className="items-end">
                     <Text
                       style={{
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: "800",
-                        color: "#a78bfa",
+                        color: SLEEP_ACCENT,
                       }}
                     >
                       {formatTimeAmPm(sliderWakeTime)}
                     </Text>
                     {smartAlarmEnabled && (
-                      <View className="flex-row items-center mt-0.5">
-                        <View className="px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25">
-                          <Text
-                            style={{
-                              fontSize: 7,
-                              fontWeight: "800",
-                              color: "#34d399",
-                              letterSpacing: 0.5,
-                            }}
-                          >
-                            SMART
-                          </Text>
-                        </View>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginTop: 3,
+                          backgroundColor: "rgba(50,213,131,0.12)",
+                          borderWidth: 1,
+                          borderColor: "rgba(50,213,131,0.35)",
+                          borderRadius: RADIUS.chip,
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "600",
+                            color: "#32D583",
+                            letterSpacing: 0.3,
+                          }}
+                        >
+                          SMART
+                        </Text>
                       </View>
                     )}
                   </View>
                 </TouchableOpacity>
+              </GlassCard>
 
-                <View className="h-px bg-white/[0.06]" />
-                <View style={{ height: 14 }} />
-
-                {/* Sleep goal cards — Minimum / Recommended / Optimal / Recovery */}
-                <View style={{ paddingHorizontal: 16 }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 6,
-                      marginBottom: 12,
-                    }}
-                  >
-                    <Sparkles size={12} color="rgba(245,247,251,0.45)" />
+              {/* ── Sleep Goal — same "label above a plain row" shape as Relax's Quick Actions ── */}
+              <View style={{ marginTop: SPACING.section }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                    marginBottom: 12,
+                  }}
+                >
+                  <Sparkles size={12} color="rgba(255,255,255,0.6)" />
                     <Text
                       style={{
-                        fontSize: 10,
-                        fontWeight: "800",
-                        letterSpacing: 1.5,
-                        color: "rgba(245,247,251,0.45)",
+                        fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+                        fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
+                        letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+                        textTransform: TYPOGRAPHY.sectionLabel.textTransform,
+                        color: "rgba(255,255,255,0.6)",
                       }}
                     >
                       SLEEP GOAL
@@ -1484,75 +1570,88 @@ export default function SleepScreen() {
                             );
                           }}
                           activeOpacity={0.8}
-                          style={{
-                            flex: 1,
-                            alignItems: "center",
-                            paddingVertical: 12,
-                            borderRadius: 18,
-                            borderWidth: 1.5,
-                            backgroundColor: active
-                              ? `${g.color}1f`
-                              : "rgba(255,255,255,0.04)",
-                            borderColor: active
-                              ? g.color
-                              : "rgba(255,255,255,0.1)",
-                            shadowColor: g.color,
-                            shadowOffset: { width: 0, height: 6 },
-                            shadowOpacity: active ? 0.35 : 0,
-                            shadowRadius: active ? 12 : 0,
-                          }}
+                          style={{ flex: 1, gap: 8 }}
                         >
-                          {active && (
-                            <View
-                              style={{
-                                position: "absolute",
-                                top: 8,
-                                right: 8,
-                                width: 6,
-                                height: 6,
-                                borderRadius: 3,
-                                backgroundColor: g.color,
-                              }}
-                            />
-                          )}
                           <View
                             style={{
-                              width: 24,
-                              height: 24,
-                              borderRadius: 12,
+                              minHeight: 76,
                               alignItems: "center",
                               justifyContent: "center",
-                              marginBottom: 4,
+                              paddingVertical: 12,
+                              borderRadius: 18,
+                              borderWidth: 1,
                               backgroundColor: active
-                                ? `${g.color}30`
-                                : "rgba(255,255,255,0.06)",
+                                ? SLEEP_ACCENT + "1A"
+                                : "rgba(255,255,255,0.05)",
+                              borderColor: active
+                                ? SLEEP_ACCENT
+                                : "rgba(255,255,255,0.08)",
+                              shadowColor: SLEEP_ACCENT,
+                              shadowOffset: { width: 0, height: 6 },
+                              shadowOpacity: active ? 0.3 : 0,
+                              shadowRadius: active ? 12 : 0,
                             }}
                           >
-                            <GoalIcon
-                              size={13}
-                              color={
-                                active ? g.color : "rgba(245,247,251,0.45)"
-                              }
-                            />
+                            {active && (
+                              <View
+                                style={{
+                                  position: "absolute",
+                                  top: 8,
+                                  right: 8,
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: 3,
+                                  backgroundColor: SLEEP_ACCENT,
+                                }}
+                              />
+                            )}
+                            <View
+                              style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: 14,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginBottom: 4,
+                                opacity: active ? 1 : 0.75,
+                                backgroundColor: active
+                                  ? SLEEP_ACCENT + "18"
+                                  : "rgba(255,255,255,0.06)",
+                                borderWidth: active ? 1 : 0,
+                                borderColor: SLEEP_ACCENT + "28",
+                                shadowColor: SLEEP_ACCENT,
+                                shadowOffset: { width: 0, height: 0 },
+                                shadowOpacity: active ? 0.4 : 0,
+                                shadowRadius: 6,
+                              }}
+                            >
+                              <GoalIcon
+                                size={13}
+                                color={active ? SLEEP_ACCENT : "rgba(255,255,255,0.6)"}
+                              />
+                            </View>
+                            <Text
+                              style={{
+                                fontSize: 18,
+                                fontWeight: "700",
+                                opacity: active ? 1 : 0.75,
+                                color: "#FFFFFF",
+                              }}
+                            >
+                              {g.hours}h
+                            </Text>
                           </View>
+                          {/* Label sits outside the card, same as the Quick Action
+                              tiles on Home — keeps the card itself uniform width. */}
                           <Text
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.8}
                             style={{
-                              fontSize: 14,
-                              fontWeight: "800",
-                              color: active
-                                ? "#FFFFFF"
-                                : "rgba(245,247,251,0.65)",
-                            }}
-                          >
-                            {g.hours}h
-                          </Text>
-                          <Text
-                            style={{
-                              fontSize: 8,
-                              fontWeight: "700",
-                              letterSpacing: 0.6,
-                              marginTop: 2,
-                              color: active ? g.color : "rgba(245,247,251,0.3)",
+                              fontSize: 13,
+                              fontWeight: "500",
+                              textAlign: "center",
+                              color: active ? SLEEP_ACCENT : "rgba(255,255,255,0.6)",
                             }}
                           >
                             {g.label}
@@ -1563,11 +1662,19 @@ export default function SleepScreen() {
                   </View>
                 </View>
 
-                <View style={{ height: 14 }} />
+              {/* ── Start Sleep CTA — same frozen primary-button gradient as every other screen ── */}
+              <GradientCTA
+                label="Start Sleep"
+                sublabel={`Wake at ${formatTimeAmPm(sliderWakeTime)}`}
+                icon={<MoonStar size={20} color="#03212C" />}
+                textColor="#03212C"
+                onPress={handleStartSleep}
+                disabled={busy}
+                style={{ marginTop: SPACING.section }}
+              />
 
-                {/* Divider */}
-                <View className="h-px bg-white/[0.06]" />
-
+              {/* ── Smart Alarm — its own card ── */}
+              <GlassCard noPadding tint={SURFACE_TINT.card} style={{ marginTop: SPACING.section, borderRadius: RADIUS.card, ...SHADOWS.medium }}>
                 {/* Smart alarm toggle */}
                 <TouchableOpacity
                   onPress={() => router.push(ROUTES.appAlarmSettings)}
@@ -1575,37 +1682,51 @@ export default function SleepScreen() {
                   className="flex-row items-center justify-between px-4"
                   style={{ paddingVertical: 16, gap: 12 }}
                 >
-                  <View className="flex-row items-center gap-2 flex-1">
+                  <View className="flex-row items-center gap-3 flex-1">
                     <View
                       className="items-center justify-center"
                       style={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: 13,
-                        backgroundColor: "rgba(26,143,255,0.14)",
+                        width: 48,
+                        height: 48,
+                        borderRadius: 24,
+                        backgroundColor: SLEEP_ACCENT + "18",
                         borderWidth: 1,
-                        borderColor: "rgba(26,143,255,0.28)",
+                        borderColor: SLEEP_ACCENT + "28",
+                        shadowColor: SLEEP_ACCENT,
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: 0.4,
+                        shadowRadius: 7,
                       }}
                     >
-                      <Bell size={18} color="#1A8FFF" />
+                      <Bell size={22} color={SLEEP_ACCENT} />
                     </View>
                     <Text
                       style={{
-                        fontSize: 14,
-                        fontWeight: "700",
-                        color: "#f6f8fc",
+                        fontSize: TYPOGRAPHY.cardTitle.fontSize,
+                        fontWeight: TYPOGRAPHY.cardTitle.fontWeight,
+                        color: "#FFFFFF",
+                        marginHorizontal: 10,
                       }}
                     >
                       Smart Alarm
                     </Text>
                     {smartAlarmEnabled && (
-                      <View className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30">
+                      <View
+                        style={{
+                          backgroundColor: "rgba(50,213,131,0.12)",
+                          borderWidth: 1,
+                          borderColor: "rgba(50,213,131,0.35)",
+                          borderRadius: RADIUS.chip,
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                        }}
+                      >
                         <Text
                           style={{
-                            fontSize: 8,
-                            fontWeight: "700",
-                            color: "#34d399",
-                            letterSpacing: 0.5,
+                            fontSize: 11,
+                            fontWeight: "600",
+                            color: "#32D583",
+                            letterSpacing: 0.3,
                           }}
                         >
                           On
@@ -1621,59 +1742,52 @@ export default function SleepScreen() {
                     <ChevronRight size={16} color="rgba(255,255,255,0.25)" />
                   </View>
                 </TouchableOpacity>
+              </GlassCard>
 
-                {/* Divider */}
-                <View className="h-px bg-white/[0.06]" />
-
-                {/* AI Insight card */}
-                <View style={{ paddingHorizontal: 16, paddingTop: 18 }}>
-                  <View
-                    style={{
-                      borderRadius: 18,
-                      overflow: "hidden",
-                      borderWidth: 1,
-                      borderColor: "rgba(167,139,250,0.3)",
-                      shadowColor: "rgba(167,139,250,0.2)",
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 16,
-                    }}
-                  >
-                    <LinearGradient
-                      colors={[
-                        "rgba(167,139,250,0.18)",
-                        "rgba(79,195,247,0.1)",
-                      ]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFill}
-                    />
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "flex-start",
-                        gap: 12,
-                        padding: 18,
-                      }}
-                    >
+              {/* ── AI Insight — same flat card language as Home's Daily Tip ── */}
+              <View
+                style={{
+                  marginTop: SPACING.section,
+                  borderRadius: RADIUS.card,
+                  backgroundColor: "rgba(255,255,255,0.05)",
+                  borderWidth: 1,
+                  borderColor: "rgba(255,255,255,0.08)",
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: 12,
+                    padding: 18,
+                  }}
+                >
                       <View
-                        className="w-9 h-9 rounded-full items-center justify-center"
+                        className="items-center justify-center"
                         style={{
-                          backgroundColor: "rgba(167,139,250,0.22)",
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          backgroundColor: SLEEP_ACCENT + "18",
                           borderWidth: 1,
-                          borderColor: "rgba(167,139,250,0.35)",
+                          borderColor: SLEEP_ACCENT + "28",
+                          shadowColor: SLEEP_ACCENT,
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: 0.4,
+                          shadowRadius: 7,
                         }}
                       >
-                        <Sparkles size={16} color="#c4b5fd" />
+                        <Sparkles size={16} color={SLEEP_ACCENT} />
                       </View>
                       <View style={{ flex: 1, flexShrink: 1 }}>
                         <View className="flex-row items-center gap-1.5">
                           <Text
                             style={{
-                              fontSize: 10,
-                              fontWeight: "800",
-                              letterSpacing: 1.3,
-                              color: "#c4b5fd",
+                              fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+                              fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
+                              letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+                              textTransform: TYPOGRAPHY.sectionLabel.textTransform,
+                              color: SLEEP_ACCENT,
                             }}
                           >
                             {planInsight.isAi ? "AI INSIGHT" : "TONIGHT'S PLAN"}
@@ -1681,68 +1795,60 @@ export default function SleepScreen() {
                           {planInsight.loading && (
                             <View
                               className="w-1.5 h-1.5 rounded-full"
-                              style={{ backgroundColor: "#c4b5fd" }}
+                              style={{ backgroundColor: SLEEP_ACCENT }}
                             />
                           )}
                         </View>
                         <Text
                           style={{
-                            fontSize: 13.5,
+                            fontSize: TYPOGRAPHY.body.fontSize,
                             lineHeight: 21,
-                            fontWeight: "500",
-                            color: "rgba(245,247,251,0.9)",
+                            fontWeight: TYPOGRAPHY.body.fontWeight,
+                            color: "rgba(255,255,255,0.85)",
                             marginTop: 6,
                           }}
+                          numberOfLines={insightExpanded ? undefined : 2}
                         >
                           {insightExpanded
                             ? planInsight.text
-                            : truncateAtWord(planInsight.text, 64)}
-                          {planInsight.text.length > 64 && (
-                            <Text
-                              onPress={() => {
-                                LayoutAnimation.configureNext(
-                                  LayoutAnimation.Presets.easeInEaseOut,
-                                );
-                                setInsightExpanded((v) => !v);
-                              }}
-                              suppressHighlighting
-                              style={{
-                                fontSize: 12.5,
-                                fontWeight: "800",
-                                color: "#c4b5fd",
-                              }}
-                            >
-                              {insightExpanded ? "  Read less" : "Read more"}
-                            </Text>
-                          )}
+                            : truncateAtWord(planInsight.text, 90)}
                         </Text>
+                        {planInsight.text.length > 90 && (
+                          <Text
+                            onPress={() => {
+                              LayoutAnimation.configureNext(
+                                LayoutAnimation.Presets.easeInEaseOut,
+                              );
+                              setInsightExpanded((v) => !v);
+                            }}
+                            suppressHighlighting
+                            style={{
+                              fontSize: 14,
+                              fontWeight: "600",
+                              color: SLEEP_ACCENT,
+                              marginTop: 4,
+                            }}
+                          >
+                            {insightExpanded ? "Read less" : "Read more →"}
+                          </Text>
+                        )}
                       </View>
                     </View>
                   </View>
-                </View>
 
-                {/* Action button — Start Sleep (primary) */}
-                <View
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingTop: 16,
-                    paddingBottom: 18,
-                    gap: 12,
-                  }}
-                >
-                  {/* Start Sleep CTA — premium gradient button (matches onboarding) */}
-                  <GradientCTA
-                    label="START SLEEP"
-                    sublabel={`WAKE AT ${formatTimeAmPm(sliderWakeTime).toUpperCase()}`}
-                    icon={<MoonStar size={20} color="#fff" />}
-                    onPress={handleStartSleep}
-                    disabled={busy}
-                    colors={["#3b82f6", "#7c3aed", "#c026d3"]}
-                    glowColor="rgba(124,58,237,0.5)"
-                    letterSpacing={2}
-                  />
-                </View>
-              </GlassCard>
+              {/* Weekly Sleep — same shared weekly-progress pattern as every other screen */}
+              <View style={{ marginTop: SPACING.section }}>
+                <SectionLabel first accent={SLEEP_ACCENT}>WEEKLY SLEEP</SectionLabel>
+                <WeeklyProgressRow
+                  icon={<Moon size={13} color={SLEEP_ACCENT} fill={SLEEP_ACCENT} strokeWidth={1.5} />}
+                  label="Weekly Sleep"
+                  value={`${Math.min(nightsThisWeek, 7)}/7 nights`}
+                  percent={(Math.min(nightsThisWeek, 7) / 7) * 100}
+                  accentColor={SLEEP_ACCENT}
+                  caption={avg > 0 ? `Avg: ${formatDuration(avg)}` : undefined}
+                  onPress={() => setSegment("analysis")}
+                />
+              </View>
 
               {/* Stats row — compact text */}
               <View
@@ -1767,7 +1873,7 @@ export default function SleepScreen() {
                         width: 8,
                         height: 8,
                         borderRadius: 4,
-                        backgroundColor: "#a78bfa",
+                        backgroundColor: SLEEP_ACCENT,
                       }}
                     />
                     <Text
@@ -1785,37 +1891,6 @@ export default function SleepScreen() {
                     </Text>
                   </View>
                 )}
-                {avg > 0 && (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: 4,
-                        backgroundColor: "#4FC3F7",
-                      }}
-                    />
-                    <Text
-                      style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}
-                    >
-                      Avg:{" "}
-                      <Text
-                        style={{
-                          color: "rgba(255,255,255,0.7)",
-                          fontWeight: "700",
-                        }}
-                      >
-                        {formatDuration(avg)}
-                      </Text>
-                    </Text>
-                  </View>
-                )}
                 {streak >= 1 && (
                   <View
                     style={{
@@ -1829,7 +1904,7 @@ export default function SleepScreen() {
                         width: 8,
                         height: 8,
                         borderRadius: 4,
-                        backgroundColor: "#FF9800",
+                        backgroundColor: SLEEP_ACCENT,
                       }}
                     />
                     <Text
@@ -1859,7 +1934,7 @@ export default function SleepScreen() {
 
           {/* Extra runway so the goal chips / CTA scroll fully clear of the
               floating tab bar (on top of the shell's reserved tab-bar space). */}
-          <View style={{ height: 60 }} />
+          <View style={{ height: 20 }} />
 
           {/* Modals */}
           <Modal

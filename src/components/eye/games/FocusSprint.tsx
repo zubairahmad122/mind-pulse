@@ -19,10 +19,8 @@ import Animated, {
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GradientCTA } from '@/components/ui/GradientCTA';
-import { PILLAR_THEME } from '@/constants/theme';
+import { FONTS, PILLAR_COLORS } from '@/constants/designSystem';
 import { type GameEndStats } from './GameOverScreen';
-
-const EYES = PILLAR_THEME.eyes;
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -71,15 +69,17 @@ const MOVE_ORDER = [0, 3, 1, 2, 4, 5, 7, 8, 6, 4, 1, 2, 3, 0, 6, 8];
 
 const EYE_TIPS = [
   'Full blinks reset your tear film — blink between targets.',
-  'Saccadic training improves reading speed and reduces fatigue.',
+  'Keep the activity comfortable; speed is only a game metric.',
   'After this session, look 20 ft away for 20 seconds.',
-  'Peripheral vision exercises reduce central eye strain.',
-  'Daily training reduces CVS symptoms in 3–4 weeks.',
+  'Pause if you notice blur, pain, dizziness, or double vision.',
+  'Regular screen breaks matter more than a high game score.',
 ];
 
 const C = {
   card:        'rgba(255,255,255,0.045)',
-  purple:      '#22d3ee',
+  // Eye-pillar accent (was the old teal-cyan '#22d3ee' — a different color
+  // from PILLAR_COLORS.eye used everywhere else in the Eye tab).
+  purple:      PILLAR_COLORS.eye,
   purpleLight: '#5eead4',
   green:       '#6ee7b7',
   red:         '#e24b4a',
@@ -102,10 +102,10 @@ function getTimeMult(t: number): number {
 }
 
 function getAccuracyMsg(pct: number): string {
-  if (pct > 80) return 'Excellent focus control. Your ciliary muscle is recovering.';
-  if (pct >= 60) return 'Good timing. Keep training to sharpen your focus window.';
-  if (pct >= 40) return 'Getting there. Focus switching improves with daily practice.';
-  return 'Tough one. This game gets easier as your eyes adapt.';
+  if (pct > 80) return 'Excellent game timing. Now give your eyes a distant-view break.';
+  if (pct >= 60) return 'Good timing. Keep the focus changes comfortable.';
+  if (pct >= 40) return 'Getting there. Accuracy matters more than speed.';
+  return 'Tough one. Slow down or stop if your eyes feel uncomfortable.';
 }
 
 // ─── Particle types ───────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ const vs = StyleSheet.create({
   mid:     { flex: 1, alignItems: 'center', gap: 2 },
   roleYou: { fontSize: 10, fontWeight: '800', color: C.purpleLight, letterSpacing: 1 },
   roleCpu: { fontSize: 10, fontWeight: '800', color: C.muted, letterSpacing: 1 },
-  num:     { fontSize: 26, fontWeight: '900', color: C.muted },
+  num:     { fontFamily: FONTS.heading, fontSize: 26, fontWeight: '900', color: C.muted },
   vsLabel: { fontSize: 10, fontWeight: '800', color: C.dim, letterSpacing: 2 },
   status:  { fontSize: 11, fontWeight: '800', color: C.muted, letterSpacing: 0.4 },
   track:   { height: 5, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden', position: 'relative' },
@@ -847,9 +847,7 @@ export function FocusSprint({ running, onSession, onGameEnd }: Props) {
           <View style={s.pauseOverlay}>
             <Text style={s.pauseTitle}>Paused</Text>
             <Text style={s.pauseSub}>CPU keeps scoring…</Text>
-            <TouchableOpacity style={s.resumeBtn} onPress={resumeSession} activeOpacity={0.8}>
-              <Text style={s.resumeBtnText}>Resume</Text>
-            </TouchableOpacity>
+            <GradientCTA label="Resume" onPress={resumeSession} textColor="#03212C" compact />
             <TouchableOpacity style={s.endGameBtn} onPress={endSession} activeOpacity={0.8}>
               <Ionicons name="stop-circle-outline" size={15} color={C.red} />
               <Text style={s.endGameBtnText}>End Session</Text>
@@ -872,14 +870,12 @@ export function FocusSprint({ running, onSession, onGameEnd }: Props) {
       <GradientCTA
         label={gameActive ? 'Playing' : sessionDone ? 'Play Again' : 'Start Session'}
         sublabel={gameActive ? `${timer} sec left` : sessionDone ? 'Beat your best' : 'Ready when you are'}
-        icon={!gameActive ? <Ionicons name="play" size={16} color={EYES.buttonTextColor} /> : undefined}
+        icon={!gameActive ? <Ionicons name="play" size={16} color="#03212C" /> : undefined}
         compact
         onPress={startSession}
         disabled={gameActive}
         keepBright={gameActive}
-        colors={EYES.buttonGradient}
-        glowColor={EYES.buttonShadow}
-        textColor={EYES.buttonTextColor}
+        textColor="#03212C"
         letterSpacing={1}
         style={s.startCta}
       />
@@ -895,7 +891,7 @@ const s = StyleSheet.create({
   tipBar: {
     alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: 7,
     borderRadius: 10,
-    borderWidth: 1, borderColor: 'rgba(34,211,238,0.2)',
+    borderWidth: 1, borderColor: 'rgba(0,224,255,0.2)',
     paddingHorizontal: 12, paddingVertical: 8,
   },
   tipText: { fontSize: 11, color: C.muted, fontWeight: '500', flex: 1 },
@@ -907,7 +903,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
   },
   stat:    { flex: 1, alignItems: 'center', gap: 2 },
-  statVal: { fontSize: 20, fontWeight: '800', color: C.purpleLight },
+  statVal: { fontFamily: FONTS.heading, fontSize: 20, fontWeight: '800', color: C.purpleLight },
   statLbl: { fontSize: 10, color: C.muted, fontWeight: '600', letterSpacing: 0.5 },
   divider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.06)' },
 
@@ -917,7 +913,7 @@ const s = StyleSheet.create({
     borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.1)',
     backgroundColor: C.card,
   },
-  diffBtnActive:     { borderColor: C.purple, backgroundColor: 'rgba(34,211,238,0.15)' },
+  diffBtnActive:     { borderColor: C.purple, backgroundColor: 'rgba(0,224,255,0.15)' },
   diffBtnDisabled:   { opacity: 0.4 },
   diffLabelRow:      { flexDirection: 'row', alignItems: 'center', gap: 6 },
   diffDot:           { width: 7, height: 7, borderRadius: 3.5 },
@@ -928,7 +924,7 @@ const s = StyleSheet.create({
   arena: {
     height: ARENA_H, borderRadius: 22,
     backgroundColor: C.arenaBg,
-    borderWidth: 1.5, borderColor: 'rgba(34,211,238,0.25)',
+    borderWidth: 1.5, borderColor: 'rgba(0,224,255,0.25)',
     overflow: 'hidden', position: 'relative',
   },
   arenaFlash: { borderColor: C.red,    borderWidth: 2.5 },
@@ -965,7 +961,7 @@ const s = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     alignItems: 'center', justifyContent: 'center', gap: 10,
   },
-  idleTitle: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: 0.5 },
+  idleTitle: { fontFamily: FONTS.heading, fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: 0.5 },
   idleSub:   { fontSize: 13, color: C.muted, textAlign: 'center', lineHeight: 24 },
 
   pauseBtn: {
@@ -979,10 +975,8 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(3,8,11,0.93)',
     alignItems: 'center', justifyContent: 'center', gap: 8, zIndex: 10,
   },
-  pauseTitle:    { fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 1 },
+  pauseTitle:    { fontFamily: FONTS.heading, fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 1 },
   pauseSub:      { fontSize: 12, color: C.red, fontWeight: '600', marginBottom: 8 },
-  resumeBtn:     { backgroundColor: C.purple, borderRadius: 100, paddingHorizontal: 38, paddingVertical: 13 },
-  resumeBtnText: { fontSize: 15, fontWeight: '800', color: '#03212c' },
   endGameBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     borderWidth: 1.5, borderColor: 'rgba(226,75,74,0.45)',

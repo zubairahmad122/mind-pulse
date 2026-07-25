@@ -24,6 +24,7 @@ import { GradientCTA } from '@/components/ui/GradientCTA';
 import { BREATHING_MUSIC } from '@/constants/breathingMusic';
 import { BREATHING_PATTERNS } from '@/constants/breathingPatterns';
 import { colors } from '@/constants/colors';
+import { BACKGROUND, PILLAR_COLORS } from '@/constants/designSystem';
 import { formatSessionDuration, getSessionById } from '@/constants/relaxSessions';
 import { ROUTES } from '@/constants/routes';
 import { trackSessionAbandoned } from '@/services/analytics';
@@ -35,7 +36,8 @@ import { useAudioGuide } from '@/hooks/useAudioGuide';
 
 // One accent for ALL Relax sessions (matches the Relax tab) — the color marks
 // the feature, not the individual session, so it never changes between sessions.
-const RELAX_ACCENT = '#34D399';
+// Was a stale green (#34D399) predating the frozen spec's blue Relax accent.
+const RELAX_ACCENT = PILLAR_COLORS.relax;
 
 /**
  * Per-session voice plan (pre-recorded clips):
@@ -707,7 +709,7 @@ export default function RelaxSessionPlayer() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: BACKGROUND.base,
   },
 
   centerFlex: {

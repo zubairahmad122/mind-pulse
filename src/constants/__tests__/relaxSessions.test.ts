@@ -15,11 +15,11 @@ describe('formatSessionDuration', () => {
     expect(formatSessionDuration(60)).toBe('1 min');
   });
 
-  it('shows m:ss for partial minutes (zero-padded)', () => {
-    expect(formatSessionDuration(320)).toBe('5:20 min');
-    expect(formatSessionDuration(378)).toBe('6:18 min');
-    expect(formatSessionDuration(630)).toBe('10:30 min');
-    expect(formatSessionDuration(65)).toBe('1:05 min');
+  it('shows Xm Ys for partial minutes', () => {
+    expect(formatSessionDuration(320)).toBe('5m 20s');
+    expect(formatSessionDuration(378)).toBe('6m 18s');
+    expect(formatSessionDuration(630)).toBe('10m 30s');
+    expect(formatSessionDuration(65)).toBe('1m 5s');
   });
 });
 

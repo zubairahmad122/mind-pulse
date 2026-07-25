@@ -1,10 +1,17 @@
 import { Bell, BellRing, BatteryCharging, Maximize2, Smartphone } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
-import { PrimaryButton } from '@/components/ui/PrimaryButton';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 import { OutlineButton } from '@/components/ui/OutlineButton';
 import { colors } from '@/constants/colors';
+import { FONTS, PILLAR_COLORS, TYPOGRAPHY } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+
+// This modal has no pillar of its own (it's a system-permission prompt, can
+// surface from any screen) — the sleep indigo reads correctly here since
+// it's specifically about the wake-alarm flow.
+const ACCENT = PILLAR_COLORS.sleep;
 
 type Props = {
   loading?: boolean;
@@ -24,41 +31,43 @@ const ITEMS = [
 export function AlarmPermissionModal({ loading, onAllow, onLater, onAutostart }: Props) {
   return (
     <View style={styles.overlay}>
-      <View style={styles.card}>
-        <View style={styles.iconContainer}>
-          <Bell size={40} color={colors.accent.purple} />
-        </View>
-        <Text style={styles.title}>Allow wake alarms</Text>
-        <Text style={styles.subtitle}>
-          MindPulse needs these permissions to ring when the app is closed or your screen is
-          off.
-        </Text>
+      <GlassCard noPadding style={styles.card}>
+        <View style={styles.cardInner}>
+          <View style={styles.iconContainer}>
+            <Bell size={40} color={ACCENT} />
+          </View>
+          <Text style={styles.title}>Allow wake alarms</Text>
+          <Text style={styles.subtitle}>
+            MindPulse needs these permissions to ring when the app is closed or your screen is
+            off.
+          </Text>
 
-        <View style={styles.list}>
-          {ITEMS.map(item => {
-            const ItemIcon = item.icon;
-            return (
-              <View key={item.text} style={styles.row}>
-                <View style={styles.iconBox}>
-                  <ItemIcon size={18} color={colors.accent.purple} strokeWidth={1.8} />
+          <View style={styles.list}>
+            {ITEMS.map(item => {
+              const ItemIcon = item.icon;
+              return (
+                <View key={item.text} style={styles.row}>
+                  <View style={styles.iconBox}>
+                    <ItemIcon size={18} color={ACCENT} strokeWidth={1.8} />
+                  </View>
+                  <Text style={styles.rowText}>{item.text}</Text>
                 </View>
-                <Text style={styles.rowText}>{item.text}</Text>
-              </View>
-            );
-          })}
-        </View>
+              );
+            })}
+          </View>
 
-        <PrimaryButton
-          label="Allow alarms"
-          onPress={onAllow}
-          loading={loading}
-          style={styles.primary}
-        />
-        {onAutostart ? (
-          <OutlineButton label="Enable Autostart" onPress={onAutostart} style={styles.primary} />
-        ) : null}
-        <OutlineButton label="Not now" onPress={onLater} />
-      </View>
+          <GradientCTA
+            label="Allow alarms"
+            onPress={onAllow}
+            loading={loading}
+            style={styles.primary}
+          />
+          {onAutostart ? (
+            <OutlineButton label="Enable Autostart" onPress={onAutostart} style={styles.primary} />
+          ) : null}
+          <OutlineButton label="Not now" onPress={onLater} />
+        </View>
+      </GlassCard>
     </View>
   );
 }
@@ -71,25 +80,30 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   card: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: 24,
+    width: '100%',
+  },
+  cardInner: {
     padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.accent.purpleBorder,
     alignItems: 'center',
   },
   iconContainer: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: colors.accent.purpleLight,
+    backgroundColor: ACCENT + '1F',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.accent.purpleBorder,
+    borderColor: ACCENT + '35',
   },
-  title: { ...typography.headingMedium, color: colors.text.primary, textAlign: 'center' },
+  title: {
+    fontFamily: FONTS.heading,
+    fontSize: TYPOGRAPHY.cardTitle.fontSize,
+    fontWeight: TYPOGRAPHY.cardTitle.fontWeight,
+    color: colors.text.primary,
+    textAlign: 'center',
+  },
   subtitle: {
     ...typography.body,
     color: colors.text.secondary,
@@ -104,7 +118,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: colors.accent.purpleLight,
+    backgroundColor: ACCENT + '1F',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,15 +1,19 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronLeft, ChevronRight, Clock } from 'lucide-react-native';
+import { ChevronRight, Clock, Lock } from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { AmbientBackground } from '@/components/ui';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenTransition } from '@/components/ui/ScreenTransition';
 import { PaywallGate } from '@/components/paywall/PaywallGate';
 import { colors } from '@/constants/colors';
+import { PRO_GOLD } from '@/constants/designSystem';
+import { ENTITLEMENTS } from '@/constants/entitlements';
+import { useSubscription } from '@/context/SubscriptionContext';
 import {
   formatSessionDuration,
   getSessionRoute,
@@ -28,6 +32,7 @@ const CATEGORY_NAMES: Record<SessionCategory, string> = {
 
 export default function RelaxLibrary() {
   const router = useRouter();
+  const { isPremium } = useSubscription();
   const { category } = useLocalSearchParams<{ category?: SessionCategory }>();
 
   const sessions = category ? getSessionsByCategory(category) : RELAX_SESSIONS;
@@ -43,22 +48,16 @@ export default function RelaxLibrary() {
     <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
       <ScreenTransition>
         <View style={styles.page}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={styles.backBtn}>
-              <ChevronLeft size={22} color={colors.text.secondary} strokeWidth={2.4} />
-            </TouchableOpacity>
-            <View style={styles.headerText}>
-              <Text style={styles.title}>{title}</Text>
-              <Text style={styles.subtitle}>
-                {sessions.length} {sessions.length === 1 ? 'session' : 'sessions'}
-              </Text>
-            </View>
-          </View>
+          <ScreenHeader
+            title={title}
+            subtitle={`${sessions.length} ${sessions.length === 1 ? 'session' : 'sessions'}`}
+            showBack
+          />
 
           {/* Sessions list */}
           <View style={styles.list}>
             {sessions.map(session => {
+              const locked = !isPremium && !!session.featureId && ENTITLEMENTS[session.featureId] === 'pro';
               const card = (
                 <TouchableOpacity
                   onPress={() => handleStartSession(session.id)}
@@ -104,9 +103,15 @@ export default function RelaxLibrary() {
                           <Text style={[styles.metaText, styles.capitalize]}>{session.difficulty}</Text>
                         </View>
                       </View>
-                      <View style={[styles.arrow, { backgroundColor: session.color + '18', borderColor: session.color + '30' }]}>
-                        <ChevronRight size={17} color={session.color} strokeWidth={2.3} />
-                      </View>
+                      {locked ? (
+                        <View style={[styles.arrow, { backgroundColor: PRO_GOLD + '1F', borderColor: PRO_GOLD + '55' }]}>
+                          <Lock size={15} color={PRO_GOLD} strokeWidth={2.3} />
+                        </View>
+                      ) : (
+                        <View style={[styles.arrow, { backgroundColor: session.color + '18', borderColor: session.color + '30' }]}>
+                          <ChevronRight size={17} color={session.color} strokeWidth={2.3} />
+                        </View>
+                      )}
                     </View>
                   </GlassCard>
                 </TouchableOpacity>
@@ -130,37 +135,6 @@ export default function RelaxLibrary() {
 const styles = StyleSheet.create({
   page: {
     paddingTop: spacing.xs,
-  },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  backBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerText: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.5)',
-    marginTop: 2,
   },
 
   list: {
