@@ -4,8 +4,8 @@
 
 import './global.css';
 
-import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -31,6 +31,7 @@ import { LanguageProvider } from '@/context/LanguageContext';
 import { SubscriptionProvider } from '@/context/SubscriptionContext';
 import { RelaxProvider } from '@/context/RelaxContext';
 import { PaywallProvider } from '@/components/paywall/PaywallProvider';
+import { AnimatedLaunchScreen } from '@/components/AnimatedLaunchScreen';
 
 Sentry.init({
   dsn: 'https://4d1abf4f165aaf226f6a58a70cdf65d7@o4511705450414080.ingest.de.sentry.io/4511705459261520',
@@ -47,6 +48,7 @@ function RootLayoutNav() {
   const { user, isGuestMode, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const [launchFinished, setLaunchFinished] = useState(false);
   const [fontsLoaded, fontsError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -57,18 +59,26 @@ function RootLayoutNav() {
   });
 
   useEffect(() => {
-    if (fontsLoaded || fontsError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontsError]);
+    SplashScreen.hide();
+  }, []);
+
+  const finishLaunch = useCallback(() => setLaunchFinished(true), []);
 
   useEffect(() => {
     if (loading) return;
     const inAuth = segments[0] === '(auth)' || segments[0] === undefined;
     const inApp = segments[0] === '(app)';
     const hasAccess = Boolean(user) || isGuestMode;
+    const isGuest = Boolean(user?.isAnonymous) || isGuestMode;
+    const isGuestCreatingAccount =
+      isGuest &&
+      segments[0] === '(auth)' &&
+      segments[1] === 'create-account';
 
-    if (hasAccess && inAuth) {
+    // Guests need access to this auth screen to convert their anonymous/local
+    // session into a permanent account. Other auth screens still redirect
+    // authenticated users back into the app.
+    if (hasAccess && inAuth && !isGuestCreatingAccount) {
       router.replace(ROUTES.appHome as never);
     }
 
@@ -77,16 +87,10 @@ function RootLayoutNav() {
     }
   }, [user, isGuestMode, loading, segments, router]);
 
-  if (!fontsLoaded && !fontsError) {
-    return null;
-  }
+  const appReady = (fontsLoaded || Boolean(fontsError)) && !loading;
 
-  if (loading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator color={COLORS.purple} size="large" />
-      </View>
-    );
+  if (!launchFinished) {
+    return <AnimatedLaunchScreen ready={appReady} onFinish={finishLaunch} />;
   }
 
   return (
@@ -127,10 +131,4 @@ export default Sentry.wrap(RootLayout);
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  loading: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
 });

@@ -32,6 +32,11 @@ interface Props {
   /** Real, verified callout — e.g. "🏆 New Personal Best!" — only ever set
    * from an actual record check, never a guessed/invented achievement. */
   celebration?: string;
+  progressReward?: {
+    xpAwarded: number;
+    level: number;
+    leveledUp: boolean;
+  } | null;
 }
 
 const RATING_LABEL = ['😐 Keep going', '🔥 Well played!', '🏆 Outstanding!'];
@@ -59,7 +64,13 @@ function StatRow({ label, value, delay }: { label: string; value: string; delay:
   );
 }
 
-export function GameOverScreen({ stats, onReplay, onDismiss, celebration }: Props) {
+export function GameOverScreen({
+  stats,
+  onReplay,
+  onDismiss,
+  celebration,
+  progressReward,
+}: Props) {
   const scale   = useSharedValue(0.95);
   const opacity = useSharedValue(0);
   const btnScale = useSharedValue(0);
@@ -108,6 +119,14 @@ export function GameOverScreen({ stats, onReplay, onDismiss, celebration }: Prop
             {celebration ? (
               <View style={styles.celebrationChip}>
                 <Text style={styles.celebrationText}>{celebration}</Text>
+              </View>
+            ) : null}
+            {progressReward ? (
+              <View style={styles.xpChip}>
+                <Text style={styles.xpText}>
+                  +{progressReward.xpAwarded} XP · Level {progressReward.level}
+                  {progressReward.leveledUp ? ' reached!' : ''}
+                </Text>
               </View>
             ) : null}
             {stats.subline ? (
@@ -215,6 +234,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   celebrationText: { fontSize: 12, fontWeight: '800', color: '#FFD700' },
+  xpChip: {
+    backgroundColor: 'rgba(0,224,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,224,255,0.3)',
+    borderRadius: 100,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginTop: 4,
+  },
+  xpText: { fontSize: 12, fontWeight: '800', color: PILLAR_COLORS.eye },
   subline: {
     ...typography.caption,
     color: colors.text.secondary,

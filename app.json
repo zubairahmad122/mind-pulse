@@ -20,7 +20,7 @@
         "foregroundImage": "./assets/expo.icon/Assets/mind-pulse-adaptive-fg.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.zubzen.sleepy",
+      "package": "com.zubzen.mindpulse",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -29,7 +29,7 @@
       ]
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/expo.icon/Assets/mind-pulse-icon.png",
       "bundler": "metro"
     },
@@ -41,16 +41,15 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/expo.icon/Assets/mind-pulse-logo.png",
-          "imageWidth": 260,
-          "resizeMode": "contain",
-          "backgroundColor": "#182749",
+          "backgroundColor": "#080D1A",
           "dark": {
-            "backgroundColor": "#182749"
+            "backgroundColor": "#080D1A"
           }
         }
       ],
       "expo-audio",
+      "expo-image",
+      "expo-web-browser",
       [
         "expo-notifications",
         {

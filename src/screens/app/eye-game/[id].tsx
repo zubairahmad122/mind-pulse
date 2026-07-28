@@ -26,10 +26,15 @@ import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useGameRecord } from '@/hooks/useGameRecord';
 import { type GameId } from '@/services/gameRecords';
+import {
+  awardEyeGameXp,
+  type EyeGameReward,
+} from '@/services/eyeGameProgress';
 import { colors } from '@/constants/colors';
 import { PILLAR_COLORS, STATUS_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+import { useProgressStore } from '@/stores/useProgressStore';
 
 const EYE_ACCENT = PILLAR_COLORS.eye;
 
@@ -85,12 +90,14 @@ export default function EyeGameScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
+  const logEyeGame = useProgressStore(state => state.logEyeGame);
   const activity = id ? getEyeActivity(id) : undefined;
   const [secondsLeft, setSecondsLeft] = useState(activity?.durationSeconds ?? 60);
   const [running, setRunning]         = useState(true);
   const [gameEndStats, setGameEndStats] = useState<GameEndStats | null>(null);
   const [showComplete, setShowComplete] = useState(false);
   const [eyeResetActive, setEyeResetActive] = useState(false);
+  const [progressReward, setProgressReward] = useState<EyeGameReward | null>(null);
 
   const gameId = (id ?? 'saccade-sniper') as GameId;
   const { record, isNewRecord, submit } = useGameRecord(user?.uid, gameId);
@@ -107,6 +114,7 @@ export default function EyeGameScreen() {
   // Comet Trace is an exercise — no score/PB/game-over screen, just the
   // 20-second look-away reset on completion.
   const isExercise = activity?.id === 'comet-trace';
+  const isDone = gameEndStats !== null;
 
   // Parent countdown for timer-managed games (Blink, Radar, Focus)
   useEffect(() => {
@@ -115,6 +123,13 @@ export default function EyeGameScreen() {
     const t = setTimeout(() => setSecondsLeft(s => s - 1), 1000);
     return () => clearTimeout(t);
   }, [running, secondsLeft, gameEndStats, isSelfManaged]);
+
+  useEffect(() => {
+    if (!isDone) return;
+    if (gameId === 'saccade-sniper' && bestMsRef.current !== null) {
+      void submit(bestMsRef.current);
+    }
+  }, [isDone, gameId, submit]);
 
   if (!activity) {
     return (
@@ -137,15 +152,6 @@ export default function EyeGameScreen() {
     );
   }
 
-  const isDone = gameEndStats !== null;
-
-  useEffect(() => {
-    if (!isDone) return;
-    if (gameId === 'saccade-sniper' && bestMsRef.current !== null) {
-      submit(bestMsRef.current);
-    }
-  }, [isDone]);
-
   const formatRecord = (): string => {
     if (!record) return '—';
     if (gameId === 'saccade-sniper') return `${record.value}ms`;
@@ -157,6 +163,7 @@ export default function EyeGameScreen() {
     setSecondsLeft(activity!.durationSeconds);
     setRunning(true);
     bestMsRef.current = null;
+    setProgressReward(null);
   }
 
   return (
@@ -212,6 +219,10 @@ export default function EyeGameScreen() {
                   setEyeResetActive(true);
                   return;
                 }
+                void awardEyeGameXp(user?.uid, gameId, stats.rating).then(
+                  setProgressReward,
+                );
+                logEyeGame();
                 if (isSelfManaged) {
                   // Self-managed games have their own completion UI — go directly to results
                   setGameEndStats(stats);
@@ -253,6 +264,15 @@ export default function EyeGameScreen() {
         <GameOverScreen
           stats={gameEndStats}
           celebration={!isExercise && isNewRecord ? '🏆 New Personal Best!' : undefined}
+          progressReward={
+            progressReward
+              ? {
+                  xpAwarded: progressReward.xpAwarded,
+                  level: progressReward.after.level,
+                  leveledUp: progressReward.leveledUp,
+                }
+              : null
+          }
           onReplay={handleReplay}
           onDismiss={() => {
             setGameEndStats(null);

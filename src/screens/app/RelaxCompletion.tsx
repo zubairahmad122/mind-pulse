@@ -79,6 +79,22 @@ export default function RelaxCompletion() {
 
   const session = getSessionById(sessionId || '');
   const { completedSessions, completeSession, updateLastCompletion } = useRelaxContext();
+  const [weekStart] = useState(() => Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const heroAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: heroScale.value }],
+    opacity: heroOpacity.value,
+  }));
+
+  const statsAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: statsSlide.value }],
+    opacity: statsOpacity.value,
+  }));
+
+  const emotionAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: emotionSlide.value }],
+    opacity: emotionOpacity.value,
+  }));
 
   // Record the completion as soon as this screen opens, so the stats above are
   // correct immediately. Mood + rating get attached to this record afterwards.
@@ -119,23 +135,8 @@ export default function RelaxCompletion() {
 
   const nextSession = selectedEmotion ? getRecommendedSession(selectedEmotion) : null;
   const thisWeekSessions = completedSessions.filter(
-    (s: any) => s.completedAt > Date.now() - 7 * 24 * 60 * 60 * 1000
+    (s: any) => s.completedAt > weekStart
   ).length;
-
-  const heroAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: heroScale.value }],
-    opacity: heroOpacity.value,
-  }));
-
-  const statsAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: statsSlide.value }],
-    opacity: statsOpacity.value,
-  }));
-
-  const emotionAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: emotionSlide.value }],
-    opacity: emotionOpacity.value,
-  }));
 
   return (
     <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>

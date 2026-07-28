@@ -3,16 +3,23 @@ import { useEffect } from 'react';
 import { BACKGROUND } from '@/constants/designSystem';
 import { AlarmOverlayProvider } from '@/context/AlarmOverlayContext';
 import { SleepProvider } from '@/context/SleepContext';
-import { EYE_BREAK_NOTIF_PREFIX } from '@/services/eyeBreakNotification';
+import {
+  EYE_BREAK_NOTIF_PREFIX,
+  EYE_BREAK_SNOOZE_ACTION,
+  scheduleEyeBreakSnooze,
+} from '@/services/eyeBreakNotification';
 import { ROUTES } from '@/constants';
 import { useStreakSync } from '@/hooks/useStreakSync';
 import { useDailyCheckIn } from '@/hooks/useDailyCheckIn';
 import { useEveningReminderSync } from '@/hooks/useEveningReminderSync';
 import { useSurpriseBadgeSync } from '@/hooks/useSurpriseBadgeSync';
 import { useWellnessCloudSync } from '@/hooks/useWellnessCloudSync';
+import { useAuth } from '@/context/AuthContext';
+import { recordEyeBreakReminderEvent } from '@/services/eyeBreakReminderEvents';
 
 export default function AppStackLayout() {
   const router = useRouter();
+  const { user } = useAuth();
 
   useStreakSync();
   useDailyCheckIn();
@@ -28,7 +35,24 @@ export default function AppStackLayout() {
         sub = N.addNotificationResponseReceivedListener(response => {
           const id = response.notification.request.identifier;
           if (id.startsWith(EYE_BREAK_NOTIF_PREFIX)) {
-            router.push(ROUTES.appEyeBreak as never);
+            if (response.actionIdentifier === EYE_BREAK_SNOOZE_ACTION) {
+              void scheduleEyeBreakSnooze();
+              void recordEyeBreakReminderEvent(user?.uid, {
+                type: 'snoozed',
+                occurredAt: Date.now(),
+                notificationId: id,
+              });
+              return;
+            }
+            void recordEyeBreakReminderEvent(user?.uid, {
+              type: 'opened',
+              occurredAt: Date.now(),
+              notificationId: id,
+            });
+            router.push({
+              pathname: ROUTES.appEyeBreak,
+              params: { source: 'reminder', notificationId: id },
+            } as never);
           }
         });
       })
@@ -37,7 +61,7 @@ export default function AppStackLayout() {
     return () => {
       sub?.remove();
     };
-  }, []);
+  }, [router, user?.uid]);
 
   return (
     <AlarmOverlayProvider>

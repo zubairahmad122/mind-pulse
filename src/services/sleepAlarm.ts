@@ -5,6 +5,7 @@ import { getNativeAlarmModule } from './nativeAlarm';
 
 const ALARM_SOUND = 'alarm.wav';
 const NOTIFICATION_CHANNEL_ID = 'sleep-wake-alarms-ringing-v3';
+const SLEEP_ALARM_NOTIFICATION_PREFIX = 'sleep-wake-alarm-';
 const MIN_ALARM_MS = 5_000;
 const MIN_TEST_ALARM_MS = 2_000;
 
@@ -86,7 +87,15 @@ export async function cancelSleepAlarms(): Promise<void> {
 
   const Notifications = await getNotifications();
   if (Notifications) {
-    await Notifications.cancelAllScheduledNotificationsAsync();
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const sleepAlarmIds = scheduled
+      .map(request => request.identifier)
+      .filter(identifier => identifier.startsWith(SLEEP_ALARM_NOTIFICATION_PREFIX));
+    await Promise.all(
+      sleepAlarmIds.map(identifier =>
+        Notifications.cancelScheduledNotificationAsync(identifier)
+      ),
+    );
   }
 }
 
@@ -116,6 +125,7 @@ export async function scheduleWakeAlarm(
   await setupNotificationChannel(Notifications);
 
   return Notifications.scheduleNotificationAsync({
+    identifier: `${SLEEP_ALARM_NOTIFICATION_PREFIX}${wakeAt.getTime()}`,
     content: {
       title: 'Time to wake up',
       body: label,

@@ -1,17 +1,32 @@
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from 'react-native';
+import { FONTS } from '@/constants/designSystem';
 
 type Props = {
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
 };
 
-export function GoogleSignInButton({ onPress, loading, disabled }: Props) {
+export function GoogleSignInButton({
+  onPress,
+  loading,
+  disabled,
+  style,
+}: Props) {
   const isDisabled = disabled || loading;
 
   return (
     <TouchableOpacity
-      style={[styles.btn, isDisabled && styles.disabled]}
+      style={[styles.btn, style, isDisabled && styles.disabled]}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.85}
@@ -54,5 +69,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconLetter: { color: '#4285F4', fontWeight: '700', fontSize: 13 },
-  label: { color: 'rgba(245,247,251,0.85)', fontWeight: '600', fontSize: 14 },
+  label: {
+    color: 'rgba(245,247,251,0.85)',
+    fontFamily: FONTS.bodySemi,
+    fontWeight: '600',
+    fontSize: 14,
+  },
 });

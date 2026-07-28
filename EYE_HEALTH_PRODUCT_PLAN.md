@@ -9,12 +9,29 @@ Started July 25, 2026.
 - [x] Add stop conditions and professional-care guidance to Eye Reset.
 - [x] Preserve and reuse the existing English and Urdu/Hindi recorded audio-guide system.
 - [x] Reframe game scores as game performance rather than eye-health measurements.
+- [x] Add persistent game XP, levels, and completed-round progress.
+- [x] Apply the same progression rewards to the premium red/cyan coordination game.
+- [x] Add meaningful, non-medical game level titles and visible next milestones.
+- [x] Add optional cosmetic badge rewards for later game milestones.
 - [ ] Clinically review and re-record Eye Reset audio whose spoken wording still contains older exercise claims.
-- [ ] Add before/after symptom check-ins.
-- [ ] Persist symptom and break-outcome data.
-- [ ] Build the personalized weekly eye-comfort report.
-- [ ] Improve reminder scheduling and background reliability.
-- [ ] Prototype the desktop/browser companion.
+- [x] Add optional before/after eye-comfort check-ins to Eye Reset.
+- [x] Persist Eye Reset comfort outcomes locally with signed-in cloud backup.
+- [x] Add a seven-day eye-comfort summary with session outcomes and safety-aware trend messaging.
+- [x] Expand the summary into a personalized weekly report with reminder, symptom, and manually reported screen-habit data.
+- [x] Add eye comfort and reminder follow-through to the main weekly report.
+- [x] Add one safety-aware weekly habit recommendation from comfort and reminder data.
+- [x] Add an optional symptom check-in with non-diagnostic escalation guidance.
+- [x] Summarize recent symptom check-ins in the weekly report.
+- [x] Add configurable 20/30/45/60-minute reminder intervals.
+- [x] Repair missing notification schedules when an enabled user returns.
+- [x] Keep the reminder toggle off when OS permission or scheduling fails.
+- [x] Track reminder opens, completed breaks, and abandoned breaks locally.
+- [x] Show a seven-day reminder follow-through summary on the Eye screen.
+- [x] Add a system-notification “Snooze 10 min” action and track its use.
+- [x] Add anytime, weekday, and daily working-hours reminder schedules.
+- [x] Add custom start/end hours and selectable reminder days.
+- [ ] Validate notification reliability under real Android battery restrictions.
+- [x] Prototype a responsive desktop/browser break companion.
 
 ## Product direction
 

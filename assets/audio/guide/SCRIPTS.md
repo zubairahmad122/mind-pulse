@@ -709,6 +709,10 @@ breathe modes now open the Relax player. No file exists and no code references i
 `reset-nearfar`, `reset-shift` (one per exercise, plays as it starts), and
 `reset-complete` (done screen). en + hi.
 
+> Clinical status: the existing recordings are not clinically approved. Do not
+> re-record or market them as reviewed until the copy and sign-off checklist in
+> `docs/EYE_RESET_AUDIO_CLINICAL_REVIEW.md` has been completed.
+
 ### ⏳ Games — NOT YET RECORDED
 
 Personality: calm coach — short, unhurried, one breath per line.

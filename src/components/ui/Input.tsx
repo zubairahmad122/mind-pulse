@@ -1,8 +1,18 @@
 import { forwardRef, useCallback, useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
+import {
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
-import { SURFACE } from '../../constants/designSystem';
+import { FONTS, SURFACE } from '../../constants/designSystem';
 
 // Only used by Edit Profile — the app's generic brand purple, not a pillar color.
 const ACCENT = SURFACE.purple;
@@ -11,10 +21,22 @@ type Props = TextInputProps & {
   label: string;
   secureToggle?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
+  fieldStyle?: StyleProp<ViewStyle>;
+  labelStyle?: StyleProp<TextStyle>;
+  focusColor?: string;
 };
 
 const Input = forwardRef<TextInput, Props>(function Input(
-  { label, secureToggle = false, icon, style, ...props },
+  {
+    label,
+    secureToggle = false,
+    icon,
+    style,
+    fieldStyle,
+    labelStyle,
+    focusColor = ACCENT,
+    ...props
+  },
   ref,
 ) {
   const [show, setShow] = useState(false);
@@ -35,38 +57,61 @@ const Input = forwardRef<TextInput, Props>(function Input(
   );
 
   const handleToggleVisibility = useCallback(() => {
-    setShow(v => !v);
+    setShow((v) => !v);
     requestAnimationFrame(() => localRef.current?.focus());
   }, []);
 
   return (
     <View style={styles.wrap}>
-      <Text style={focused ? styles.labelFocused : styles.label}>{label}</Text>
-      <View style={[styles.field, focused && styles.fieldFocused]}>
+      <Text style={[focused ? styles.labelFocused : styles.label, labelStyle]}>
+        {label}
+      </Text>
+      <View
+        style={[
+          styles.field,
+          fieldStyle,
+          focused && styles.fieldFocused,
+          focused && { borderColor: focusColor },
+        ]}
+      >
         {icon ? (
-          <Ionicons name={icon} size={18} color={focused ? ACCENT : COLORS.textMuted} style={styles.leftIcon} />
+          <Ionicons
+            name={icon}
+            size={18}
+            color={focused ? focusColor : COLORS.textMuted}
+            style={styles.leftIcon}
+          />
         ) : null}
         <TextInput
           ref={setRefs}
-          style={[styles.input, icon && styles.inputWithIcon, secureToggle && styles.inputWithToggle, style]}
+          style={[
+            styles.input,
+            icon && styles.inputWithIcon,
+            secureToggle && styles.inputWithToggle,
+            style,
+          ]}
           placeholderTextColor={COLORS.textMuted}
           secureTextEntry={secureToggle ? !show : props.secureTextEntry}
-          onFocus={e => {
+          onFocus={(e) => {
             setFocused(true);
             props.onFocus?.(e);
           }}
-          onBlur={e => {
+          onBlur={(e) => {
             setFocused(false);
             props.onBlur?.(e);
           }}
           {...props}
         />
         {secureToggle ? (
-          <TouchableOpacity onPress={handleToggleVisibility} activeOpacity={0.7} hitSlop={8}>
+          <TouchableOpacity
+            onPress={handleToggleVisibility}
+            activeOpacity={0.7}
+            hitSlop={8}
+          >
             <Ionicons
               name={show ? 'eye-off' : 'eye'}
               size={18}
-              color={focused ? ACCENT : COLORS.textMuted}
+              color={focused ? focusColor : COLORS.textMuted}
             />
           </TouchableOpacity>
         ) : null}
@@ -108,6 +153,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    fontFamily: FONTS.body,
     color: '#FFFFFF',
     fontSize: 16,
     paddingVertical: 14,

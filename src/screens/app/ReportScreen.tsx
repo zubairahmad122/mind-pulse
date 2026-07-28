@@ -1,4 +1,14 @@
-import { Activity, BarChart3, Eye, Flame, Moon, Share2, Sparkles, type LucideIcon } from 'lucide-react-native';
+import {
+  Activity,
+  BarChart3,
+  Bell,
+  Eye,
+  Flame,
+  Moon,
+  Share2,
+  Sparkles,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -21,6 +31,10 @@ import { typography } from '@/constants/typography';
 import { useAuth } from '@/context/AuthContext';
 import { useSleep } from '@/context/SleepContext';
 import { useEyeScore } from '@/hooks/useEyeScore';
+import { useEyeBreakReminderSummary } from '@/hooks/useEyeBreakReminderSummary';
+import { useEyeComfortSummary } from '@/hooks/useEyeComfortSummary';
+import { useEyeSymptomSummary } from '@/hooks/useEyeSymptomSummary';
+import { useEyeScreenHabitSummary } from '@/hooks/useEyeScreenHabitSummary';
 import { useMindScore } from '@/hooks/useMindScore';
 import { useSleepScore } from '@/hooks/useSleepScore';
 import { useWeeklyReflection } from '@/hooks/useWeeklyReflection';
@@ -34,11 +48,22 @@ import {
   getFocusArea,
   pulseScoreTheme,
 } from '@/utils/scoring';
+import { getEyeWeeklyRecommendation } from '@/utils/eyeWeeklyRecommendation';
 
 const FOCUS_AREA_ICON: Record<string, LucideIcon> = {
   Sleep: Moon,
   Eyes: Eye,
   Mind: Activity,
+};
+const SYMPTOM_LABELS: Record<string, string> = {
+  dryness: 'dryness or burning',
+  tired: 'tired or sore eyes',
+  headache: 'headache',
+  blurred: 'blurred vision',
+  double: 'double vision',
+  pain: 'eye pain',
+  'sudden-change': 'sudden vision change',
+  'after-injury': 'symptoms after injury',
 };
 
 function StatRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
@@ -96,7 +121,7 @@ function AnimatedBigScore({ score, statusColor, label, status, isLoading }: {
       cancelAnimation(glowPulse);
       cancelAnimation(scalePulse);
     };
-  }, [isLoading]);
+  }, [glowPulse, isLoading, scalePulse]);
 
   const glowAnim = useAnimatedStyle(() => ({ opacity: glowPulse.value }));
   const scaleAnim = useAnimatedStyle(() => ({ transform: [{ scale: scalePulse.value }] }));
@@ -141,6 +166,14 @@ export default function ReportScreen() {
   }, [user?.uid]);
   const { sessions } = useSleep();
   const eyeResult = useEyeScore(user?.uid ?? undefined);
+  const { summary: comfortSummary, loading: comfortLoading } =
+    useEyeComfortSummary(user?.uid);
+  const { summary: reminderSummary, loading: reminderLoading } =
+    useEyeBreakReminderSummary(user?.uid);
+  const { summary: symptomSummary, loading: symptomLoading } =
+    useEyeSymptomSummary(user?.uid);
+  const { summary: screenHabitSummary, loading: screenHabitLoading } =
+    useEyeScreenHabitSummary(user?.uid);
   const mindResult = useMindScore(user?.uid ?? undefined);
   const sleepResult = useSleepScore(user?.uid ?? undefined, user?.isAnonymous ?? true);
 
@@ -195,6 +228,84 @@ export default function ReportScreen() {
           <ScoreTrendChart days={weekData} />
         </PaywallGate>
       )}
+
+      {/* Eye habits use observed actions and optional self-reports, not game scores. */}
+      <GlassCard style={styles.eyeWeekCard}>
+        <View style={styles.eyeWeekHeader}>
+          <View style={styles.eyeWeekIcon}>
+            <Eye size={17} color={colors.accent.blue} />
+          </View>
+          <View style={styles.eyeWeekHeading}>
+            <Text style={styles.eyeWeekEyebrow}>YOUR EYE-COMFORT WEEK</Text>
+            <Text style={styles.eyeWeekTitle}>Break habits and check-ins</Text>
+          </View>
+        </View>
+
+        {comfortLoading || reminderLoading || symptomLoading || screenHabitLoading ? (
+          <ActivityIndicator size="small" color={colors.accent.blue} />
+        ) : (
+          <>
+            <View style={styles.eyeWeekStats}>
+              <View style={styles.eyeWeekStat}>
+                <Text style={styles.eyeWeekValue}>{reminderSummary.completed}</Text>
+                <Text style={styles.eyeWeekLabel}>Breaks done</Text>
+              </View>
+              <View style={styles.eyeWeekDivider} />
+              <View style={styles.eyeWeekStat}>
+                <Text style={styles.eyeWeekValue}>
+                  {reminderSummary.completionRate === null
+                    ? '–'
+                    : `${reminderSummary.completionRate}%`}
+                </Text>
+                <Text style={styles.eyeWeekLabel}>Follow-through</Text>
+              </View>
+              <View style={styles.eyeWeekDivider} />
+              <View style={styles.eyeWeekStat}>
+                <Text style={styles.eyeWeekValue}>{comfortSummary.improvedSessions}</Text>
+                <Text style={styles.eyeWeekLabel}>Felt better</Text>
+              </View>
+            </View>
+
+            <View style={styles.eyeWeekRecommendation}>
+              <Bell size={14} color={colors.accent.blue} />
+              <Text style={styles.eyeWeekRecommendationText}>
+                {getEyeWeeklyRecommendation(comfortSummary, reminderSummary)}
+              </Text>
+            </View>
+            <Text style={styles.eyeWeekDisclaimer}>
+              Comfort results are optional self-reports and are not a medical assessment.
+            </Text>
+            {symptomSummary.checkIns > 0 && (
+              <Text style={styles.eyeWeekSymptomSummary}>
+                {symptomSummary.checkIns} symptom check-in
+                {symptomSummary.checkIns === 1 ? '' : 's'}
+                {symptomSummary.mostFrequent
+                  ? ` · Most selected: ${SYMPTOM_LABELS[symptomSummary.mostFrequent]}`
+                  : ' · No symptoms selected'}
+              </Text>
+            )}
+            {symptomSummary.concerningCheckIns > 0 && (
+              <Text style={styles.eyeWeekSafety}>
+                A concerning symptom was recorded. Follow the care guidance shown
+                during check-in rather than continuing eye activities.
+              </Text>
+            )}
+            {screenHabitSummary.checkIns > 0 && (
+              <View style={styles.eyeWeekScreenHabit}>
+                <Text style={styles.eyeWeekScreenHabitTitle}>SCREEN HABITS</Text>
+                <Text style={styles.eyeWeekScreenHabitText}>
+                  Longest reported block: {screenHabitSummary.longestMinutes}
+                  {screenHabitSummary.longestMinutes === 90 ? '+' : ''} min
+                  {' · '}Average: {screenHabitSummary.averageMinutes} min
+                  {screenHabitSummary.mostFrequentContext
+                    ? ` · Most often: ${screenHabitSummary.mostFrequentContext}`
+                    : ''}
+                </Text>
+              </View>
+            )}
+          </>
+        )}
+      </GlassCard>
 
       {/* Weekly Reflection — Gemini-powered narrative summary */}
       <PaywallGate featureId="report_weekly_summary">
@@ -289,6 +400,108 @@ export default function ReportScreen() {
 }
 
 const styles = StyleSheet.create({
+  eyeWeekCard: { marginBottom: spacing.md },
+  eyeWeekHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  eyeWeekIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accent.blue + '14',
+    borderWidth: 1,
+    borderColor: colors.accent.blue + '35',
+  },
+  eyeWeekHeading: { flex: 1, gap: 2 },
+  eyeWeekEyebrow: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+    color: colors.accent.blue,
+  },
+  eyeWeekTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  eyeWeekStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  eyeWeekStat: { flex: 1, alignItems: 'center', gap: 3 },
+  eyeWeekValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.text.primary,
+  },
+  eyeWeekLabel: {
+    fontSize: 9.5,
+    color: colors.text.tertiary,
+    textAlign: 'center',
+  },
+  eyeWeekDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  eyeWeekRecommendation: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: 12,
+    backgroundColor: colors.accent.blue + '0C',
+  },
+  eyeWeekRecommendationText: {
+    flex: 1,
+    fontSize: 11.5,
+    lineHeight: 17,
+    color: colors.text.secondary,
+  },
+  eyeWeekDisclaimer: {
+    marginTop: spacing.sm,
+    fontSize: 9.5,
+    lineHeight: 14,
+    color: colors.text.tertiary,
+  },
+  eyeWeekSymptomSummary: {
+    marginTop: spacing.sm,
+    fontSize: 10.5,
+    lineHeight: 15,
+    color: colors.text.secondary,
+  },
+  eyeWeekSafety: {
+    marginTop: spacing.xs,
+    fontSize: 10.5,
+    lineHeight: 15,
+    fontWeight: '600',
+    color: '#FBBF24',
+  },
+  eyeWeekScreenHabit: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    gap: 3,
+  },
+  eyeWeekScreenHabitTitle: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: colors.accent.blue,
+  },
+  eyeWeekScreenHabitText: {
+    fontSize: 10.5,
+    lineHeight: 15,
+    color: colors.text.secondary,
+    textTransform: 'capitalize',
+  },
   statRow: {
     flexDirection: 'row',
     alignItems: 'center',

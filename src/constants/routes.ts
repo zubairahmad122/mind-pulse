@@ -26,6 +26,7 @@ export const ROUTES = {
   appCvsProtocol: '/(app)/cvs-protocol',
   appDichopticScreen: '/(app)/dichoptic-screen',
   appEyeBreak: '/(app)/eye-break',
+  appEyeCompanion: '/(app)/eye-companion',
   appGrounding: '/(app)/stress/grounding',
   appCalmWave: '/(app)/relax/player?sessionId=calm-flow',
   appTensionRelease: '/(app)/stress/tension-release',

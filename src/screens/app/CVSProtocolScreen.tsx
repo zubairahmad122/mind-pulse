@@ -51,6 +51,11 @@ import { PillarProvider } from '@/context/PillarContext';
 import { useAuth } from '@/context/AuthContext';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
 import { useEyeProgress } from '@/hooks/useEyeProgress';
+import {
+  saveEyeComfortRecord,
+  type EyeComfortRating,
+} from '@/services/eyeComfortPersistence';
+import { getComfortChange } from '@/utils/eyeComfort';
 
 // One accent for the whole Eyes feature — matches the Eye tab (was
 // PILLAR_THEME.eyes.accent, a different teal-cyan from the separate
@@ -103,7 +108,15 @@ function formatTotalShort(seconds: number): string {
   return s === 0 ? `${m}m` : `${m}m ${s}s`;
 }
 
-const BENEFITS = ['Reduce eye strain', 'Improve focus', 'Relax eye muscles'];
+const BENEFITS = ['Take a structured screen break', 'Practice comfortable focus changes', 'Build a consistent eye-care habit'];
+
+const COMFORT_OPTIONS: { value: EyeComfortRating; label: string }[] = [
+  { value: 1, label: 'Comfortable' },
+  { value: 2, label: 'Slight' },
+  { value: 3, label: 'Moderate' },
+  { value: 4, label: 'Strong' },
+  { value: 5, label: 'Severe' },
+];
 
 function StepGuide({ stepId, active }: { stepId: string; active: boolean }) {
   switch (stepId) {
@@ -179,7 +192,7 @@ function StepDots({ count, current }: { count: number; current: number }) {
   })}</View>;
 }
 
-type Phase = 'idle' | 'calibrate' | 'countdown' | 'active' | 'recovery' | 'done';
+type Phase = 'idle' | 'checkin-before' | 'calibrate' | 'countdown' | 'active' | 'recovery' | 'checkin-after' | 'done';
 type Interstitial = { doneTitle: string; nextTitle: string; encouragement?: string } | null;
 
 // Tiny reminder tips under the countdown — rotate slowly, low-key coaching.
@@ -219,6 +232,8 @@ export default function CVSProtocolScreen() {
   const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
   // 20-20-20 recovery: look far away for 20s after the last exercise.
   const [recoverySecs, setRecoverySecs] = useState(20);
+  const [comfortBefore, setComfortBefore] = useState<EyeComfortRating | null>(null);
+  const [comfortAfter, setComfortAfter] = useState<EyeComfortRating | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interstitialTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -393,8 +408,16 @@ export default function CVSProtocolScreen() {
     return () => clearTimeout(t);
   }, [phase, prepNum, contentOpacity]);
 
-  function begin() {
+  function requestStart() {
     void Haptics.selectionAsync();
+    setComfortBefore(null);
+    setComfortAfter(null);
+    setPhase('checkin-before');
+  }
+
+  function begin(before: EyeComfortRating | null = comfortBefore) {
+    void Haptics.selectionAsync();
+    setComfortBefore(before);
     setStepIndex(0); setSecondsLeft(STEPS[0].durationSeconds); setPaused(false);
     activeStartedRef.current = false;
     // Calibration holds while the recorded session intro speaks (~20s),
@@ -406,8 +429,21 @@ export default function CVSProtocolScreen() {
 
   // Session end: 20-20-20 recovery first, then the celebration screen.
   function finishSession() {
+    stopVoice();
+    setPhase('checkin-after');
+  }
+
+  function completeSession(after: EyeComfortRating | null) {
+    const record = {
+      completedAt: Date.now(),
+      sessionType: 'eye-reset' as const,
+      before: comfortBefore,
+      after,
+    };
+    setComfortAfter(after);
     setPhase('done');
     void recordCompletion('eye-reset');
+    void saveEyeComfortRecord(user?.uid, record);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     play('eyes/reset-complete', 500, 1, { protect: true });
     completionOpacity.value = withTiming(1, { duration: 420 });
@@ -427,7 +463,7 @@ export default function CVSProtocolScreen() {
   function repeatSession() {
     void Haptics.selectionAsync();
     completionOpacity.value = 0; completionScale.value = 0.85;
-    begin();
+    requestStart();
   }
 
   function exitNow() { clearTimer(); stopVoice(); setExitConfirm(false); router.back(); }
@@ -524,11 +560,74 @@ export default function CVSProtocolScreen() {
               <GradientCTA
                 label="Start Session"
                 icon={<Play size={18} color="#03212C" />}
-                onPress={begin}
+                onPress={requestStart}
                 textColor="#03212C"
                 style={styles.cta}
               />
             </View>
+          </View>
+        )}
+
+        {(phase === 'checkin-before' || phase === 'checkin-after') && (
+          <View style={styles.checkinRoot}>
+            <GlassCard style={styles.checkinCard}>
+              <Text style={styles.checkinKicker}>
+                {phase === 'checkin-before' ? 'BEFORE YOUR RESET' : 'AFTER YOUR RESET'}
+              </Text>
+              <Text style={styles.checkinTitle}>How uncomfortable do your eyes feel?</Text>
+              <Text style={styles.checkinSub}>
+                This tracks how you feel—it does not diagnose an eye condition.
+              </Text>
+              <View style={styles.comfortOptions}>
+                {COMFORT_OPTIONS.map(option => {
+                  const selected = (phase === 'checkin-before' ? comfortBefore : comfortAfter) === option.value;
+                  return (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[styles.comfortOption, selected && styles.comfortOptionSelected]}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        void Haptics.selectionAsync();
+                        if (phase === 'checkin-before') setComfortBefore(option.value);
+                        else setComfortAfter(option.value);
+                      }}
+                    >
+                      <Text style={[styles.comfortNumber, selected && styles.comfortTextSelected]}>{option.value}</Text>
+                      <Text style={[styles.comfortLabel, selected && styles.comfortTextSelected]}>{option.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              {phase === 'checkin-after' && comfortAfter !== null && (
+                <Text style={styles.comfortOutcome}>
+                  {getComfortChange({ before: comfortBefore, after: comfortAfter }) === 'better'
+                    ? 'You reported feeling more comfortable.'
+                    : getComfortChange({ before: comfortBefore, after: comfortAfter }) === 'worse'
+                      ? 'You reported more discomfort. Rest your eyes and stop if symptoms persist.'
+                      : getComfortChange({ before: comfortBefore, after: comfortAfter }) === 'same'
+                        ? 'You reported no immediate change.'
+                        : 'Your response will be saved with this session.'}
+                </Text>
+              )}
+              <GradientCTA
+                label={phase === 'checkin-before' ? 'Continue' : 'Save & Finish'}
+                onPress={() => {
+                  if (phase === 'checkin-before') begin(comfortBefore);
+                  else completeSession(comfortAfter);
+                }}
+                textColor="#03212C"
+                style={styles.cta}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  if (phase === 'checkin-before') begin(null);
+                  else completeSession(null);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.checkinSkip}>Skip check-in</Text>
+              </TouchableOpacity>
+            </GlassCard>
           </View>
         )}
 
@@ -660,7 +759,7 @@ export default function CVSProtocolScreen() {
                     <Pause size={30} color={ACCENT} fill={ACCENT} />
                   </View>
                   <Text style={styles.pausedTitle}>Session Paused</Text>
-                  <Text style={styles.pausedSub}>Take a short break.{'\n'}Resume whenever you're ready.</Text>
+                  <Text style={styles.pausedSub}>Take a short break.{'\n'}Resume whenever you&apos;re ready.</Text>
 
                   <View style={styles.pausedDivider} />
 
@@ -910,6 +1009,30 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   benefitText: { fontSize: 15, color: colors.text.primary, fontWeight: '500' },
+
+  // Optional self-reported comfort check-ins
+  checkinRoot: { flex: 1, justifyContent: 'center', paddingHorizontal: SPACING.screenH },
+  checkinCard: { gap: 14 },
+  checkinKicker: { fontSize: 11, fontWeight: '800', color: ACCENT, letterSpacing: 1.6 },
+  checkinTitle: { fontFamily: FONTS.heading, fontSize: 23, fontWeight: '800', color: colors.text.primary, lineHeight: 29 },
+  checkinSub: { fontSize: 13, color: colors.text.secondary, lineHeight: 19 },
+  comfortOptions: { gap: 8, marginVertical: 4 },
+  comfortOption: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    minHeight: 48, paddingHorizontal: 14,
+    borderRadius: 14, borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.035)',
+  },
+  comfortOptionSelected: {
+    borderColor: ACCENT + '88',
+    backgroundColor: ACCENT + '16',
+  },
+  comfortNumber: { width: 22, fontSize: 14, fontWeight: '800', color: colors.text.tertiary },
+  comfortLabel: { fontSize: 14, fontWeight: '600', color: colors.text.secondary },
+  comfortTextSelected: { color: ACCENT },
+  comfortOutcome: { fontSize: 12.5, color: colors.text.secondary, lineHeight: 18 },
+  checkinSkip: { paddingVertical: 4, textAlign: 'center', fontSize: 13, fontWeight: '600', color: colors.text.tertiary },
 
   cta: { alignSelf: 'stretch' },
 

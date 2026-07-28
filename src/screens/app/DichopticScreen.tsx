@@ -20,6 +20,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useGameRecord } from '@/hooks/useGameRecord';
 import { markGamePlayedToday } from '@/services/dailyEyeGoalsPersistence';
+import {
+  awardEyeGameXp,
+  type EyeGameReward,
+} from '@/services/eyeGameProgress';
+import { useProgressStore } from '@/stores/useProgressStore';
 import type { GameEndStats } from '@/components/eye/games/GameOverScreen';
 import { colors } from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
@@ -89,11 +94,13 @@ export default function DichopticScreen() {
   const { user } = useAuth();
   const { record, submit } = useGameRecord(user?.uid, 'dichoptic-reaction');
   const { isPremium: hasAccess } = useSubscription();
+  const logEyeGame = useProgressStore(state => state.logEyeGame);
 
   const [dColors, setDColors] = useState<DichopticColors>(DEFAULT_DICHOPTIC_COLORS);
   const [loaded, setLoaded] = useState(false);
   const [screen, setScreen] = useState<'calibration' | 'game'>('calibration');
   const [gameStats, setGameStats] = useState<GameEndStats | null>(null);
+  const [progressReward, setProgressReward] = useState<EyeGameReward | null>(null);
   const [running, setRunning] = useState(false);
   const [showCalHelp, setShowCalHelp] = useState(false);
 
@@ -113,8 +120,17 @@ export default function DichopticScreen() {
     setGameStats(stats);
     setRunning(false);
     void markGamePlayedToday(user?.uid ?? undefined);
+    void awardEyeGameXp(user?.uid, 'dichoptic-reaction', stats.rating).then(reward => {
+      setProgressReward(reward);
+      logEyeGame();
+    });
     const quality = Number((stats.stats.find(s => s.label === 'Score')?.value ?? '0'));
-    submit(quality);
+    void submit(quality);
+  };
+
+  const handleReplay = () => {
+    setGameStats(null);
+    setProgressReward(null);
   };
 
   if (!loaded) {
@@ -148,6 +164,14 @@ export default function DichopticScreen() {
         {gameStats && (
           <View style={cs.resultBanner}>
             <Text style={cs.resultHeadline}>{gameStats.headline}</Text>
+            {progressReward ? (
+              <View style={cs.xpChip}>
+                <Text style={cs.xpText}>
+                  +{progressReward.xpAwarded} XP · Level {progressReward.after.level}
+                  {progressReward.leveledUp ? ' reached!' : ''}
+                </Text>
+              </View>
+            ) : null}
             <Text style={cs.resultSub}>{gameStats.subline}</Text>
           </View>
         )}
@@ -156,12 +180,16 @@ export default function DichopticScreen() {
           running={running}
           colors={dColors}
           onGameEnd={handleGameEnd}
-          onReplay={() => setGameStats(null)}
+          onReplay={handleReplay}
         />
 
         <TouchableOpacity
           style={cs.backBtn}
-          onPress={() => { setScreen('calibration'); setGameStats(null); }}
+          onPress={() => {
+            setScreen('calibration');
+            setGameStats(null);
+            setProgressReward(null);
+          }}
           activeOpacity={0.7}
         >
           <Ionicons name="settings-outline" size={14} color={colors.text.secondary} />
@@ -235,7 +263,12 @@ export default function DichopticScreen() {
         sublabel="Tap the matching color"
         icon={<Ionicons name="play" size={16} color="#03212C" />}
         compact
-        onPress={() => { setScreen('game'); setRunning(true); }}
+        onPress={() => {
+          setScreen('game');
+          setGameStats(null);
+          setProgressReward(null);
+          setRunning(true);
+        }}
         textColor="#03212C"
         letterSpacing={1}
         style={cs.playCta}
@@ -333,6 +366,15 @@ const cs = StyleSheet.create({
   },
   resultHeadline: { fontSize: 28, fontWeight: '900', color: '#fff' },
   resultSub: { fontSize: 12, color: colors.text.secondary, textAlign: 'center' },
+  xpChip: {
+    borderRadius: 100,
+    backgroundColor: 'rgba(0,224,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,224,255,0.3)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  xpText: { fontSize: 12, fontWeight: '800', color: EYE_COLOR },
 
   backBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,

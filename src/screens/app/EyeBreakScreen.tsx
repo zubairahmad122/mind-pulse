@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { AmbientBackground } from '@/components/ui/AmbientBackground';
@@ -14,28 +14,62 @@ import { STATUS_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { GradientCTA } from '@/components/ui/GradientCTA';
+import { recordEyeBreakReminderEvent } from '@/services/eyeBreakReminderEvents';
 
 const DURATION = 20;
 
 export default function EyeBreakScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    source?: string;
+    notificationId?: string;
+  }>();
   const { user } = useAuth();
   const [secondsLeft, setSecondsLeft] = useState(DURATION);
   const [done, setDone] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reminderResolvedRef = useRef(false);
+  const fromReminder = params.source === 'reminder';
+
+  const completeBreak = useCallback(() => {
+    setDone(true);
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    void recordBreakTaken(user?.uid ?? undefined);
+    void incrementBreaksTaken(user?.uid ?? undefined);
+    if (fromReminder && !reminderResolvedRef.current) {
+      reminderResolvedRef.current = true;
+      void recordEyeBreakReminderEvent(user?.uid, {
+        type: 'completed',
+        occurredAt: Date.now(),
+        notificationId: params.notificationId,
+      });
+    }
+  }, [fromReminder, params.notificationId, user?.uid]);
+
+  useEffect(() => {
+    return () => {
+      if (!fromReminder || reminderResolvedRef.current) return;
+      reminderResolvedRef.current = true;
+      void recordEyeBreakReminderEvent(user?.uid, {
+        type: 'abandoned',
+        occurredAt: Date.now(),
+        notificationId: params.notificationId,
+      });
+    };
+  }, [fromReminder, params.notificationId, user?.uid]);
 
   useEffect(() => {
     if (done) return;
-    if (secondsLeft <= 0) {
-      setDone(true);
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      void recordBreakTaken(user?.uid ?? undefined);
-      void incrementBreaksTaken(user?.uid ?? undefined);
-      return;
-    }
-    timerRef.current = setTimeout(() => setSecondsLeft(s => s - 1), 1000);
+    timerRef.current = setTimeout(() => {
+      if (secondsLeft <= 1) {
+        setSecondsLeft(0);
+        completeBreak();
+      } else {
+        setSecondsLeft(current => current - 1);
+      }
+    }, 1000);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [secondsLeft, done]);
+  }, [secondsLeft, done, completeBreak]);
 
   return (
     <ScreenShell scroll={false} pillar="eye" contentStyle={styles.root} ambient={<AmbientBackground subtle />}>

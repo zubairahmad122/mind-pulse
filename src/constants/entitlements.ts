@@ -66,7 +66,7 @@ export const FEATURE_NAMES: Record<FeatureId, string> = {
 
 /** One-line, feature-specific pitch shown on the locked-feature card — replaces the generic "This is a Pro feature." */
 export const FEATURE_DESCRIPTIONS: Record<FeatureId, string> = {
-  eye_focus_sprint: 'Train your eyes to quickly switch focus between near and far objects. Available with MindPulse Pro.',
+  eye_focus_sprint: 'Play a near-and-far focus-switching game with comfort-first guidance. Available with MindPulse Pro.',
   eye_dichoptic: 'Play a red/cyan color-coordination activity. This is not clinician-prescribed vision therapy. Available with MindPulse Pro.',
   relax_body_scan: 'A guided body scan to release tension zone by zone. Available with MindPulse Pro.',
   relax_tension_release: 'A guided session to release physical tension and reset your nervous system. Available with MindPulse Pro.',
