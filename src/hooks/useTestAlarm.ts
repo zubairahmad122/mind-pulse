@@ -16,9 +16,17 @@ export function useTestAlarm() {
       const support = await prepareAlarmPermissions();
       if (!handleAlarmSupport(support)) return;
 
-      const id = await scheduleTestWakeAlarm(seconds);
+      let id: string | null = null;
+      try {
+        id = await scheduleTestWakeAlarm(seconds);
+      } catch (error) {
+        console.warn('Failed to schedule test alarm:', error);
+      }
       if (!id) {
-        Alert.alert('Could not schedule', 'Try again in a moment.');
+        Alert.alert(
+          'Could not schedule',
+          'Allow “Alarms & reminders” for Mind Pulse in Android Settings, then try again.',
+        );
       }
     } finally {
       busyRef.current = false;

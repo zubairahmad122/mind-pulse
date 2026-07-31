@@ -111,11 +111,9 @@ export async function scheduleWakeAlarm(
   const native = getNativeAlarmModule();
   if (native) {
     await cancelSleepAlarms();
-    try {
-      return await native.scheduleAlarm(wakeAt.getTime(), label);
-    } catch {
-      return null;
-    }
+    // Do not hide native scheduling errors. Callers must be able to tell the
+    // user that no alarm was armed instead of silently starting sleep tracking.
+    return native.scheduleAlarm(wakeAt.getTime(), label);
   }
 
   const Notifications = await getNotifications();

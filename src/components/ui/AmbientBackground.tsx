@@ -1,4 +1,14 @@
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedProps,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
 import Svg, {
   Defs,
   LinearGradient as SvgLinearGradient,
@@ -7,7 +17,6 @@ import Svg, {
   Rect,
   Stop,
 } from 'react-native-svg';
-import { useGlobalFrame } from '@/hooks/useAnimationFrame';
 import { usePillarAccent } from '@/context/PillarContext';
 
 // ── Beam configuration ───────────────────────────────────────────────────────
@@ -39,18 +48,55 @@ function AmbientGlow({ accent }: { accent: string }) {
   );
 }
 
-function AmbientBeams({ frame, accent }: { frame: number; accent: string }) {
-  const angle = (-frame * 0.06) % 360;
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+
+function AmbientBeam({
+  deg,
+  index,
+  phase,
+}: {
+  deg: number;
+  index: number;
+  phase: SharedValue<number>;
+}) {
+  const animatedProps = useAnimatedProps(() => ({
+    opacity: (0.5 + 0.5 * Math.sin(phase.value + index * 1.6)) * 0.18,
+  }));
   return (
-    <View
+    <AnimatedPath
+      d="M150,150 L132,10 L168,10 Z"
+      fill="url(#ambientBeam)"
+      animatedProps={animatedProps}
+      transform={`rotate(${deg} 150 150)`}
+    />
+  );
+}
+
+function AmbientBeams({ accent }: { accent: string }) {
+  const rotation = useSharedValue(0);
+  const phase = useSharedValue(0);
+
+  useEffect(() => {
+    rotation.value = withRepeat(
+      withTiming(-360, { duration: 300_000, easing: Easing.linear }),
+      -1,
+      false,
+    );
+    phase.value = withRepeat(
+      withTiming(Math.PI * 2, { duration: 10_500, easing: Easing.linear }),
+      -1,
+      false,
+    );
+  }, [phase, rotation]);
+
+  const rotationStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
+  return (
+    <Animated.View
       pointerEvents="none"
-      style={{
-        position: 'absolute',
-        width: '100%',
-        height: 300,
-        alignItems: 'center',
-        transform: [{ rotate: `${angle}deg` }],
-      }}
+      style={[styles.beams, rotationStyle]}
     >
       <Svg width={300} height={300} viewBox="0 0 300 300">
         <Defs>
@@ -59,21 +105,11 @@ function AmbientBeams({ frame, accent }: { frame: number; accent: string }) {
             <Stop offset="100%" stopColor={accent} stopOpacity={0} />
           </SvgLinearGradient>
         </Defs>
-        {BEAM_ANGLES.map((deg, i) => {
-          const shimmer = 0.5 + 0.5 * Math.sin(frame * 0.03 + i * 1.6);
-          return (
-            <Path
-              key={i}
-              // Wider, softer beams read as a gentle glow rather than hard streaks.
-              d="M150,150 L132,10 L168,10 Z"
-              fill="url(#ambientBeam)"
-              opacity={shimmer * 0.18}
-              transform={`rotate(${deg} 150 150)`}
-            />
-          );
-        })}
+        {BEAM_ANGLES.map((deg, i) => (
+          <AmbientBeam key={i} deg={deg} index={i} phase={phase} />
+        ))}
       </Svg>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -95,7 +131,6 @@ interface AmbientBackgroundProps {
  * before the content, so it sits behind everything.
  */
 export function AmbientBackground({ subtle = false }: AmbientBackgroundProps) {
-  const frame = useGlobalFrame();
   const accent = usePillarAccent();
 
   const opacity = subtle ? 0.5 : 1;
@@ -103,7 +138,16 @@ export function AmbientBackground({ subtle = false }: AmbientBackgroundProps) {
   return (
     <View pointerEvents="none" style={{ ...StyleSheet.absoluteFill, opacity }}>
       <AmbientGlow accent={accent} />
-      <AmbientBeams frame={frame} accent={accent} />
+      <AmbientBeams accent={accent} />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  beams: {
+    position: 'absolute',
+    width: '100%',
+    height: 300,
+    alignItems: 'center',
+  },
+});

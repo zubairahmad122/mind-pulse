@@ -5,9 +5,30 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ReactNode } from 'react';
-import { Image, ImageSourcePropType, KeyboardAvoidingView, Platform, ScrollView, StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Path, Stop } from 'react-native-svg';
+import {
+  Image,
+  ImageSourcePropType,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from 'react-native';
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Path,
+  RadialGradient,
+  Rect,
+  Stop,
+} from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AnimatedBackground from '@/components/AnimatedBackground';
 
 type Props = {
   children: ReactNode;
@@ -16,6 +37,8 @@ type Props = {
   sheetStyle?: StyleProp<ViewStyle>;
   heroImage?: ImageSourcePropType;
   heroLabel?: string;
+  simpleHero?: boolean;
+  appBackground?: boolean;
 };
 
 // ── Outer glow rings — faint rotating ring outlines for depth ────────────────
@@ -24,10 +47,33 @@ function OuterRings({ frame }: { frame: number }) {
   const angle = (frame * 0.2) % 360;
   const pulseT = (Math.sin(frame * 0.03) + 1) / 2;
   return (
-    <View style={{ position: 'absolute', width: 230, height: 230, transform: [{ rotate: `${angle}deg` }], opacity: 0.5 + pulseT * 0.3 }}>
+    <View
+      style={{
+        position: 'absolute',
+        width: 230,
+        height: 230,
+        transform: [{ rotate: `${angle}deg` }],
+        opacity: 0.5 + pulseT * 0.3,
+      }}
+    >
       <Svg width={230} height={230} viewBox="0 0 230 230">
-        <Circle cx={115} cy={115} r={114} fill="none" stroke="rgba(26,143,255,0.16)" strokeWidth={1} />
-        <Circle cx={115} cy={115} r={98} fill="none" stroke="rgba(26,143,255,0.1)" strokeWidth={1} strokeDasharray="2 8" />
+        <Circle
+          cx={115}
+          cy={115}
+          r={114}
+          fill="none"
+          stroke="rgba(26,143,255,0.16)"
+          strokeWidth={1}
+        />
+        <Circle
+          cx={115}
+          cy={115}
+          r={98}
+          fill="none"
+          stroke="rgba(26,143,255,0.1)"
+          strokeWidth={1}
+          strokeDasharray="2 8"
+        />
       </Svg>
     </View>
   );
@@ -40,10 +86,23 @@ const BEAM_ANGLES = [0, 72, 144, 216, 288];
 function LightBeams({ frame }: { frame: number }) {
   const groupAngle = (-frame * 0.07) % 360;
   return (
-    <View style={{ position: 'absolute', width: 200, height: 200, transform: [{ rotate: `${groupAngle}deg` }] }}>
+    <View
+      style={{
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        transform: [{ rotate: `${groupAngle}deg` }],
+      }}
+    >
       <Svg width={200} height={200} viewBox="0 0 200 200">
         <Defs>
-          <SvgLinearGradient id="authBeamGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+          <SvgLinearGradient
+            id="authBeamGrad"
+            x1="0%"
+            y1="100%"
+            x2="0%"
+            y2="0%"
+          >
             <Stop offset="0%" stopColor="#1A8FFF" stopOpacity={0.22} />
             <Stop offset="100%" stopColor="#1A8FFF" stopOpacity={0} />
           </SvgLinearGradient>
@@ -86,11 +145,19 @@ function SoftParticles({ frame }: { frame: number }) {
           <View
             key={i}
             style={{
-              position: 'absolute', left: `${p.x}%`, top: `${p.y}%`,
-              width: p.s, height: p.s, borderRadius: p.s / 2,
+              position: 'absolute',
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              width: p.s,
+              height: p.s,
+              borderRadius: p.s / 2,
               backgroundColor: '#7EB8FF',
-              shadowColor: '#1A8FFF', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: p.s * 2.5,
-              transform: [{ translateY }], opacity,
+              shadowColor: '#1A8FFF',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.7,
+              shadowRadius: p.s * 2.5,
+              transform: [{ translateY }],
+              opacity,
             }}
           />
         );
@@ -99,7 +166,17 @@ function SoftParticles({ frame }: { frame: number }) {
   );
 }
 
-function AuthHero({ heroImage, heroLabel, accent }: { heroImage: ImageSourcePropType; heroLabel?: string; accent: string }) {
+function AuthHero({
+  heroImage,
+  heroLabel,
+  accent,
+  simple,
+}: {
+  heroImage: ImageSourcePropType;
+  heroLabel?: string;
+  accent: string;
+  simple?: boolean;
+}) {
   const frame = useGlobalFrame();
   const breathe = (Math.sin(frame * 0.045) + 1) / 2;
   const glowOpacity = 0.5 + breathe * 0.5;
@@ -107,29 +184,113 @@ function AuthHero({ heroImage, heroLabel, accent }: { heroImage: ImageSourceProp
   const floatT = (Math.sin(frame * 0.03) + 1) / 2;
   const translateY = -floatT * 6;
 
+  if (simple) {
+    return (
+      <View
+        style={{
+          width: 128,
+          height: 112,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Svg
+          width={128}
+          height={112}
+          viewBox="0 0 128 112"
+          style={StyleSheet.absoluteFill}
+        >
+          <Defs>
+            <RadialGradient id="simpleAuthGlow" cx="50%" cy="50%" r="50%">
+              <Stop offset="0%" stopColor="#00D4FF" stopOpacity={0.16} />
+              <Stop offset="52%" stopColor="#1A8FFF" stopOpacity={0.05} />
+              <Stop offset="100%" stopColor="#1A8FFF" stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Rect width={128} height={112} fill="url(#simpleAuthGlow)" />
+        </Svg>
+        <Image
+          source={heroImage}
+          style={{ width: 128, height: 128 }}
+          resizeMode="contain"
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={{ alignItems: 'center' }}>
-      <View style={{ width: 150, height: 150, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          width: 150,
+          height: 150,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <OuterRings frame={frame} />
         <LightBeams frame={frame} />
         <SoftParticles frame={frame} />
-        <View pointerEvents="none" style={{
-          position: 'absolute', width: 190, height: 190, borderRadius: 95,
-          backgroundColor: 'rgba(26,143,255,0.1)',
-          transform: [{ scale: glowScale }], opacity: glowOpacity,
-          shadowColor: accent, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 36, elevation: 18,
-        }} />
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            width: 190,
+            height: 190,
+            borderRadius: 95,
+            backgroundColor: 'rgba(26,143,255,0.1)',
+            transform: [{ scale: glowScale }],
+            opacity: glowOpacity,
+            shadowColor: accent,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.8,
+            shadowRadius: 36,
+            elevation: 18,
+          }}
+        />
         <View style={{ transform: [{ translateY }] }}>
-          <Image source={heroImage} style={{ width: 150, height: 150 }} resizeMode="contain" />
+          <Image
+            source={heroImage}
+            style={{ width: 150, height: 150 }}
+            resizeMode="contain"
+          />
         </View>
       </View>
       {heroLabel && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 }}>
-          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: accent }} />
-          <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 2.5, color: accent }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            marginTop: 14,
+          }}
+        >
+          <View
+            style={{
+              width: 4,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: accent,
+            }}
+          />
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: '700',
+              letterSpacing: 2.5,
+              color: accent,
+            }}
+          >
             {heroLabel}
           </Text>
-          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: accent }} />
+          <View
+            style={{
+              width: 4,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: accent,
+            }}
+          />
         </View>
       )}
     </View>
@@ -143,6 +304,8 @@ export default function AuthHeroLayout({
   sheetStyle,
   heroImage,
   heroLabel,
+  simpleHero = false,
+  appBackground = false,
 }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -151,22 +314,33 @@ export default function AuthHeroLayout({
   return (
     <View style={{ flex: 1 }}>
       {/* Background gradient — matches the onboarding flow's dark navy */}
-      <LinearGradient
-        colors={pillar.bgGradient}
-        locations={[0, 0.48, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      {appBackground ? (
+        <AnimatedBackground />
+      ) : (
+        <LinearGradient
+          colors={pillar.bgGradient}
+          locations={[0, 0.48, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
 
       {showBack && (
         <TouchableOpacity
           onPress={onBackPress ?? (() => router.back())}
           activeOpacity={0.7}
           style={{
-            position: 'absolute', top: Math.max(insets.top, 16) + 8, left: 24, zIndex: 10,
-            width: 36, height: 36, borderRadius: 18,
-            alignItems: 'center', justifyContent: 'center',
+            position: 'absolute',
+            top: Math.max(insets.top, 16) + 8,
+            left: 24,
+            zIndex: 10,
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            alignItems: 'center',
+            justifyContent: 'center',
             backgroundColor: 'rgba(255,255,255,0.1)',
-            borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.18)',
           }}
         >
           <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
@@ -187,51 +361,98 @@ export default function AuthHeroLayout({
           bounces={false}
         >
           {heroImage && (
-            <View style={{ alignItems: 'center', paddingTop: Math.max(insets.top, 16) + 56, paddingBottom: 18 }}>
-              <AuthHero heroImage={heroImage} heroLabel={heroLabel} accent={pillar.accent} />
+            <View
+              style={{
+                alignItems: 'center',
+                paddingTop: Math.max(insets.top, 16) + 56,
+                paddingBottom: 18,
+              }}
+            >
+              <AuthHero
+                heroImage={heroImage}
+                heroLabel={heroLabel}
+                accent={pillar.accent}
+                simple={simpleHero}
+              />
             </View>
           )}
 
           {/* Outer wrapper carries the glow so it isn't clipped by the card below */}
-          <View style={{
-            flex: 1,
-            shadowColor: pillar.accent,
-            ...GLASS_CARD.outerGlow,
-          }}>
-            <View style={[{
+          <View
+            style={{
               flex: 1,
-              borderTopLeftRadius: GLASS_CARD.borderRadius, borderTopRightRadius: GLASS_CARD.borderRadius,
-              overflow: 'hidden',
-              borderTopWidth: GLASS_CARD.borderTopWidth, borderColor: GLASS_CARD.borderColor,
-              paddingTop: heroImage ? 24 : Math.max(insets.top, 16) + 64,
-              paddingHorizontal: 24,
-              paddingBottom: Math.max(insets.bottom, 16) + 24,
-            }, sheetStyle]}>
+              shadowColor: pillar.accent,
+              ...GLASS_CARD.outerGlow,
+            }}
+          >
+            <View
+              style={[
+                {
+                  flex: 1,
+                  borderTopLeftRadius: GLASS_CARD.borderRadius,
+                  borderTopRightRadius: GLASS_CARD.borderRadius,
+                  overflow: 'hidden',
+                  borderTopWidth: GLASS_CARD.borderTopWidth,
+                  borderColor: GLASS_CARD.borderColor,
+                  paddingTop: heroImage ? 24 : Math.max(insets.top, 16) + 64,
+                  paddingHorizontal: 24,
+                  paddingBottom: Math.max(insets.bottom, 16) + 24,
+                },
+                sheetStyle,
+              ]}
+            >
               {/* Frosted glass background */}
               <BlurView
                 intensity={GLASS_CARD.blurIntensity}
                 tint="dark"
-                style={{ ...StyleSheet.absoluteFill, borderTopLeftRadius: GLASS_CARD.borderRadius, borderTopRightRadius: GLASS_CARD.borderRadius }}
+                style={{
+                  ...StyleSheet.absoluteFill,
+                  borderTopLeftRadius: GLASS_CARD.borderRadius,
+                  borderTopRightRadius: GLASS_CARD.borderRadius,
+                }}
               />
               <LinearGradient
                 colors={pillar.cardTint}
-                style={{ ...StyleSheet.absoluteFill, borderTopLeftRadius: GLASS_CARD.borderRadius, borderTopRightRadius: GLASS_CARD.borderRadius }}
+                style={{
+                  ...StyleSheet.absoluteFill,
+                  borderTopLeftRadius: GLASS_CARD.borderRadius,
+                  borderTopRightRadius: GLASS_CARD.borderRadius,
+                }}
               />
               {/* Top highlight line — light catching the glass edge */}
               <LinearGradient
                 colors={GLASS_CARD.highlightColors}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 1.5 }}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 24,
+                  right: 24,
+                  height: 1.5,
+                }}
               />
               {/* Soft inner shadow — top inner glow + bottom inner darkening */}
               <LinearGradient
                 colors={GLASS_CARD.innerTopColors}
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, height: GLASS_CARD.innerTopHeight }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: GLASS_CARD.innerTopHeight,
+                }}
                 pointerEvents="none"
               />
               <LinearGradient
                 colors={GLASS_CARD.innerBottomColors}
-                style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: GLASS_CARD.innerBottomHeight }}
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: GLASS_CARD.innerBottomHeight,
+                }}
                 pointerEvents="none"
               />
               {children}

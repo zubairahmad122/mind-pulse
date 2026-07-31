@@ -32,6 +32,7 @@ import type { AudioClipId } from '@/constants/audioGuide';
 import { useRelaxContext } from '@/context/RelaxContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useBreathingMusic } from '@/hooks/useBreathingMusic';
+import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
 
 // One accent for ALL Relax sessions (matches the Relax tab) — the color marks
@@ -160,6 +161,7 @@ export default function RelaxSessionPlayer() {
   const music = BREATHING_MUSIC.find(m => m.id === selectedSound) || BREATHING_MUSIC[0];
 
   const musicShouldPlay = isRunning && !isPaused && sessionPhase === 'breathing';
+  useSessionKeepAwake(isRunning, 'mindpulse-relax-session');
   // Muted music fades to 0 but keeps looping, so unmute fades right back in.
   // A muted voice shouldn't duck the music (no audible reason to dip).
   useBreathingMusic(

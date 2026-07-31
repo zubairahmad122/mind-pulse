@@ -175,7 +175,22 @@ export function usePersistedSleepTracker({ uid, defaultPreset }: Options) {
 
       const support = await prepareAlarmPermissions();
       if (handleAlarmSupport(support)) {
-        await scheduleWakeAlarmWithFeedback(wake, label);
+        const alarmId = await scheduleWakeAlarmWithFeedback(wake, label);
+        if (!alarmId) {
+          await clearActiveSleep(uid);
+          setTracking(false);
+          setWakeAt(null);
+          setStartTime(null);
+          setBusy(false);
+          return false;
+        }
+      } else {
+        await clearActiveSleep(uid);
+        setTracking(false);
+        setWakeAt(null);
+        setStartTime(null);
+        setBusy(false);
+        return false;
       }
 
       setBusy(false);

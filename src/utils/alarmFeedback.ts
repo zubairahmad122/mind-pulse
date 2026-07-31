@@ -49,12 +49,21 @@ export async function scheduleWakeAlarmWithFeedback(
   try {
     const id = await scheduleWakeAlarm(wakeAt, label);
     if (!id) {
-      // Scheduling returned null — the wake time is too close (under 5s)
       console.warn('Alarm scheduling returned null — wake time too soon');
+      Alert.alert(
+        'Alarm was not set',
+        'The wake time is too close or the device could not schedule it. Choose a later time and try again.',
+      );
     }
     return id;
   } catch (err) {
     console.warn('Failed to schedule wake alarm:', err);
+    Alert.alert(
+      'Alarm was not set',
+      Platform.OS === 'android'
+        ? 'Android could not arm this alarm. Allow “Alarms & reminders” for Mind Pulse, then try again.'
+        : 'The device could not schedule this alarm. Check notification permissions and try again.',
+    );
     return null;
   }
 }

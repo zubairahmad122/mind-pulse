@@ -50,6 +50,7 @@ import type { AudioClipId } from '@/constants/audioGuide';
 import { PillarProvider } from '@/context/PillarContext';
 import { useAuth } from '@/context/AuthContext';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
+import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
 import { useEyeProgress } from '@/hooks/useEyeProgress';
 import {
   saveEyeComfortRecord,
@@ -234,6 +235,7 @@ export default function CVSProtocolScreen() {
   const [recoverySecs, setRecoverySecs] = useState(20);
   const [comfortBefore, setComfortBefore] = useState<EyeComfortRating | null>(null);
   const [comfortAfter, setComfortAfter] = useState<EyeComfortRating | null>(null);
+  useSessionKeepAwake(phase === 'active', 'mindpulse-cvs-protocol');
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interstitialTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);

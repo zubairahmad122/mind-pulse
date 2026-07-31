@@ -17,6 +17,7 @@ import { colors } from '@/constants/colors';
 import { PILLAR_COLORS, STATUS_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
 
 const EYE_ACCENT = PILLAR_COLORS.eye;
 
@@ -26,6 +27,7 @@ export default function EyeExerciseScreen() {
   const [secondsLeft, setSecondsLeft] = useState(exercise?.durationSeconds ?? 60);
   const [running, setRunning] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  useSessionKeepAwake(running && secondsLeft > 0, 'mindpulse-eye-exercise');
   const justCompletedRef = useRef(false);
 
   const sessionOpacity = useSharedValue(0);

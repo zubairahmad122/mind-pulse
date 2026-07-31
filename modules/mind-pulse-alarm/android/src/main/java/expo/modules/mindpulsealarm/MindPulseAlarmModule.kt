@@ -109,9 +109,11 @@ class MindPulseAlarmModule : Module() {
       "fullScreenIntent" to fullScreenIntent,
       "batteryUnrestricted" to hasBatteryUnrestricted(),
       "nativeAvailable" to true,
-      // Battery exemption is strongly recommended but not strictly required for
-      // setAlarmClock to fire, so it does not gate `ready`.
-      "ready" to (notifications && exactAlarm && fullScreenIntent),
+      // The actual alarm sound is produced by AlarmService and does not depend
+      // on notification or full-screen-intent access. Those permissions improve
+      // the visible controls/lock-screen UI, but must never prevent a wake alarm
+      // from being armed. Exact-alarm access is the only hard requirement.
+      "ready" to exactAlarm,
     )
   }
 

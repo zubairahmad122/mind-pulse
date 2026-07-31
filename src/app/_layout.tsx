@@ -70,15 +70,14 @@ function RootLayoutNav() {
     const inApp = segments[0] === '(app)';
     const hasAccess = Boolean(user) || isGuestMode;
     const isGuest = Boolean(user?.isAnonymous) || isGuestMode;
-    const isGuestCreatingAccount =
+    const isGuestAuthEntry =
       isGuest &&
       segments[0] === '(auth)' &&
-      segments[1] === 'create-account';
+      (segments[1] === 'create-account' || segments[1] === 'sign-in');
 
-    // Guests need access to this auth screen to convert their anonymous/local
-    // session into a permanent account. Other auth screens still redirect
-    // authenticated users back into the app.
-    if (hasAccess && inAuth && !isGuestCreatingAccount) {
+    // Guests need access to sign-in and account creation so they can convert
+    // their anonymous/local session into a permanent account.
+    if (hasAccess && inAuth && !isGuestAuthEntry) {
       router.replace(ROUTES.appHome as never);
     }
 

@@ -43,17 +43,18 @@ function subscribeGlobal(notify: () => void): () => void {
  * Updates ~20 times per second.  All components that use this hook
  * share the SAME global rAF loop — zero wasted frames.
  */
-export function useGlobalFrame(): number {
+export function useGlobalFrame(enabled = true): number {
   const [frame, setFrame] = useState(0);
   const frameRef = useRef(0);
 
   useEffect(() => {
+    if (!enabled) return;
     const unsub = subscribeGlobal(() => {
       frameRef.current = globalFrame;
       setFrame(globalFrame);
     });
     return unsub;
-  }, []);
+  }, [enabled]);
 
   return frame;
 }

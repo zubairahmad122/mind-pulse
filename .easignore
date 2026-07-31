@@ -1,0 +1,32 @@
+# Dependencies and generated output
+node_modules/
+.expo/
+.eas-local-build/
+dist/
+web-build/
+android/
+ios/
+modules/*/android/build/
+
+# Local caches and logs
+.git/
+.kotlin/
+.smart-sleep-app/
+*.orig.*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.tsbuildinfo
+
+# Local secrets (Firebase config is explicitly included below)
+.env
+.env*.local
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Include the Android Firebase configuration required during prebuild
+!google-services.json

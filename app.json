@@ -21,6 +21,9 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.zubzen.mindpulse",
+      "blockedPermissions": [
+        "android.permission.ACTIVITY_RECOGNITION"
+      ],
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",

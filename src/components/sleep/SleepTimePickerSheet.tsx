@@ -219,7 +219,8 @@ export function SleepTimePickerSheet({
   const [tab, setTab] = useState<Tab>(initialTab);
   const [ringtoneSheetOpen, setRingtoneSheetOpen] = useState(false);
   const [windowSheetOpen, setWindowSheetOpen] = useState(false);
-  const frame = useGlobalFrame();
+  // Do not keep the global 20fps visual loop alive while this modal is hidden.
+  const frame = useGlobalFrame(visible);
   const insets = useSafeAreaInsets();
 
   const {

@@ -13,6 +13,7 @@ import { spacing } from '@/constants/spacing';
 import { radius } from '@/constants/radius';
 import { typography } from '@/constants/typography';
 import { useAuth } from '@/context/AuthContext';
+import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
 import { saveRecoverySession } from '@/services/recoveryPersistence';
 import { ScreenTransition } from '@/components/ui/ScreenTransition';
 
@@ -77,6 +78,7 @@ export default function RecoveryScreen() {
   const [activeOption, setActiveOption] = useState<RecoveryOption | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [done, setDone] = useState(false);
+  useSessionKeepAwake(Boolean(activeOption) && !done, 'mindpulse-recovery-session');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startTimer = (option: RecoveryOption) => {

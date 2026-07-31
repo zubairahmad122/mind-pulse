@@ -23,7 +23,7 @@ export type PlanItem = { id: string; title: string; subtitle: string; emoji: str
 export function getDynamicPlan(worstArea: string): PlanItem[] {
   if (worstArea === 'Eyes') return [
     { id: 'e1', title: 'Eye Reset',  subtitle: '3 min 30 sec · guided relaxation', emoji: '👁️', route: '/(app)/cvs-protocol' },
-    { id: 'e2', title: 'Follow the Dot',     subtitle: '60 sec · moving target',    emoji: '☄️', route: '/(app)/eye-game/comet-trace' },
+    { id: 'e2', title: 'Orbit Rescue',       subtitle: '75 sec · orbital arcade', emoji: '🛰️', route: '/(app)/eye-game/comet-trace' },
     { id: 'e3', title: 'Target Tap',         subtitle: '60 sec · reflex training',  emoji: '🎯', route: '/(app)/eye-game/saccade-sniper' },
   ];
   if (worstArea === 'Sleep') return [
@@ -37,5 +37,3 @@ export function getDynamicPlan(worstArea: string): PlanItem[] {
     { id: 'm3', title: 'Grounding',      subtitle: '5 min · 5-4-3-2-1 technique',  emoji: '🌿', route: '/(app)/stress/grounding' },
   ];
 }
-
-

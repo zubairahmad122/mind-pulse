@@ -30,6 +30,7 @@ import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import type { AudioClipId } from '@/constants/audioGuide';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
+import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
 
 // One accent across the whole Relax feature — matches RelaxSessionPlayer.
 // Same accent as the Relax tab / session player — one color for the feature
@@ -60,6 +61,10 @@ export default function BodyScanScreen() {
   const [phase, setPhase]       = useState<'idle' | 'intro' | 'running' | 'done'>('idle');
   const [zoneIdx, setZoneIdx]   = useState(0);
   const [secondsLeft, setSecs]  = useState(ZONE_DURATIONS[0]);
+  useSessionKeepAwake(
+    phase === 'intro' || phase === 'running',
+    'mindpulse-body-scan',
+  );
 
   const progressAnim = useSharedValue(0);
   const cardOpacity  = useSharedValue(1);

@@ -1,7 +1,7 @@
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,6 +19,27 @@ export const FLOATING_TAB_BAR_HEIGHT = BOTTOM_NAV.height;
 const TabBarSpaceContext = createContext(0);
 export const TabBarSpaceProvider = TabBarSpaceContext.Provider;
 export const useTabBarSpace = () => useContext(TabBarSpaceContext);
+
+type SleepLockContextValue = {
+  sleepLocked: boolean;
+  setSleepLocked: (locked: boolean) => void;
+};
+
+const SleepLockContext = createContext<SleepLockContextValue>({
+  sleepLocked: false,
+  setSleepLocked: () => {},
+});
+
+export function SleepLockProvider({ children }: { children: React.ReactNode }) {
+  const [sleepLocked, setSleepLocked] = useState(false);
+  return (
+    <SleepLockContext.Provider value={{ sleepLocked, setSleepLocked }}>
+      {children}
+    </SleepLockContext.Provider>
+  );
+}
+
+export const useSleepLock = () => useContext(SleepLockContext);
 
 // Global chrome, not per-pillar — the tab bar always uses the Home accent.
 const ACTIVE_COLOR = PILLAR_COLORS.mind;
@@ -54,6 +75,9 @@ type GlassTabBarProps = {
  */
 export function GlassTabBar({ state, navigation }: GlassTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { sleepLocked } = useSleepLock();
+
+  if (sleepLocked) return null;
 
   // Only render the configured main tabs (hidden routes like report/recovery
   // are excluded), preserving their order from MAIN_APP_TABS.

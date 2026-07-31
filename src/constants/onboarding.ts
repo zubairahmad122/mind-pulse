@@ -9,22 +9,22 @@ export type OnboardingSlide = {
 export const ONBOARDING_SLIDES: OnboardingSlide[] = [
   {
     icon: 'eyes',
-    title: 'Your Eyes Blink\n66% Less at Screens',
-    desc: 'Build healthier screen habits with guided breaks, blinking, and comfortable distance viewing.',
+    title: 'Protect Your Eyes',
+    desc: 'Build healthier screen habits with guided exercises and smart reminders.',
     accent: '#22d3ee',
     category: 'EYE WELLNESS',
   },
   {
     icon: 'sleep',
-    title: '70% Sleep Better\nWith a Routine',
-    desc: 'Track your sleep cycles, set smart alarms, and wake up fully restored every morning.',
+    title: 'Sleep Better Every Night',
+    desc: 'Create relaxing bedtime routines and wake up refreshed.',
     accent: '#a78bfa',
     category: 'DEEP REST',
   },
   {
     icon: 'mind',
-    title: '2 Minutes of Breathing\nReduces Stress 40%',
-    desc: 'Guided relaxation, meditation, and journaling — your complete mental wellness toolkit.',
+    title: 'Relax in Just Minutes',
+    desc: 'Guided breathing sessions to ease tension and restore calm.',
     accent: '#3b82f6',
     category: 'MIND PULSE',
   },

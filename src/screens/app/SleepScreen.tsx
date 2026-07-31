@@ -1,4 +1,5 @@
 import { ScreenShell } from "@/components/layout/ScreenShell";
+import { useSleepLock } from "@/components/layout/GlassTabBar";
 import { BreatheToDismiss } from "@/components/sleep/BreatheToDismiss";
 import { HoldButton } from "@/components/sleep/HoldButton";
 import { MoonWave } from "@/components/sleep/MoonWave";
@@ -39,6 +40,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AppState,
+  BackHandler,
   LayoutAnimation,
   Modal,
   Platform,
@@ -109,6 +111,160 @@ function formatTimeAmPm(wakeTime: string): string {
   const ampm = hh24 < 12 ? "AM" : "PM";
   return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
 }
+
+function LiveSleepClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const hour24 = now.getHours();
+  const hm = `${String(hour24 % 12 === 0 ? 12 : hour24 % 12).padStart(2, "0")} : ${String(now.getMinutes()).padStart(2, "0")}`;
+  const amPm = hour24 < 12 ? "AM" : "PM";
+  const date = now.toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+  return (
+    <View className="items-center">
+      <View className="flex-row items-end">
+        <Text style={liveClockStyles.time}>{hm}</Text>
+        <Text style={liveClockStyles.period}>{amPm}</Text>
+      </View>
+      <Text style={liveClockStyles.date}>{date}</Text>
+    </View>
+  );
+}
+
+function ElapsedSleepTime({ startTime }: { startTime: Date }) {
+  const [elapsed, setElapsed] = useState(() =>
+    Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000)),
+  );
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    const tick = () =>
+      setElapsed(
+        Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000)),
+      );
+    const id = setInterval(tick, 1000);
+    scale.value = withRepeat(
+      withTiming(1.03, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+    return () => {
+      clearInterval(id);
+      cancelAnimation(scale);
+    };
+  }, [scale, startTime]);
+
+  const scaleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <View className="items-center">
+      <Text style={elapsedStyles.label}>TIME ASLEEP</Text>
+      <Animated.View style={scaleStyle}>
+        <Text style={elapsedStyles.value}>{formatElapsed(elapsed)}</Text>
+      </Animated.View>
+    </View>
+  );
+}
+
+function AccidentalStartCancel({
+  startTime,
+  busy,
+  onCancel,
+}: {
+  startTime: Date;
+  busy: boolean;
+  onCancel: () => void;
+}) {
+  const remainingNow = () =>
+    Math.max(
+      0,
+      10 * 60 - Math.floor((Date.now() - startTime.getTime()) / 1000),
+    );
+  const [remaining, setRemaining] = useState(remainingNow);
+
+  useEffect(() => {
+    const id = setInterval(() => setRemaining(remainingNow()), 1000);
+    return () => clearInterval(id);
+  }, [startTime]);
+
+  if (remaining <= 0) return null;
+  return (
+    <TouchableOpacity
+      onPress={onCancel}
+      disabled={busy}
+      activeOpacity={0.75}
+      className="self-center items-center px-6 py-3 rounded-full border border-red-300/20 bg-red-400/[0.07]"
+    >
+      <Text style={elapsedStyles.cancel}>Cancel accidental start</Text>
+      <Text style={elapsedStyles.remaining}>
+        Available for {formatElapsed(remaining)}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+const liveClockStyles = StyleSheet.create({
+  time: {
+    fontSize: 66,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -2,
+    fontVariant: ["tabular-nums"],
+  },
+  period: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "rgba(255,255,255,0.85)",
+    marginBottom: 14,
+    marginLeft: 6,
+  },
+  date: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.5)",
+    marginTop: 2,
+  },
+});
+
+const elapsedStyles = StyleSheet.create({
+  label: {
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+    fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
+    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+    textTransform: TYPOGRAPHY.sectionLabel.textTransform,
+    color: "rgba(255,255,255,0.5)",
+  },
+  value: {
+    fontSize: 34,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    fontVariant: ["tabular-nums"],
+    letterSpacing: 1,
+    marginTop: 4,
+  },
+  cancel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "rgba(255,180,180,0.9)",
+  },
+  remaining: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.38)",
+    marginTop: 2,
+    fontVariant: ["tabular-nums"],
+  },
+});
 
 /**
  * Truncate text at a whole-word boundary (never mid-word / mid-number) and
@@ -609,6 +765,7 @@ export default function SleepScreen() {
   const { sessions, addSession } = useSleep();
   const { schedule, saveSchedule } = useSleepSchedule(user?.uid, isGuestMode);
   const readiness = useSleepReadiness();
+  const { setSleepLocked } = useSleepLock();
 
   // ── Default preset ────────────────────────────────────────────────────────
   const defaultNight =
@@ -671,30 +828,21 @@ export default function SleepScreen() {
     }
   }, [schedule]);
 
-  // ── Elapsed timer + live device clock ─────────────────────────────────────
-  const [elapsed, setElapsed] = useState(0);
-  const [clockNow, setClockNow] = useState(() => new Date());
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
+  // A running sleep session is intentionally kiosk-like: hide app navigation
+  // and consume Android's hardware back action. The user can undo an accidental
+  // start for ten minutes; after that, Wake up must be held to finish.
   useEffect(() => {
-    if (!hydrated) return;
-    if (tracking && startTime) {
-      const tick = () => {
-        setElapsed(
-          Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000)),
-        );
-        setClockNow(new Date());
-      };
-      tick();
-      intervalRef.current = setInterval(tick, 1000);
-    } else {
-      setElapsed(0);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    }
+    setSleepLocked(tracking);
+    if (!tracking) return;
+    const backSubscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => true,
+    );
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      backSubscription.remove();
+      setSleepLocked(false);
     };
-  }, [tracking, startTime, hydrated]);
+  }, [tracking, setSleepLocked]);
 
   // ── Night dimming — auto-dim everything but the clock/moon after 30s idle,
   // any touch anywhere restores it. Pure in-app opacity, not system
@@ -725,16 +873,6 @@ export default function SleepScreen() {
   }, [tracking, registerTrackingActivity, dimOpacity]);
 
   const dimStyle = useAnimatedStyle(() => ({ opacity: dimOpacity.value }));
-
-  // Live clock parts for the tracking hero.
-  const clockHour24 = clockNow.getHours();
-  const clockHm = `${String(clockHour24 % 12 === 0 ? 12 : clockHour24 % 12).padStart(2, "0")} : ${String(clockNow.getMinutes()).padStart(2, "0")}`;
-  const clockAmPm = clockHour24 < 12 ? "AM" : "PM";
-  const clockDate = clockNow.toLocaleDateString([], {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
 
   // ── Alarm state refresh ───────────────────────────────────────────────────
   useEffect(() => {
@@ -848,6 +986,23 @@ export default function SleepScreen() {
     actionBusyRef.current = false;
   }, [busy]);
 
+  const handleCancelAccidentalSleep = useCallback(async () => {
+    if (
+      actionBusyRef.current ||
+      busy ||
+      !startTime ||
+      Date.now() - startTime.getTime() >= 10 * 60 * 1000
+    ) {
+      return;
+    }
+    actionBusyRef.current = true;
+    await stopSleep();
+    setPendingEnd(null);
+    setShowBreathing(false);
+    setShowRating(false);
+    actionBusyRef.current = false;
+  }, [busy, startTime, stopSleep]);
+
   const handleSnooze = useCallback(async () => {
     if (snoozeCount >= 3 || busy) return;
     await snooze();
@@ -900,29 +1055,6 @@ export default function SleepScreen() {
     actionBusyRef.current = false;
   }, [addSession, clearSession, pendingEnd, selectedQuality, startTime]);
 
-  // ── Animations ────────────────────────────────────────────────────────────
-  // Gentle breathing pulse on the "time asleep" number.
-  const timerScale = useSharedValue(1);
-
-  useEffect(() => {
-    if (!tracking) {
-      cancelAnimation(timerScale);
-      timerScale.value = withTiming(1);
-    } else {
-      timerScale.value = withRepeat(
-        withTiming(1.03, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true,
-      );
-    }
-    return () => {
-      cancelAnimation(timerScale);
-    };
-  }, [tracking]);
-
-  const timerScaleAnim = useAnimatedStyle(() => ({
-    transform: [{ scale: timerScale.value }],
-  }));
   // ── Stats ─────────────────────────────────────────────────────────────────
   const streak = calculateStreak(sessions);
   const avg = avgDuration(sessions);
@@ -1032,13 +1164,15 @@ export default function SleepScreen() {
                 </TouchableOpacity>
               )}
               {/* Alarm settings button */}
-              <TouchableOpacity
-                onPress={() => router.push(ROUTES.appAlarmSettings)}
-                activeOpacity={0.7}
-                className="w-9 h-9 rounded-full items-center justify-center bg-white/[0.06] border border-white/10"
-              >
-                <Settings size={16} color="rgba(255,255,255,0.5)" />
-              </TouchableOpacity>
+              {!tracking && (
+                <TouchableOpacity
+                  onPress={() => router.push(ROUTES.appAlarmSettings)}
+                  activeOpacity={0.7}
+                  className="w-9 h-9 rounded-full items-center justify-center bg-white/[0.06] border border-white/10"
+                >
+                  <Settings size={16} color="rgba(255,255,255,0.5)" />
+                </TouchableOpacity>
+              )}
               {tracking && (
                 <View
                   style={{ flexShrink: 0 }}
@@ -1163,42 +1297,7 @@ export default function SleepScreen() {
               <TrackingGlow frame={0} />
 
               {/* Live device clock — stays full brightness during night dimming */}
-              <View className="items-center">
-                <View className="flex-row items-end">
-                  <Text
-                    style={{
-                      fontSize: 66,
-                      fontWeight: "800",
-                      color: "#FFFFFF",
-                      letterSpacing: -2,
-                      fontVariant: ["tabular-nums"],
-                    }}
-                  >
-                    {clockHm}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 22,
-                      fontWeight: "800",
-                      color: "rgba(255,255,255,0.85)",
-                      marginBottom: 14,
-                      marginLeft: 6,
-                    }}
-                  >
-                    {clockAmPm}
-                  </Text>
-                </View>
-                <Text
-                  style={{
-                    fontSize: 15,
-                    fontWeight: "600",
-                    color: "rgba(255,255,255,0.5)",
-                    marginTop: 2,
-                  }}
-                >
-                  {clockDate}
-                </Text>
-              </View>
+              <LiveSleepClock />
 
               {/* Moon + drifting golden wave — stays full brightness during night dimming */}
               <MoonWave width={Math.min(width - 48, 340)} />
@@ -1207,33 +1306,7 @@ export default function SleepScreen() {
                   dimming) — any touch anywhere restores it instantly. */}
               <Animated.View style={[{ gap: 24 }, dimStyle]}>
                 {/* Time asleep */}
-                <View className="items-center">
-                  <Text
-                    style={{
-                      fontSize: TYPOGRAPHY.sectionLabel.fontSize,
-                      fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
-                      letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
-                      textTransform: TYPOGRAPHY.sectionLabel.textTransform,
-                      color: "rgba(255,255,255,0.5)",
-                    }}
-                  >
-                    TIME ASLEEP
-                  </Text>
-                  <Animated.View style={timerScaleAnim}>
-                    <Text
-                      style={{
-                        fontSize: 34,
-                        fontWeight: "800",
-                        color: "#FFFFFF",
-                        fontVariant: ["tabular-nums"],
-                        letterSpacing: 1,
-                        marginTop: 4,
-                      }}
-                    >
-                      {formatElapsed(elapsed)}
-                    </Text>
-                  </Animated.View>
-                </View>
+                {startTime && <ElapsedSleepTime startTime={startTime} />}
 
                 {/* Alarm + Sounds list cards — shared ActionCard */}
                 <View>
@@ -1280,7 +1353,6 @@ export default function SleepScreen() {
                     title="Sounds & Music"
                     description="Ringtone & alarm volume"
                     accent={SLEEP_ACCENT}
-                    onPress={() => router.push(ROUTES.appAlarmSettings)}
                   />
                 </View>
 
@@ -1307,6 +1379,14 @@ export default function SleepScreen() {
                       Snooze 10 min ({3 - snoozeCount} left)
                     </Text>
                   </TouchableOpacity>
+                )}
+
+                {startTime && (
+                  <AccidentalStartCancel
+                    startTime={startTime}
+                    busy={busy}
+                    onCancel={handleCancelAccidentalSleep}
+                  />
                 )}
 
                 {/* Wake up — hold to confirm */}

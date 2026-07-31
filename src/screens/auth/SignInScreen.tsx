@@ -1,5 +1,6 @@
 import { signInWithEmailAndPassword } from '@react-native-firebase/auth';
 import { getAuth } from '@/lib/firebase';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
@@ -16,22 +17,22 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Svg, {
-  Defs,
-  Path,
-  RadialGradient,
-  Rect,
-  Stop,
-} from 'react-native-svg';
+import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { GoogleSignInButton } from '@/components/auth';
 import { Input } from '@/components/ui';
-import { COLORS, FONTS, ROUTES } from '@/constants';
+import {
+  COLORS,
+  DEFAULT_PILLAR_THEME,
+  FONTS,
+  GLASS_CARD as AUTH_GLASS_CARD,
+  ROUTES,
+} from '@/constants';
 import {
   BACKGROUND,
   BUTTON,
-  GLASS_CARD,
+  GLASS_CARD as SURFACE_CARD,
   PILLAR_COLORS,
   RADIUS,
   SPACING,
@@ -99,7 +100,7 @@ export default function SignInScreen() {
           bounces={false}
         >
           <View style={styles.content}>
-            <View style={styles.header}>
+            <View style={styles.logoHeader}>
               <View style={styles.iconWrap}>
                 <Svg
                   width="100%"
@@ -109,9 +110,22 @@ export default function SignInScreen() {
                   pointerEvents="none"
                 >
                   <Defs>
-                    <RadialGradient id="signInIconGlow" cx="50%" cy="50%" r="50%">
-                      <Stop offset="0%" stopColor="#00D4FF" stopOpacity={0.16} />
-                      <Stop offset="52%" stopColor="#1A8FFF" stopOpacity={0.05} />
+                    <RadialGradient
+                      id="signInIconGlow"
+                      cx="50%"
+                      cy="50%"
+                      r="50%"
+                    >
+                      <Stop
+                        offset="0%"
+                        stopColor="#00D4FF"
+                        stopOpacity={0.16}
+                      />
+                      <Stop
+                        offset="52%"
+                        stopColor="#1A8FFF"
+                        stopOpacity={0.05}
+                      />
                       <Stop offset="100%" stopColor="#1A8FFF" stopOpacity={0} />
                     </RadialGradient>
                   </Defs>
@@ -123,119 +137,154 @@ export default function SignInScreen() {
                   resizeMode="contain"
                 />
               </View>
-              <Text style={styles.title}>Welcome Back</Text>
-              <Text style={styles.subtitle} numberOfLines={2}>
-                Continue your journey toward better sleep, focus and wellbeing.
-              </Text>
             </View>
 
-            <View style={styles.form}>
-              <Input
-                label="Email Address"
-                icon="mail-outline"
-                placeholder="you@example.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="email"
-                textContentType="emailAddress"
-                returnKeyType="next"
-                blurOnSubmit={false}
-                editable={!formBusy}
-                fieldStyle={styles.inputField}
-                labelStyle={styles.inputLabel}
-                focusColor={PILLAR_COLORS.relax}
-                style={styles.inputText}
-                onSubmitEditing={() => passwordRef.current?.focus()}
-              />
-              <Input
-                ref={passwordRef}
-                label="Password"
-                icon="lock-closed-outline"
-                placeholder="Your password"
-                value={password}
-                onChangeText={setPassword}
-                secureToggle
-                autoCapitalize="none"
-                autoComplete="password"
-                textContentType="password"
-                returnKeyType="done"
-                editable={!formBusy}
-                fieldStyle={styles.inputField}
-                labelStyle={styles.inputLabel}
-                focusColor={PILLAR_COLORS.relax}
-                style={styles.inputText}
-                onSubmitEditing={handleSignIn}
-              />
-              <TouchableOpacity
-                style={styles.forgot}
-                onPress={() => router.push(ROUTES.authForgotPassword)}
-                activeOpacity={0.7}
-                disabled={formBusy}
-              >
-                <Text style={styles.forgotText}>Forgot Password?</Text>
-              </TouchableOpacity>
+            <View style={styles.sheetShadow}>
+              <View style={styles.sheet}>
+                <BlurView
+                  intensity={AUTH_GLASS_CARD.blurIntensity}
+                  tint="dark"
+                  style={StyleSheet.absoluteFill}
+                />
+                <LinearGradient
+                  colors={DEFAULT_PILLAR_THEME.cardTint}
+                  style={StyleSheet.absoluteFill}
+                />
+                <LinearGradient
+                  colors={AUTH_GLASS_CARD.highlightColors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.sheetHighlight}
+                  pointerEvents="none"
+                />
+                <LinearGradient
+                  colors={AUTH_GLASS_CARD.innerTopColors}
+                  style={styles.sheetInnerTop}
+                  pointerEvents="none"
+                />
+                <LinearGradient
+                  colors={AUTH_GLASS_CARD.innerBottomColors}
+                  style={styles.sheetInnerBottom}
+                  pointerEvents="none"
+                />
 
-              <View style={styles.signInShadow}>
-                <TouchableOpacity
-                  onPress={handleSignIn}
-                  activeOpacity={0.88}
-                  disabled={formBusy}
-                  style={styles.signInBtn}
-                >
-                  <LinearGradient
-                    colors={BUTTON.primaryGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.signInGradient}
+                <View style={styles.sheetHeader}>
+                  <Text style={styles.title}>Welcome Back</Text>
+                  <Text style={styles.subtitle} numberOfLines={2}>
+                    Continue your journey toward better sleep, focus and
+                    wellbeing.
+                  </Text>
+                </View>
+
+                <View style={styles.form}>
+                  <Input
+                    label="Email Address"
+                    icon="mail-outline"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="email"
+                    textContentType="emailAddress"
+                    returnKeyType="next"
+                    blurOnSubmit={false}
+                    editable={!formBusy}
+                    fieldStyle={styles.inputField}
+                    labelStyle={styles.inputLabel}
+                    focusColor={PILLAR_COLORS.relax}
+                    style={styles.inputText}
+                    onSubmitEditing={() => passwordRef.current?.focus()}
+                  />
+                  <Input
+                    ref={passwordRef}
+                    label="Password"
+                    icon="lock-closed-outline"
+                    placeholder="Your password"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureToggle
+                    autoCapitalize="none"
+                    autoComplete="password"
+                    textContentType="password"
+                    returnKeyType="done"
+                    editable={!formBusy}
+                    fieldStyle={styles.inputField}
+                    labelStyle={styles.inputLabel}
+                    focusColor={PILLAR_COLORS.relax}
+                    style={styles.inputText}
+                    onSubmitEditing={handleSignIn}
+                  />
+                  <TouchableOpacity
+                    style={styles.forgot}
+                    onPress={() => router.push(ROUTES.authForgotPassword)}
+                    activeOpacity={0.7}
+                    disabled={formBusy}
                   >
-                    {loading ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                    ) : (
-                      <>
-                        <Text style={styles.signInLabel}>Sign In</Text>
-                        <Svg width={17} height={17} viewBox="0 0 24 24">
-                          <Path
-                            d="M5 12h14M13 6l6 6-6 6"
-                            fill="none"
-                            stroke="#fff"
-                            strokeWidth={2.2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </Svg>
-                      </>
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
+                    <Text style={styles.forgotText}>Forgot Password?</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.signInShadow}>
+                    <TouchableOpacity
+                      onPress={handleSignIn}
+                      activeOpacity={0.88}
+                      disabled={formBusy}
+                      style={styles.signInBtn}
+                    >
+                      <LinearGradient
+                        colors={BUTTON.primaryGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.signInGradient}
+                      >
+                        {loading ? (
+                          <ActivityIndicator color="#FFFFFF" size="small" />
+                        ) : (
+                          <>
+                            <Text style={styles.signInLabel}>Sign In</Text>
+                            <Svg width={17} height={17} viewBox="0 0 24 24">
+                              <Path
+                                d="M5 12h14M13 6l6 6-6 6"
+                                fill="none"
+                                stroke="#fff"
+                                strokeWidth={2.2}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </Svg>
+                          </>
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.dividerRow}>
+                    <View style={styles.divider} />
+                    <Text style={styles.dividerText}>Continue with</Text>
+                    <View style={styles.divider} />
+                  </View>
+
+                  <GoogleSignInButton
+                    onPress={handleGoogle}
+                    loading={googleLoading}
+                    disabled={loading}
+                    style={styles.googleButton}
+                  />
+
+                  <TouchableOpacity
+                    onPress={() => router.replace(ROUTES.authCreateAccount)}
+                    activeOpacity={0.7}
+                    disabled={formBusy}
+                    style={styles.createAccount}
+                  >
+                    <Text style={styles.footer}>
+                      Don&apos;t have an account?{' '}
+                      <Text style={styles.footerLink}>Create Account</Text>
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-
-              <View style={styles.dividerRow}>
-                <View style={styles.divider} />
-                <Text style={styles.dividerText}>Continue with</Text>
-                <View style={styles.divider} />
-              </View>
-
-              <GoogleSignInButton
-                onPress={handleGoogle}
-                loading={googleLoading}
-                disabled={loading}
-                style={styles.googleButton}
-              />
-
-              <TouchableOpacity
-                onPress={() => router.replace(ROUTES.authCreateAccount)}
-                activeOpacity={0.7}
-                disabled={formBusy}
-                style={styles.createAccount}
-              >
-                <Text style={styles.footer}>
-                  Don&apos;t have an account?{' '}
-                  <Text style={styles.footerLink}>Create Account</Text>
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
@@ -252,9 +301,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
     paddingTop: SPACING.screenTop,
-    paddingBottom: 24,
   },
   content: {
     flexGrow: 1,
@@ -263,9 +310,10 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     justifyContent: 'flex-start',
   },
-  header: {
+  logoHeader: {
     alignItems: 'center',
-    marginBottom: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 18,
   },
   iconWrap: {
     width: 128,
@@ -281,6 +329,47 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.14,
     shadowRadius: 8,
+  },
+  sheetShadow: {
+    flexGrow: 1,
+    shadowColor: DEFAULT_PILLAR_THEME.accent,
+    ...AUTH_GLASS_CARD.outerGlow,
+  },
+  sheet: {
+    flexGrow: 1,
+    overflow: 'hidden',
+    borderTopLeftRadius: AUTH_GLASS_CARD.borderRadius,
+    borderTopRightRadius: AUTH_GLASS_CARD.borderRadius,
+    borderTopWidth: AUTH_GLASS_CARD.borderTopWidth,
+    borderColor: AUTH_GLASS_CARD.borderColor,
+    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 28,
+  },
+  sheetHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 24,
+    right: 24,
+    height: 1.5,
+  },
+  sheetInnerTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: AUTH_GLASS_CARD.innerTopHeight,
+  },
+  sheetInnerBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: AUTH_GLASS_CARD.innerBottomHeight,
+  },
+  sheetHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
   title: {
     fontFamily: FONTS.heading,
@@ -305,8 +394,8 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 16,
     paddingRight: 20,
-    backgroundColor: GLASS_CARD.bg,
-    borderColor: GLASS_CARD.border,
+    backgroundColor: SURFACE_CARD.bg,
+    borderColor: SURFACE_CARD.border,
   },
   inputText: { paddingLeft: 4 },
   inputLabel: {
@@ -363,8 +452,8 @@ const styles = StyleSheet.create({
     height: 60,
     minHeight: 60,
     borderRadius: RADIUS.button,
-    borderColor: GLASS_CARD.border,
-    backgroundColor: GLASS_CARD.bg,
+    borderColor: SURFACE_CARD.border,
+    backgroundColor: SURFACE_CARD.bg,
   },
   createAccount: { marginTop: 8 },
   footer: {

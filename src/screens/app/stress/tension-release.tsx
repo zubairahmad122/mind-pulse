@@ -34,6 +34,7 @@ import { typography } from '@/constants/typography';
 import { resolveGuideLang, type AudioClipId } from '@/constants/audioGuide';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
+import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
 
 // One accent across the whole Relax feature — matches RelaxSessionPlayer.
 // Same accent as the Relax tab / session player — one color for the feature
@@ -72,6 +73,10 @@ export default function TensionReleaseScreen() {
   const [zoneIdx, setZoneIdx]  = useState(0);
   const [sub, setSub]          = useState<'squeeze' | 'release'>('squeeze');
   const [secondsLeft, setSecs] = useState<number>(phaseSeconds.squeeze);
+  useSessionKeepAwake(
+    phase === 'intro' || phase === 'running',
+    'mindpulse-tension-release',
+  );
 
   const progressAnim = useSharedValue(0);
   const ringScale    = useSharedValue(1);
