@@ -4,8 +4,8 @@ node_modules/
 .eas-local-build/
 dist/
 web-build/
-android/
-ios/
+/android/
+/ios/
 modules/*/android/build/
 
 # Local caches and logs
