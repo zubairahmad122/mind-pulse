@@ -90,7 +90,18 @@ export default function EyeGamesScreen() {
   const { user } = useAuth();
 
   const gameProgress = useEyeGameProgress(user?.uid);
+  // useGameRecord can't be called inside EYE_GAMES.map() (hooks can't run
+  // in a loop) — one call per id plus a small lookup is the smallest
+  // correct fix. Extend this the same way if another game is added.
   const focus = useGameRecord(user?.uid, 'focus-sprint');
+  const neonCipher = useGameRecord(user?.uid, 'neon-cipher');
+  const signalOps = useGameRecord(user?.uid, 'signal-ops');
+  const recordsByGameId: Record<string, typeof focus> = {
+    'focus-sprint': focus,
+    'neon-cipher': neonCipher,
+    'signal-ops': signalOps,
+  };
+  const anyRecordExists = Boolean(focus.record || neonCipher.record || signalOps.record);
 
   const open = (id: string) => router.push(ROUTES.appEyeGame(id) as never);
 
@@ -138,8 +149,8 @@ export default function EyeGamesScreen() {
           <GameCard
             key={item.id}
             item={item}
-            pb={formatPb(focus.record?.value)}
-            pbDate={formatDate(focus.record?.updatedAt)}
+            pb={formatPb(recordsByGameId[item.id]?.record?.value)}
+            pbDate={formatDate(recordsByGameId[item.id]?.record?.updatedAt)}
             onPress={() => open(item.id)}
           />
         ))}
@@ -147,24 +158,27 @@ export default function EyeGamesScreen() {
         {/* ── Game history — personal bests ───────────────────────── */}
         <SectionLabel>GAME HISTORY</SectionLabel>
         <GlassCard simple noPadding tint={SURFACE_TINT.card}>
-          {focus.record ? (
-            EYE_GAMES.map((item, index) => (
-              <View
-                key={item.id}
-                style={[styles.historyRow, index > 0 && styles.historyRowDivider]}
-              >
-                <Text style={styles.historyEmoji}>{item.emoji}</Text>
-                <View style={styles.historyInfo}>
-                  <Text style={styles.historyTitle}>{item.title}</Text>
-                  <Text style={styles.historyDate}>
-                    Last played {formatDate(focus.record?.updatedAt) ?? 'recently'}
+          {anyRecordExists ? (
+            EYE_GAMES.filter(item => recordsByGameId[item.id]?.record).map((item, index) => {
+              const record = recordsByGameId[item.id]?.record;
+              return (
+                <View
+                  key={item.id}
+                  style={[styles.historyRow, index > 0 && styles.historyRowDivider]}
+                >
+                  <Text style={styles.historyEmoji}>{item.emoji}</Text>
+                  <View style={styles.historyInfo}>
+                    <Text style={styles.historyTitle}>{item.title}</Text>
+                    <Text style={styles.historyDate}>
+                      Last played {formatDate(record?.updatedAt) ?? 'recently'}
+                    </Text>
+                  </View>
+                  <Text style={styles.historyPb}>
+                    {formatPb(record?.value) ?? '—'}
                   </Text>
                 </View>
-                <Text style={styles.historyPb}>
-                  {formatPb(focus.record?.value) ?? '—'}
-                </Text>
-              </View>
-            ))
+              );
+            })
           ) : (
             <View style={styles.historyEmpty}>
               <Gamepad2 size={22} color="rgba(255,255,255,0.35)" strokeWidth={1.8} />

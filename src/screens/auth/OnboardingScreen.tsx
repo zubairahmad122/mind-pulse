@@ -241,7 +241,7 @@ export default function OnboardingScreen() {
 
           <View
             style={styles.dots}
-            accessibilityLabel={`Slide ${index + 1} of 3`}
+            accessibilityLabel={`Slide ${index + 1} of ${ONBOARDING_SLIDES.length}`}
           >
             {ONBOARDING_SLIDES.map((item, dotIndex) => (
               <TouchableOpacity
@@ -358,7 +358,11 @@ const styles = StyleSheet.create({
   },
   actions: { gap: rs(9), marginTop: rs(20) },
   primaryButton: {
-    height: rs(60),
+    // `minHeight`, not `height` — a fixed height + `overflow: hidden` was
+    // silently clipping the label's second line whenever it wrapped
+    // (longer label, larger system font size, or a narrow device). The
+    // button now grows with its content instead of cutting it off.
+    minHeight: rs(60),
     overflow: 'hidden',
     borderRadius: rs(18),
     shadowOffset: { width: 0, height: rs(9) },
@@ -372,13 +376,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: rs(8),
+    paddingVertical: rs(12),
+    paddingHorizontal: rs(12),
   },
   primaryLabel: {
     fontFamily: FONTS.bodyBold,
     fontSize: rs(16),
+    textAlign: 'center',
+    flexShrink: 1,
   },
   secondaryButton: {
-    height: rs(52),
+    minHeight: rs(52),
+    paddingVertical: rs(10),
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: rs(16),

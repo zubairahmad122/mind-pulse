@@ -3,7 +3,7 @@ import { getFirestore, doc, getDoc, setDoc } from '@react-native-firebase/firest
 
 const db = getFirestore();
 
-export type GameId = 'focus-sprint';
+export type GameId = 'focus-sprint' | 'neon-cipher' | 'signal-ops';
 
 export interface GameRecord {
   value: number;    // score, higher = better

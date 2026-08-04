@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pause, Trophy } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -13,7 +14,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { FocusSprint, type FocusSwitchDifficulty } from '@/components/eye/games/FocusSprint';
 import { GameOverScreen, type GameEndStats } from '@/components/eye/games/GameOverScreen';
+import { NeonCipher } from '@/components/eye/games/NeonCipher';
+import { SignalOps } from '@/components/eye/games/SignalOps';
 import { AmbientBackground } from '@/components/ui';
+import { GradientCTA } from '@/components/ui/GradientCTA';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { FOCUS_SWITCH_DEFAULT_RACE_CPU, getEyeActivity } from '@/constants/eyeRelax';
@@ -34,7 +38,7 @@ import { useProgressStore } from '@/stores/useProgressStore';
 function GameView({
   id, running, onGameEnd, onFocusSession,
   focusDifficulty, onFocusDifficultyChange, onFocusActiveChange, raceCpu, onRaceCpuChange,
-  pauseRequest, onRoundActiveChange,
+  pauseRequest, onRoundActiveChange, onSetupActionChange,
 }: {
   id: string;
   running: boolean;
@@ -47,6 +51,10 @@ function GameView({
   onRaceCpuChange?: (raceCpu: boolean) => void;
   pauseRequest?: number;
   onRoundActiveChange?: (active: boolean) => void;
+  /** Neon Cipher only — lets its pre-session Start CTA render as this
+   *  screen's sticky bottom action bar instead of scrolling with the setup
+   *  form (see `ScreenShell`'s `footer` slot below). */
+  onSetupActionChange?: (action: { label: string; onPress: () => void } | null) => void;
 }) {
   switch (id) {
     case 'focus-sprint':
@@ -60,6 +68,27 @@ function GameView({
           onActiveChange={onFocusActiveChange}
           initialRaceCpu={raceCpu}
           onRaceCpuChange={onRaceCpuChange}
+          pauseRequest={pauseRequest}
+          onRoundActiveChange={onRoundActiveChange}
+        />
+      );
+    case 'neon-cipher':
+      return (
+        <NeonCipher
+          running={running}
+          onGameEnd={onGameEnd}
+          onSession={onFocusSession}
+          pauseRequest={pauseRequest}
+          onRoundActiveChange={onRoundActiveChange}
+          onSetupActionChange={onSetupActionChange}
+        />
+      );
+    case 'signal-ops':
+      return (
+        <SignalOps
+          running={running}
+          onGameEnd={onGameEnd}
+          onSession={onFocusSession}
           pauseRequest={pauseRequest}
           onRoundActiveChange={onRoundActiveChange}
         />
@@ -119,6 +148,10 @@ export default function EyeGameScreen() {
   // a moving target so the page can stop scrolling for just that instant,
   // not for the whole round.
   const [sessionInProgress, setSessionInProgress] = useState(false);
+  // Neon Cipher's pre-session Start CTA, reported up so it can render as a
+  // sticky bottom bar (ScreenShell's `footer` slot) instead of scrolling
+  // away with the setup form. Null whenever that screen isn't showing.
+  const [setupAction, setSetupAction] = useState<{ label: string; onPress: () => void } | null>(null);
 
   const gameId = (id ?? 'focus-sprint') as GameId;
   const { record, isNewRecord, submit } = useGameRecord(user?.uid, gameId);
@@ -147,52 +180,63 @@ export default function EyeGameScreen() {
       // Freeze the page while a round is live so a drag near the moving target
       // can't scroll the arena out from under the player's finger.
       scrollEnabled={!sessionInProgress}
-      // Focus Switch keeps its title pinned during a round — its own
-      // in-round chrome collapses to keep everything else visible without
-      // scrolling too, but this is a defensive fallback for tall system
-      // font sizes or unusually small screens.
-      stickyHeaderIndices={[0]}
       safeBottom
       pillar="eye"
       ambient={<AmbientBackground subtle />}
+      footer={setupAction ? <GradientCTA label={setupAction.label} onPress={setupAction.onPress} /> : undefined}
+      // Docked outside the ScrollView (see `header`'s doc comment on
+      // ScreenShell for why: a sticky child *inside* the ScrollView is
+      // clipped to that inner padded content box, so it can never actually
+      // bleed to the true screen edges — that clipping showed up as the
+      // app's own background gradient peeking in on both sides of the
+      // header). Body content always starts below it and nothing can ever
+      // scroll underneath or overlap it.
+      header={
+        <View style={styles.headerDock}>
+          <BlurView intensity={36} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={styles.headerTint} pointerEvents="none" />
+          <View style={styles.headerInner}>
+            <ScreenHeader
+              title={activity.title}
+              // No subtitle during a live round — the header drops to compact
+              // gameplay chrome (back + title + pause) so the canvas owns the
+              // screen. Subtitle + PB return for the idle/pre-game state.
+              subtitle={roundActive ? undefined : activity.subtitle}
+              showBack
+              compact
+              // 2 lines while idle — 1 line was clipping the full subtitle
+              // ("Switch focus between near and far targets") on most widths.
+              // Irrelevant during a round since subtitle is undefined there.
+              subtitleLines={2}
+              rightAction={
+                roundActive ? (
+                  <TouchableOpacity
+                    style={styles.headerPauseBtn}
+                    onPress={() => setPauseRequest(n => n + 1)}
+                    activeOpacity={0.7}
+                    hitSlop={4}
+                    accessibilityRole="button"
+                    accessibilityLabel="Pause game"
+                  >
+                    <Pause size={18} color="#9EE7FF" strokeWidth={2.4} />
+                  </TouchableOpacity>
+                ) : record !== null ? (
+                  <View
+                    style={styles.pbChip}
+                    accessible
+                    accessibilityLabel={`Personal best ${record.value.toLocaleString()} points`}
+                  >
+                    <Trophy size={13} color="#FFD700" strokeWidth={2.2} fill="#FFD700" />
+                    <Text style={styles.pbLabel}>PB</Text>
+                    <Text style={styles.pbVal}>{record.value.toLocaleString()}</Text>
+                  </View>
+                ) : undefined
+              }
+            />
+          </View>
+        </View>
+      }
     >
-      <ScreenHeader
-        title={activity.title}
-        // No subtitle during a live round — the header drops to compact
-        // gameplay chrome (back + title + pause) so the canvas owns the
-        // screen. Subtitle + PB return for the idle/pre-game state.
-        subtitle={roundActive ? undefined : activity.subtitle}
-        showBack
-        compact
-        // 2 lines while idle — 1 line was clipping the full subtitle
-        // ("Switch focus between near and far targets") on most widths.
-        // Irrelevant during a round since subtitle is undefined there.
-        subtitleLines={2}
-        rightAction={
-          roundActive ? (
-            <TouchableOpacity
-              style={styles.headerPauseBtn}
-              onPress={() => setPauseRequest(n => n + 1)}
-              activeOpacity={0.7}
-              hitSlop={4}
-              accessibilityRole="button"
-              accessibilityLabel="Pause game"
-            >
-              <Pause size={18} color="#9EE7FF" strokeWidth={2.4} />
-            </TouchableOpacity>
-          ) : record !== null ? (
-            <View
-              style={styles.pbChip}
-              accessible
-              accessibilityLabel={`Personal best ${record.value.toLocaleString()} points`}
-            >
-              <Trophy size={13} color="#FFD700" strokeWidth={2.2} fill="#FFD700" />
-              <Text style={styles.pbVal}>{record.value.toLocaleString()}</Text>
-            </View>
-          ) : undefined
-        }
-      />
-
       {/* Rendered only when earned: a `scale(0)` transform does not collapse
           layout, so an always-mounted badge reserved ~44dp of permanently
           invisible space above every eye game. `isNewRecord` flips at session
@@ -223,6 +267,7 @@ export default function EyeGameScreen() {
           onRaceCpuChange={setRaceCpu}
           pauseRequest={pauseRequest}
           onRoundActiveChange={setRoundActive}
+          onSetupActionChange={setSetupAction}
         />
       </View>
 
@@ -262,12 +307,29 @@ export default function EyeGameScreen() {
 }
 
 const styles = StyleSheet.create({
+  // No horizontal padding here on purpose — this sits outside ScreenShell's
+  // padded ScrollView (as a sibling, via the `header` slot), so it's
+  // already the true full device width. `headerInner` below re-applies the
+  // same horizontal inset the scroll content uses, so the title/back
+  // button/PB chip still line up with body content beneath it.
+  headerDock: {
+    paddingBottom: spacing.xs,
+  },
+  headerTint: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(9,9,15,0.72)',
+  },
+  headerInner: {
+    paddingHorizontal: spacing.lg,
+  },
   pbChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: 'rgba(255,215,0,0.1)',
     borderWidth: 1, borderColor: 'rgba(255,215,0,0.3)',
     borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5,
   },
+  pbLabel: { fontSize: 10.5, fontWeight: '800', color: 'rgba(255,215,0,0.75)', letterSpacing: 0.4 },
   pbVal:   { fontSize: 12, fontWeight: '800', color: '#FFD700' },
   headerPauseBtn: {
     width: 40, height: 40, borderRadius: 20,

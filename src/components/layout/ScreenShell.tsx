@@ -30,6 +30,19 @@ type Props = {
    */
   footer?: React.ReactNode;
   /**
+   * Optional fixed header — rendered above the scroll area, outside it, so
+   * body content always starts below it and can never scroll underneath or
+   * overlap it. Mirrors `footer`. Prefer this over `stickyHeaderIndices` for
+   * an always-visible header with an opaque/blurred background: a sticky
+   * child *inside* the ScrollView is clipped to that inner (padded) content
+   * box, so it can't bleed to the true screen edges no matter what margin
+   * tricks are applied to it — a real structural gap that showed up as the
+   * app's own background gradient peeking in on both sides of the header.
+   * Docking it here, outside the ScrollView entirely, sidesteps that clipping
+   * and reaches the true edges for free.
+   */
+  header?: React.ReactNode;
+  /**
    * Set false to freeze the scroll position — e.g. while an interactive game
    * is running, so dragging near a moving target can't scroll the playfield
    * out from under the player's finger. Only meaningful when `scroll` is true.
@@ -54,6 +67,7 @@ export function ScreenShell({
   pillar = 'mind',
   ambient,
   footer,
+  header,
   scrollEnabled = true,
   stickyHeaderIndices,
 }: Props & { ambient?: React.ReactNode }) {
@@ -109,6 +123,7 @@ export function ScreenShell({
             screen's accent instead of the context default. */}
         {ambient}
         <View style={styles.flex}>
+          {header}
           {content}
           {footer && (
             <View style={[styles.footer, { paddingBottom: tabBarSpace + 12 }]}>
