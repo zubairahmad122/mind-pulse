@@ -1,5 +1,6 @@
 import { RADIUS, SHADOWS, DURATION, FONTS } from '@/constants/designSystem';
 import { colors } from '@/constants/colors';
+import { trackStreakBroken, trackStreakSavedByFreeze } from '@/services/analytics';
 import { spacing } from '@/constants/spacing';
 import { useWellnessStore } from '@/stores/useWellnessStore';
 import { useEffect, useState } from 'react';
@@ -29,6 +30,8 @@ export function StreakCelebrationBanner() {
   const [anim] = useState(() => new Animated.Value(0));
   useEffect(() => {
     if (!lastStreakEvent) return;
+    if (lastStreakEvent === 'frozen') trackStreakSavedByFreeze(streak);
+    else if (lastStreakEvent === 'reset') trackStreakBroken();
     Animated.spring(anim, { toValue: 1, tension: 200, friction: 16, useNativeDriver: true }).start();
     const timer = setTimeout(() => {
       Animated.timing(anim, { toValue: 0, duration: DURATION.normal, useNativeDriver: true }).start(() => {

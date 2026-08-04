@@ -233,15 +233,16 @@ export default function HomeDashboardScreen() {
       <View style={{ height: SPACING.screenBottom }} />
 
       <SoftPaywallModal
-        visible={showOnboardingPaywall}
+        visible={!isPremium && showOnboardingPaywall}
         emoji="✨"
+        variant="welcome"
         title="Welcome to MindPulse"
-        subtitle="Unlock the full toolkit — guided sessions, eye training, and deeper insights — anytime you're ready."
+        subtitle="Unlock guided wellness, focused eye training, and deeper insights whenever you're ready."
         onUpgrade={() => { dismissOnboardingPaywall(); goToPremium(); }}
         onDismiss={dismissOnboardingPaywall}
       />
       <SoftPaywallModal
-        visible={showStreakPaywall}
+        visible={!isPremium && showStreakPaywall}
         emoji="🔥"
         title="You're building momentum"
         subtitle="3 days in a row — unlock the full toolkit to keep your progress going."

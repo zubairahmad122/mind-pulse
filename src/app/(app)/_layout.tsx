@@ -8,6 +8,11 @@ import {
   EYE_BREAK_SNOOZE_ACTION,
   scheduleEyeBreakSnooze,
 } from '@/services/eyeBreakNotification';
+import {
+  COMPANION_NOTIF_PREFIX,
+  COMPANION_SNOOZE_ACTION,
+  scheduleCompanionSnooze,
+} from '@/services/desktopCompanion';
 import { ROUTES } from '@/constants';
 import { useStreakSync } from '@/hooks/useStreakSync';
 import { useDailyCheckIn } from '@/hooks/useDailyCheckIn';
@@ -52,6 +57,20 @@ export default function AppStackLayout() {
             router.push({
               pathname: ROUTES.appEyeBreak,
               params: { source: 'reminder', notificationId: id },
+            } as never);
+            return;
+          }
+          if (id.startsWith(COMPANION_NOTIF_PREFIX)) {
+            const data = response.notification.request.content.data as
+              | { breakSeconds?: number }
+              | undefined;
+            if (response.actionIdentifier === COMPANION_SNOOZE_ACTION) {
+              void scheduleCompanionSnooze(user?.uid);
+              return;
+            }
+            router.push({
+              pathname: ROUTES.appEyeBreak,
+              params: { duration: String(data?.breakSeconds ?? 20) },
             } as never);
           }
         });

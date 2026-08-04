@@ -8,16 +8,11 @@ import {
   loadEyeSessions,
 } from '@/services/eyeProgressPersistence';
 import { calculateEyeScore, ScoreResult } from '@/utils/scoring';
+import { eyeSessionTypeToRecoveryId } from '@/utils/eyeSessionIds';
 
 function todayKey(): string {
   return new Date().toLocaleDateString('sv');
 }
-
-/** Maps EyeSessionType to the recovery-session ID shown in the UI. */
-const SESSION_TYPE_TO_ID: Record<string, string> = {
-  'cvs-protocol': 'cvs-protocol',
-  'eye-reset': 'comet-trace',
-};
 
 const LOADING_RESULT: ScoreResult = {
   score: 0,
@@ -47,8 +42,10 @@ export function useEyeScore(uid?: string) {
       const recoverySessionsToday = todaysSessions.length;
       const hasAnySessions = sessions.length > 0;
 
-      // IDs of recovery sessions completed today (e.g. ['cvs-protocol', 'comet-trace'])
-      const todayIds = [...new Set(todaysSessions.map(s => SESSION_TYPE_TO_ID[s.type] ?? s.type))];
+      // IDs of recovery sessions completed today (e.g. ['cvs-protocol']). Both
+      // stored session types ('cvs-protocol' and legacy 'eye-reset') resolve to
+      // the same Eye Reset activity id, so a completed reset is always counted.
+      const todayIds = [...new Set(todaysSessions.map(s => eyeSessionTypeToRecoveryId(s.type)))];
 
       setResult(calculateEyeScore({
         breaksTaken,
@@ -71,6 +68,7 @@ export function useEyeScore(uid?: string) {
     }
   }, [uid]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: load-on-mount data fetch. compute() sets loading synchronously (initial mount AND every refresh), which is the correct UX here — pinned by useEyeScore.characterization.test.ts.
   useEffect(() => { void compute(); }, [compute]);
 
   return { ...result, loading, refresh: compute, hasAnySessions: hasSessions, completedToday, gamePlayedToday };

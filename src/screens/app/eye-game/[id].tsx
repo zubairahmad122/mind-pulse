@@ -1,6 +1,7 @@
-import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Pause, Trophy } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SessionCompleteOverlay } from '@/components/eye/SessionCompleteOverlay';
 import { markGamePlayedToday } from '@/services/dailyEyeGoalsPersistence';
 import Animated, {
@@ -10,69 +11,73 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { CometTrace } from '@/components/eye/games/CometTrace';
-import { EyeResetOverlay } from '@/components/eye/games/EyeResetOverlay';
-import { FocusSprint } from '@/components/eye/games/FocusSprint';
+import { FocusSprint, type FocusSwitchDifficulty } from '@/components/eye/games/FocusSprint';
 import { GameOverScreen, type GameEndStats } from '@/components/eye/games/GameOverScreen';
-import { SaccadeSniper } from '@/components/eye/games/SaccadeSniper';
 import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
-import { GradientCTA } from '@/components/ui/GradientCTA';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { PaywallGate } from '@/components/paywall/PaywallGate';
-import { ENTITLEMENTS } from '@/constants/entitlements';
-import { getEyeActivity } from '@/constants/eyeRelax';
+import { FOCUS_SWITCH_DEFAULT_RACE_CPU, getEyeActivity } from '@/constants/eyeRelax';
 import { useAuth } from '@/context/AuthContext';
-import { useSubscription } from '@/context/SubscriptionContext';
 import { useGameRecord } from '@/hooks/useGameRecord';
+import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
 import { type GameId } from '@/services/gameRecords';
 import {
   awardEyeGameXp,
   type EyeGameReward,
 } from '@/services/eyeGameProgress';
 import { colors } from '@/constants/colors';
-import { PILLAR_COLORS, STATUS_COLORS } from '@/constants/designSystem';
+import { ROUTES } from '@/constants/routes';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { useProgressStore } from '@/stores/useProgressStore';
 
-const EYE_ACCENT = PILLAR_COLORS.eye;
-
 function GameView({
-  id, running, onGameEnd, onSaccadeScore, onFocusSession, personalBestMs,
+  id, running, onGameEnd, onFocusSession,
+  focusDifficulty, onFocusDifficultyChange, onFocusActiveChange, raceCpu, onRaceCpuChange,
+  pauseRequest, onRoundActiveChange,
 }: {
   id: string;
   running: boolean;
   onGameEnd: (stats: GameEndStats) => void;
-  onSaccadeScore?: (score: number, bestMs: number) => void;
   onFocusSession?: (score: number) => void;
-  personalBestMs?: number | null;
+  focusDifficulty?: FocusSwitchDifficulty;
+  onFocusDifficultyChange?: (difficulty: FocusSwitchDifficulty) => void;
+  onFocusActiveChange?: (active: boolean) => void;
+  raceCpu?: boolean;
+  onRaceCpuChange?: (raceCpu: boolean) => void;
+  pauseRequest?: number;
+  onRoundActiveChange?: (active: boolean) => void;
 }) {
   switch (id) {
-    case 'saccade-sniper':
-      return <SaccadeSniper running={running} onScore={onSaccadeScore} onGameEnd={onGameEnd} personalBestMs={personalBestMs} />;
     case 'focus-sprint':
-      return <FocusSprint running={running} onSession={onFocusSession} onGameEnd={onGameEnd} />;
-    case 'comet-trace':
-      return <CometTrace running={running} onGameEnd={onGameEnd} />;
+      return (
+        <FocusSprint
+          running={running}
+          onSession={onFocusSession}
+          onGameEnd={onGameEnd}
+          initialDifficulty={focusDifficulty}
+          onDifficultyChange={onFocusDifficultyChange}
+          onActiveChange={onFocusActiveChange}
+          initialRaceCpu={raceCpu}
+          onRaceCpuChange={onRaceCpuChange}
+          pauseRequest={pauseRequest}
+          onRoundActiveChange={onRoundActiveChange}
+        />
+      );
     default:
       return <Text style={styles.missing}>Game not found</Text>;
   }
 }
 
-function RecordBadge({ visible, label }: { visible: boolean; label: string }) {
+/** Mounted only once the record is actually earned, so it animates in on mount. */
+function RecordBadge({ label }: { label: string }) {
   const scale   = useSharedValue(0);
   const opacity = useSharedValue(0);
 
   useEffect(() => {
-    if (visible) {
-      scale.value   = withSequence(withSpring(1.15, { damping: 10 }), withSpring(1));
-      opacity.value = withTiming(1, { duration: 200 });
-    } else {
-      scale.value   = withTiming(0, { duration: 300 });
-      opacity.value = withTiming(0, { duration: 300 });
-    }
-  }, [visible]);
+    scale.value   = withSequence(withSpring(1.15, { damping: 10 }), withSpring(1));
+    opacity.value = withTiming(1, { duration: 200 });
+  }, []);
 
   const style = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -80,7 +85,7 @@ function RecordBadge({ visible, label }: { visible: boolean; label: string }) {
   }));
 
   return (
-    <Animated.View style={[styles.badge, style]}>
+    <Animated.View style={[styles.badge, style]} pointerEvents="none">
       <Text style={styles.badgeText}>🏆 {label}</Text>
     </Animated.View>
   );
@@ -88,48 +93,38 @@ function RecordBadge({ visible, label }: { visible: boolean; label: string }) {
 
 export default function EyeGameScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { user } = useAuth();
-  const { isPremium } = useSubscription();
   const logEyeGame = useProgressStore(state => state.logEyeGame);
   const activity = id ? getEyeActivity(id) : undefined;
-  const [secondsLeft, setSecondsLeft] = useState(activity?.durationSeconds ?? 60);
   const [running, setRunning]         = useState(true);
   const [gameEndStats, setGameEndStats] = useState<GameEndStats | null>(null);
+  // Header pause button — a monotonic request counter. Each press nudges it
+  // so FocusSprint can pause the live round.
+  const [pauseRequest, setPauseRequest] = useState(0);
+  // While a round is live the header swaps to compact gameplay chrome
+  // (no subtitle / PB) and hosts the pause button.
+  const [roundActive, setRoundActive] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
-  const [eyeResetActive, setEyeResetActive] = useState(false);
   const [progressReward, setProgressReward] = useState<EyeGameReward | null>(null);
+  const [replayKey, setReplayKey] = useState(0);
+  // Held above the `replayKey` remount boundary so replaying keeps the mode
+  // the player just chose instead of silently resetting to Casual.
+  const [focusDifficulty, setFocusDifficulty] = useState<FocusSwitchDifficulty>('easy');
+  // Same remount-preservation reason. Defaults to on, matching the
+  // pre-toggle behavior where every round raced the CPU unconditionally —
+  // the toggle lets a player opt into a calm solo session instead.
+  const [raceCpu, setRaceCpu] = useState(FOCUS_SWITCH_DEFAULT_RACE_CPU);
+  // Self-managed games report when the player's finger is actually down on
+  // a moving target so the page can stop scrolling for just that instant,
+  // not for the whole round.
+  const [sessionInProgress, setSessionInProgress] = useState(false);
 
-  const gameId = (id ?? 'saccade-sniper') as GameId;
+  const gameId = (id ?? 'focus-sprint') as GameId;
   const { record, isNewRecord, submit } = useGameRecord(user?.uid, gameId);
 
-  const bestMsRef = useRef<number | null>(null);
-
-  // Games that own their session (start button, internal timer, internal end) —
-  // parent skips its countdown + pause UI for these.
-  const isSelfManaged =
-    activity?.id === 'saccade-sniper' ||
-    activity?.id === 'focus-sprint' ||
-    activity?.id === 'comet-trace';
-
-  // Comet Trace is an exercise — no score/PB/game-over screen, just the
-  // 20-second look-away reset on completion.
-  const isExercise = activity?.id === 'comet-trace';
   const isDone = gameEndStats !== null;
-
-  // Parent countdown for timer-managed games (Blink, Radar, Focus)
-  useEffect(() => {
-    if (isSelfManaged) return;
-    if (!running || secondsLeft <= 0 || gameEndStats) return;
-    const t = setTimeout(() => setSecondsLeft(s => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [running, secondsLeft, gameEndStats, isSelfManaged]);
-
-  useEffect(() => {
-    if (!isDone) return;
-    if (gameId === 'saccade-sniper' && bestMsRef.current !== null) {
-      void submit(bestMsRef.current);
-    }
-  }, [isDone, gameId, submit]);
+  useSessionKeepAwake(running && !isDone, 'mindpulse-eye-arcade');
 
   if (!activity) {
     return (
@@ -140,122 +135,96 @@ export default function EyeGameScreen() {
     );
   }
 
-  // Locked games get the same clean, upfront lock card as DichopticScreen —
-  // not the game rendered live-but-inert underneath a small corner badge.
-  const locked = !isPremium && !!activity.featureId && ENTITLEMENTS[activity.featureId] === 'pro';
-  if (locked) {
-    return (
-      <ScreenShell safeBottom pillar="eye" ambient={<AmbientBackground subtle />}>
-        <ScreenHeader title={activity.title} subtitle={activity.subtitle} showBack />
-        <PaywallGate featureId={activity.featureId!}>{null}</PaywallGate>
-      </ScreenShell>
-    );
-  }
-
-  const formatRecord = (): string => {
-    if (!record) return '—';
-    if (gameId === 'saccade-sniper') return `${record.value}ms`;
-    return `${record.value}%`;
-  };
-
   function handleReplay() {
     setGameEndStats(null);
-    setSecondsLeft(activity!.durationSeconds);
     setRunning(true);
-    bestMsRef.current = null;
+    setReplayKey(value => value + 1);
     setProgressReward(null);
   }
 
   return (
-    <ScreenShell scroll={isSelfManaged} safeBottom pillar="eye" ambient={<AmbientBackground subtle />}>
-      <ScreenHeader title={activity.title} subtitle={activity.subtitle} showBack />
-
-      {/* Timer + personal best row — hidden for self-managed games */}
-      {!isSelfManaged && (
-        <View style={styles.topRow}>
-          <View style={styles.timerRow}>
-            <Text style={[styles.timer, isDone && styles.timerDone]}>
-              {isDone ? 'Done!' : `${secondsLeft}s`}
-            </Text>
-            <Text style={styles.timerLabel}>
-              {isDone ? 'session complete' : running ? 'playing' : 'paused'}
-            </Text>
-          </View>
-          {record !== null && (
-            <View style={styles.pbChip}>
-              <Text style={styles.pbLabel}>PB</Text>
-              <Text style={styles.pbVal}>{formatRecord()}</Text>
+    <ScreenShell
+      // Freeze the page while a round is live so a drag near the moving target
+      // can't scroll the arena out from under the player's finger.
+      scrollEnabled={!sessionInProgress}
+      // Focus Switch keeps its title pinned during a round — its own
+      // in-round chrome collapses to keep everything else visible without
+      // scrolling too, but this is a defensive fallback for tall system
+      // font sizes or unusually small screens.
+      stickyHeaderIndices={[0]}
+      safeBottom
+      pillar="eye"
+      ambient={<AmbientBackground subtle />}
+    >
+      <ScreenHeader
+        title={activity.title}
+        // No subtitle during a live round — the header drops to compact
+        // gameplay chrome (back + title + pause) so the canvas owns the
+        // screen. Subtitle + PB return for the idle/pre-game state.
+        subtitle={roundActive ? undefined : activity.subtitle}
+        showBack
+        compact
+        // 2 lines while idle — 1 line was clipping the full subtitle
+        // ("Switch focus between near and far targets") on most widths.
+        // Irrelevant during a round since subtitle is undefined there.
+        subtitleLines={2}
+        rightAction={
+          roundActive ? (
+            <TouchableOpacity
+              style={styles.headerPauseBtn}
+              onPress={() => setPauseRequest(n => n + 1)}
+              activeOpacity={0.7}
+              hitSlop={4}
+              accessibilityRole="button"
+              accessibilityLabel="Pause game"
+            >
+              <Pause size={18} color="#9EE7FF" strokeWidth={2.4} />
+            </TouchableOpacity>
+          ) : record !== null ? (
+            <View
+              style={styles.pbChip}
+              accessible
+              accessibilityLabel={`Personal best ${record.value.toLocaleString()} points`}
+            >
+              <Trophy size={13} color="#FFD700" strokeWidth={2.2} fill="#FFD700" />
+              <Text style={styles.pbVal}>{record.value.toLocaleString()}</Text>
             </View>
-          )}
-        </View>
-      )}
+          ) : undefined
+        }
+      />
 
-      {/* PB chip only for self-managed games (not exercises) — Saccade Sniper
-          shows its own PB inline next to the difficulty control instead of a
-          floating top-right badge, so it's excluded here. */}
-      {isSelfManaged && !isExercise && activity.id !== 'saccade-sniper' && record !== null && (
-        <View style={[styles.topRow, { justifyContent: 'flex-end' }]}>
-          <View style={styles.pbChip}>
-            <Text style={styles.pbLabel}>PB</Text>
-            <Text style={styles.pbVal}>{formatRecord()}</Text>
-          </View>
-        </View>
-      )}
+      {/* Rendered only when earned: a `scale(0)` transform does not collapse
+          layout, so an always-mounted badge reserved ~44dp of permanently
+          invisible space above every eye game. `isNewRecord` flips at session
+          end while GameOverScreen covers the screen, so neither the layout
+          shift nor the missing exit animation is observable. */}
+      {isNewRecord && <RecordBadge label="New Personal Best!" />}
 
-      {!isExercise && <RecordBadge visible={isNewRecord} label="New Personal Best!" />}
-
-      {(() => {
-        const gameView = (
-          <View style={isSelfManaged ? styles.gameAreaScroll : styles.gameArea}>
-            <GameView
-              id={activity.id}
-              running={running && !isDone}
-              onGameEnd={stats => {
-                setRunning(false);
-                void markGamePlayedToday(user?.uid ?? undefined);
-                if (isExercise) {
-                  // Comet Trace exits straight into the 20-second look-away —
-                  // no score / no game-over screen.
-                  setEyeResetActive(true);
-                  return;
-                }
-                void awardEyeGameXp(user?.uid, gameId, stats.rating).then(
-                  setProgressReward,
-                );
-                logEyeGame();
-                if (isSelfManaged) {
-                  // Self-managed games have their own completion UI — go directly to results
-                  setGameEndStats(stats);
-                } else {
-                  setShowComplete(true);
-                  setTimeout(() => {
-                    setShowComplete(false);
-                    setGameEndStats(stats);
-                  }, 1800);
-                }
-              }}
-              onSaccadeScore={(_, bMs) => { bestMsRef.current = bMs; }}
-              onFocusSession={score => submit(score)}
-              personalBestMs={gameId === 'saccade-sniper' ? (record?.value ?? null) : null}
-            />
-          </View>
-        );
-
-        return activity.featureId ? (
-          <PaywallGate featureId={activity.featureId}>{gameView}</PaywallGate>
-        ) : (
-          gameView
-        );
-      })()}
-
-      {/* Pause/Resume only for timer-managed games */}
-      {!isSelfManaged && !gameEndStats && (
-        <GradientCTA
-          label={running ? 'Pause' : 'Resume'}
-          onPress={() => setRunning(r => !r)}
-          textColor="#03212C"
+      <View style={styles.gameAreaScroll}>
+        <GameView
+          key={`${activity.id}-${replayKey}`}
+          id={activity.id}
+          running={running && !isDone}
+          onGameEnd={stats => {
+            setRunning(false);
+            void markGamePlayedToday(user?.uid ?? undefined);
+            void awardEyeGameXp(user?.uid, gameId, stats.rating).then(
+              setProgressReward,
+            );
+            logEyeGame();
+            // Self-managed: has its own completion UI — go directly to results.
+            setGameEndStats(stats);
+          }}
+          onFocusSession={score => submit(score)}
+          focusDifficulty={focusDifficulty}
+          onFocusDifficultyChange={setFocusDifficulty}
+          onFocusActiveChange={setSessionInProgress}
+          raceCpu={raceCpu}
+          onRaceCpuChange={setRaceCpu}
+          pauseRequest={pauseRequest}
+          onRoundActiveChange={setRoundActive}
         />
-      )}
+      </View>
 
       <SessionCompleteOverlay visible={showComplete} onDone={() => setShowComplete(false)} />
 
@@ -263,52 +232,49 @@ export default function EyeGameScreen() {
       {gameEndStats && (
         <GameOverScreen
           stats={gameEndStats}
-          celebration={!isExercise && isNewRecord ? '🏆 New Personal Best!' : undefined}
+          title={`${activity.title.toUpperCase()} COMPLETE`}
+          isNewRecord={isNewRecord}
           progressReward={
             progressReward
               ? {
                   xpAwarded: progressReward.xpAwarded,
                   level: progressReward.after.level,
                   leveledUp: progressReward.leveledUp,
+                  progress: progressReward.after.progress,
                 }
               : null
           }
+          personalBest={record?.value}
+          recommendedNext={{
+            label: 'Eye Reset · Guided relaxation',
+            onPress: () => router.push(ROUTES.appCvsProtocol as never),
+          }}
           onReplay={handleReplay}
           onDismiss={() => {
-            setGameEndStats(null);
             setRunning(false);
+            router.back();
           }}
         />
       )}
 
-      {/* Far-focus look-away reset (Comet Trace only) */}
-      {eyeResetActive && (
-        <EyeResetOverlay
-          onComplete={() => setEyeResetActive(false)}
-          onSkip={()     => setEyeResetActive(false)}
-        />
-      )}
     </ScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: spacing.sm,
-  },
-  timerRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
-  timer:      { ...typography.headingLarge, color: EYE_ACCENT },
-  timerDone:  { color: STATUS_COLORS.success },
-  timerLabel: { ...typography.caption, color: colors.text.secondary },
   pbChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: 'rgba(255,215,0,0.1)',
     borderWidth: 1, borderColor: 'rgba(255,215,0,0.3)',
-    borderRadius: 8, paddingHorizontal: spacing.sm, paddingVertical: 4,
+    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5,
   },
-  pbLabel: { fontSize: 9, fontWeight: '800', color: '#FFD700', letterSpacing: 1 },
-  pbVal:   { fontSize: 12, fontWeight: '700', color: '#FFD700' },
+  pbVal:   { fontSize: 12, fontWeight: '800', color: '#FFD700' },
+  headerPauseBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(0,224,255,0.1)',
+    borderWidth: 1, borderColor: 'rgba(0,224,255,0.22)',
+    alignItems: 'center', justifyContent: 'center',
+  },
   badge: {
     alignSelf: 'center',
     backgroundColor: 'rgba(255,215,0,0.15)',
@@ -317,7 +283,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   badgeText: { fontSize: 14, fontWeight: '800', color: '#FFD700' },
-  gameArea:       { flex: 1, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.lg },
-  gameAreaScroll: { alignItems: 'center', width: '100%', paddingBottom: spacing.xl },
+  // No trailing padding — the game manages its own bottom spacing, and this
+  // was pushing the layout taller than the viewport for no visual benefit.
+  gameAreaScroll: { alignItems: 'center', width: '100%' },
   missing: { ...typography.body, color: colors.text.secondary, textAlign: 'center' },
 });

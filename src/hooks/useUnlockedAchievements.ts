@@ -4,6 +4,7 @@ import type { AchievementDefinition, AchievementExtras } from '@/constants/achie
 import { useAuth } from '@/context/AuthContext';
 import { useSleep } from '@/context/SleepContext';
 import { useEyeProgress } from '@/hooks/useEyeProgress';
+import { trackAchievementUnlocked } from '@/services/analytics';
 import { loadJournalDateKeys } from '@/services/journalPersistence';
 import { loadRecoverySessionsToday } from '@/services/recoveryPersistence';
 import { useWellnessStore } from '@/stores/useWellnessStore';
@@ -23,7 +24,9 @@ export function useUnlockedAchievements() {
   const everPerfectDay = useWellnessStore((s) => s.everPerfectDay);
   const everNightOwlSession = useWellnessStore((s) => s.everNightOwlSession);
   const everComeback = useWellnessStore((s) => s.everComeback);
+  const everRushMode = useWellnessStore((s) => s.everRushMode);
   const activityLog = useWellnessStore((s) => s.activityLog);
+  const markAchievementsUnlocked = useWellnessStore((s) => s.markAchievementsUnlocked);
   const hasPerfectWeek = useMemo(() => computeHasPerfectWeek(activityLog), [activityLog]);
 
   useEffect(() => {
@@ -41,12 +44,21 @@ export function useUnlockedAchievements() {
     everPerfectDay,
     everNightOwlSession,
     everComeback,
+    everRushMode,
     hasPerfectWeek,
   };
   const earned: AchievementDefinition[] = ACHIEVEMENT_DEFINITIONS.filter(a => a.check(sessions, extrasWithEye));
   const locked: AchievementDefinition[] = ACHIEVEMENT_DEFINITIONS.filter(a => !a.check(sessions, extrasWithEye));
   const totalCount = ACHIEVEMENT_DEFINITIONS.length;
   const percent = totalCount > 0 ? (earned.length / totalCount) * 100 : 0;
+
+  const earnedIdsKey = earned.map(a => a.id).join(',');
+  useEffect(() => {
+    if (!earnedIdsKey) return;
+    const newlyUnlocked = markAchievementsUnlocked(earnedIdsKey.split(','));
+    newlyUnlocked.forEach(trackAchievementUnlocked);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [earnedIdsKey]);
 
   return { earned, locked, unlockedCount: earned.length, totalCount, percent };
 }

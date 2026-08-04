@@ -1,6 +1,7 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ROUTES } from '@/constants';
 import { colors } from '@/constants/colors';
+import { PILLAR_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -20,8 +21,10 @@ type LastFeature = {
 };
 
 const FEATURE_MAP: Record<string, LastFeature> = {
-  'eye-exercise': { id: 'eye-exercise', label: 'Eye Comfort', subtitle: 'Take a guided screen break', route: ROUTES.appEyeRelax, color: '#6ee7b7' },
-  'eye-game':     { id: 'eye-game',     label: 'Visual Games', subtitle: 'Play a short coordination activity', route: ROUTES.appEyeRelax, color: '#22d3ee' },
+  // Both eye features wear the single Eyes-pillar cyan — the old green
+  // (#6ee7b7) / teal (#22d3ee) split made the same pillar two colours.
+  'eye-exercise': { id: 'eye-exercise', label: 'Eye Comfort', subtitle: 'Take a guided screen break', route: ROUTES.appEyeRelax, color: PILLAR_COLORS.eye },
+  'eye-game':     { id: 'eye-game',     label: 'Visual Games', subtitle: 'Play a short coordination activity', route: ROUTES.appEyeRelax, color: PILLAR_COLORS.eye },
   'relax':        { id: 'relax',        label: 'Relaxation',   subtitle: 'Unwind and breathe', route: ROUTES.appRelax, color: '#4FC3F7' },
   'mind':         { id: 'mind',         label: 'Mind & Breath', subtitle: 'Stress relief', route: ROUTES.appBoxBreathing, color: '#60a5fa' },
   'sleep':        { id: 'sleep',        label: 'Sleep',        subtitle: 'Track tonight', route: ROUTES.appSleep, color: '#a78bfa' },

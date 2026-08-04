@@ -33,6 +33,8 @@ export interface AchievementExtras {
   everComeback?: boolean;
   /** Currently true if any Mon–Sun week in the activity log has all 7 days. */
   hasPerfectWeek?: boolean;
+  /** Reached a 3+ hit streak (Rush Mode) in Focus Switch, ever. */
+  everRushMode?: boolean;
 }
 
 export type AchievementDefinition = {
@@ -137,8 +139,8 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     id: 'rush_mode',
     icon: Zap,
     title: 'Rush Mode',
-    desc: 'Build a streak of 3+ hits in Focus Sprint',
-    check: (_s, e) => (e?.eyeStreak ?? 0) >= 1,
+    desc: 'Build a streak of 3+ hits in Focus Switch',
+    check: (_s, e) => !!e?.everRushMode,
     color: '#f97316',
   },
   {

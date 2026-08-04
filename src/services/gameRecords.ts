@@ -3,16 +3,15 @@ import { getFirestore, doc, getDoc, setDoc } from '@react-native-firebase/firest
 
 const db = getFirestore();
 
-export type GameId = 'saccade-sniper' | 'focus-sprint' | 'comet-trace' | 'dichoptic-reaction';
+export type GameId = 'focus-sprint';
 
 export interface GameRecord {
-  value: number;    // ms (saccade, lower=better) or % (others, higher=better) or score
+  value: number;    // score, higher = better
   updatedAt: number;
 }
 
-// For saccade-sniper: lower ms = better. For all others: higher = better.
-function isImprovement(gameId: GameId, newVal: number, oldVal: number): boolean {
-  return gameId === 'saccade-sniper' ? newVal < oldVal : newVal > oldVal;
+function isImprovement(newVal: number, oldVal: number): boolean {
+  return newVal > oldVal;
 }
 
 function storageKey(uid: string | undefined, gameId: GameId): string {
@@ -60,7 +59,7 @@ export async function submitGameScore(
 ): Promise<boolean> {
   try {
     const existing = await getGameRecord(uid, gameId);
-    const isNew = existing === null || isImprovement(gameId, value, existing.value);
+    const isNew = existing === null || isImprovement(value, existing.value);
     if (isNew) {
       const record: GameRecord = { value, updatedAt: Date.now() };
 

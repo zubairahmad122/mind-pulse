@@ -78,26 +78,6 @@ const PAYWALL_COPY: Partial<Record<FeatureId, PaywallCopy>> = {
       'Pairs with your daily routine',
     ],
   },
-  eye_focus_sprint: {
-    title: 'Build better screen-break habits',
-    subtitle:
-      'Focus Sprint is a short visual-coordination game for screen-heavy days.',
-    benefits: [
-      'Full set of visual activities',
-      'Track game progress over time',
-      'Pair activities with guided breaks',
-    ],
-  },
-  eye_dichoptic: {
-    title: 'Explore color-based coordination',
-    subtitle:
-      'A red/cyan reaction game—not a replacement for prescribed vision therapy.',
-    benefits: [
-      'Red/cyan reaction activity',
-      'Personalized color modes',
-      'Guided eye-care toolkit',
-    ],
-  },
   audio_mindful_reset: {
     title: 'Unlock deeper calm sessions',
     subtitle: 'Mindful Reset is part of the full premium audio library.',

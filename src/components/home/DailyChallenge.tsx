@@ -4,6 +4,7 @@ import { ROUTES } from '@/constants/routes';
 import { colors } from '@/constants/colors';
 import { PILLAR_COLORS, RADIUS, SHADOWS, STATUS_COLORS, SURFACE_TINT, TYPOGRAPHY } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
+import { trackChallengeCompleted } from '@/services/analytics';
 import { ChallengeFeature, useWellnessStore } from '@/stores/useWellnessStore';
 import { useProgressStore } from '@/stores/useProgressStore';
 import { todayISO } from '@/utils/dateUtils';
@@ -27,7 +28,7 @@ export const CHALLENGE_FEATURE_KEY: Record<string, ChallengeFeature> = {
 const FEATURE_TO_AREA: Record<ChallengeFeature, string> = { eye: 'Eyes', sleep: 'Sleep', mind: 'Mind' };
 
 export const CHALLENGES: Record<string, { title: string; subtitle: string; icon: typeof Eye; route: string; color: string; duration: string; difficulty: string; reward: string }> = {
-  Eyes:  { title: 'Eye Reset', subtitle: 'Follow the guided protocol', icon: Eye,   route: '/(app)/cvs-protocol',            color: PILLAR_COLORS.eye,   duration: '3 min', difficulty: 'Beginner', reward: 'Eye Protector' },
+  Eyes:  { title: 'Eye Reset', subtitle: 'Follow the guided protocol', icon: Eye,   route: '/(app)/cvs-protocol',            color: PILLAR_COLORS.eye,   duration: '3 min 30 sec', difficulty: 'Beginner', reward: 'Eye Protector' },
   Sleep: { title: 'Sleep Session', subtitle: 'Track tonight\'s sleep',  icon: Moon,  route: '/(app)/(tabs)/sleep?tab=tonight', color: PILLAR_COLORS.sleep, duration: '1 min', difficulty: 'Beginner', reward: 'Sleep Guardian' },
   Mind:  { title: 'Box Breathing', subtitle: 'Calm your nervous system', icon: Wind,  route: ROUTES.appBoxBreathing,     color: PILLAR_COLORS.mind,  duration: '5 min', difficulty: 'Beginner', reward: 'Calm Mind' },
 };
@@ -61,6 +62,15 @@ export function useDailyChallengeStatus(worstArea: string, ready = true) {
       s.relaxSessionsCompleted > 0 || s.mindSessionsCompleted > 0 || s.sleepSessionsTracked > 0;
     return hasAnySession && s.todayDate === today && s.todaySessions[activeFeature];
   });
+
+  // Fires once, only on a genuine false→true transition — never on mount
+  // with an already-completed challenge (e.g. reopening the app later today).
+  const wasDoneRef = useRef(done);
+  useEffect(() => {
+    if (!wasDoneRef.current && done) trackChallengeCompleted(activeFeature);
+    wasDoneRef.current = done;
+  }, [done, activeFeature]);
+
   return { challenge, done };
 }
 

@@ -9,6 +9,18 @@ type Props = {
   subtitle?: string;
   showBack?: boolean;
   rightAction?: ReactNode;
+  /**
+   * Tighter vertical rhythm — for screens whose main content wants the spare
+   * height (e.g. a full-bleed game arena). Spacing only: the frozen
+   * title/subtitle type scale is unchanged.
+   */
+  compact?: boolean;
+  /**
+   * Lines allowed for the subtitle before truncating. Defaults to 1 (the
+   * existing behaviour); pass 2 for descriptive subtitles that would
+   * otherwise clip on small screens.
+   */
+  subtitleLines?: number;
 };
 
 /**
@@ -16,11 +28,18 @@ type Props = {
  * slot. Title/subtitle typography is frozen (spec section 7): every screen
  * uses this exact scale, never a one-off size.
  */
-export function ScreenHeader({ title, subtitle, showBack, rightAction }: Props) {
+export function ScreenHeader({
+  title,
+  subtitle,
+  showBack,
+  rightAction,
+  compact = false,
+  subtitleLines = 1,
+}: Props) {
   const router = useRouter();
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, compact && styles.wrapCompact]}>
       <View style={styles.row}>
         {showBack && (
           <TouchableOpacity onPress={() => router.back()} style={styles.back} activeOpacity={0.7}>
@@ -29,7 +48,11 @@ export function ScreenHeader({ title, subtitle, showBack, rightAction }: Props) 
         )}
         <View style={styles.titleBlock}>
           <Text style={styles.title} numberOfLines={1}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
+          {subtitle ? (
+            <Text style={styles.subtitle} numberOfLines={subtitleLines}>
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
         <View style={styles.rightSlot}>
           {rightAction}
@@ -44,6 +67,7 @@ const styles = StyleSheet.create({
   // tokens are shared by inter-card spacing elsewhere, and the header's own
   // rhythm is tighter than the space between cards below it.
   wrap: { marginBottom: 20, paddingTop: 12 },
+  wrapCompact: { marginBottom: 10, paddingTop: 3 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

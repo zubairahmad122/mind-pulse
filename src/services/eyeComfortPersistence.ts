@@ -10,7 +10,9 @@ export type EyeComfortRating = EyeComfortValue;
 
 export interface EyeComfortRecord {
   completedAt: number;
-  sessionType: 'eye-reset';
+  /** Normalised to 'cvs-protocol' for new writes; legacy 'eye-reset' records
+   *  are still read back (no Firestore schema rewrite). */
+  sessionType: 'cvs-protocol' | 'eye-reset';
   before: EyeComfortRating | null;
   after: EyeComfortRating | null;
 }

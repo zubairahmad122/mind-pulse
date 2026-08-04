@@ -44,6 +44,7 @@ export function useDailyEyeGoals(uid?: string): DailyEyeGoals {
     setLoading(false);
   }, [uid]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: load-on-mount data fetch. load() sets loading synchronously (initial mount AND every reload), which is the correct UX here — pinned by useDailyEyeGoals.characterization.test.ts.
   useEffect(() => { void load(); }, [load]);
 
   const completedCount =

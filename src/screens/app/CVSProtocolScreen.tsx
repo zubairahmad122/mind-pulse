@@ -22,6 +22,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Animated, {
+  cancelAnimation,
   Easing,
   FadeIn,
   FadeOut,
@@ -51,12 +52,25 @@ import { PillarProvider } from '@/context/PillarContext';
 import { useAuth } from '@/context/AuthContext';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
 import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
+import { useSessionLifecycle } from '@/hooks/useSessionLifecycle';
+import { useSessionClock } from '@/hooks/useSessionClock';
 import { useEyeProgress } from '@/hooks/useEyeProgress';
+import { useProgressStore } from '@/stores/useProgressStore';
+import {
+  cvsCancelResumeBeat,
+  cvsCanComplete,
+  cvsDeferredStepApplies,
+  cvsPauseVoiceOnBackground,
+  cvsResumeVoiceOnForeground,
+  cvsShouldFreezeActive,
+  cvsTimingBlocked,
+} from '@/utils/cvsLifecycle';
 import {
   saveEyeComfortRecord,
   type EyeComfortRating,
 } from '@/services/eyeComfortPersistence';
 import { getComfortChange } from '@/utils/eyeComfort';
+import { EYE_RESET_STEPS_SECONDS } from '@/constants/eyeRelax';
 
 // One accent for the whole Eyes feature — matches the Eye tab (was
 // PILLAR_THEME.eyes.accent, a different teal-cyan from the separate
@@ -76,14 +90,19 @@ interface EyeStep {
 // and "Pencil Push-Ups" sends people looking for a pencil. Accents are one
 // desaturated premium palette (soft cyan / indigo / mint / amber), not
 // full-saturation primaries.
+// Step lengths come from the single source of truth (EYE_RESET_STEPS_SECONDS
+// in @/constants/eyeRelax) so the displayed duration can never drift from
+// the real session. Order must match the shared constant.
+const STEP_SECONDS = EYE_RESET_STEPS_SECONDS;
+
 const STEPS: EyeStep[] = [
-  { id: 'circle', icon: RotateCw, accent: '#7dd3fc', title: 'Circle Tracking', durationSeconds: 25, what: 'Follow the circle.', coach: 'Keep your head still. Follow the glowing dot using only your eyes.', intro: 'Circle. Follow the orbiting dot smoothly with your eyes only. Keep your head still.', cues: [{ atSec: 12, text: 'Stay smooth — no jumping.' }] },
-  { id: 'square', icon: Square, accent: '#a5b4fc', title: 'Square Tracking', durationSeconds: 25, what: 'Track the square.', coach: 'Move your eyes comfortably along the square.', intro: 'Square. Trace the square path gently with your eyes. Keep your head relaxed.', cues: [{ atSec: 12, text: 'Follow each corner without forcing the movement.' }] },
-  { id: 'triangle', icon: Triangle, accent: '#6ee7b7', title: 'Triangle Tracking', durationSeconds: 25, what: 'Follow the triangle.', coach: 'Let your eyes travel gently between each corner.', intro: 'Triangle. Follow the triangular path at a comfortable pace.', cues: [{ atSec: 12, text: 'Keep the diagonal movement gentle.' }] },
-  { id: 'cardinal', icon: Grid3x3, accent: '#fcd34d', title: 'Nine Point Focus', durationSeconds: 30, what: 'Pause on every point.', coach: 'Pause briefly on each glowing point.', intro: 'Nine Point Focus. Visit each glowing position without straining or forcing your gaze.', cues: [{ atSec: 14, text: 'Stay relaxed as the position changes.' }, { atSec: 24, text: 'Almost through all nine — keep it comfortable.' }] },
-  { id: 'saccade', icon: Zap, accent: '#fde68a', title: 'Quick Focus', durationSeconds: 30, what: 'Shift focus smoothly.', coach: 'Move your eyes between the two glowing dots. Keep your head still.', intro: 'Quick Focus. Shift between horizontal, vertical, and diagonal targets at a comfortable pace.', cues: [{ atSec: 8, text: 'Horizontal — side to side.' }, { atSec: 16, text: 'Vertical — up and down.' }, { atSec: 24, text: 'Diagonal — corner to corner.' }] },
-  { id: 'convergence', icon: Minimize2, accent: '#fda4af', title: 'Near–Far Focus', durationSeconds: 40, what: 'Follow the dot closer.', coach: 'Focus on the dot as it moves closer, then farther away.', intro: 'Near Far Focus. Follow the dot as it comes closer. If you see double, look away and start again.', cues: [{ atSec: 12, text: 'Stop if it doubles or blurs.' }, { atSec: 24, text: 'Bring it back, slowly.' }, { atSec: 35, text: 'Two more cycles.' }], important: true },
-  { id: 'nearfar', icon: ArrowLeftRight, accent: '#5eead4', title: 'Focus Change', durationSeconds: 35, what: 'Change focus naturally.', coach: 'Shift your attention between the glowing points.', intro: 'Focus Change. Look at the near target, then shift to the far target. Keep the change comfortable.', cues: [{ atSec: 14, text: 'Now near… now far.' }, { atSec: 28, text: 'Keep switching — stay relaxed.' }], important: true },
+  { id: 'circle', icon: RotateCw, accent: '#7dd3fc', title: 'Circle Tracking', durationSeconds: STEP_SECONDS[0], what: 'Follow the circle.', coach: 'Keep your head still. Follow the glowing dot using only your eyes.', intro: 'Circle. Follow the orbiting dot smoothly with your eyes only. Keep your head still.', cues: [{ atSec: 12, text: 'Stay smooth — no jumping.' }] },
+  { id: 'square', icon: Square, accent: '#a5b4fc', title: 'Square Tracking', durationSeconds: STEP_SECONDS[1], what: 'Track the square.', coach: 'Move your eyes comfortably along the square.', intro: 'Square. Trace the square path gently with your eyes. Keep your head relaxed.', cues: [{ atSec: 12, text: 'Follow each corner without forcing the movement.' }] },
+  { id: 'triangle', icon: Triangle, accent: '#6ee7b7', title: 'Triangle Tracking', durationSeconds: STEP_SECONDS[2], what: 'Follow the triangle.', coach: 'Let your eyes travel gently between each corner.', intro: 'Triangle. Follow the triangular path at a comfortable pace.', cues: [{ atSec: 12, text: 'Keep the diagonal movement gentle.' }] },
+  { id: 'cardinal', icon: Grid3x3, accent: '#fcd34d', title: 'Nine Point Focus', durationSeconds: STEP_SECONDS[3], what: 'Pause on every point.', coach: 'Pause briefly on each glowing point.', intro: 'Nine Point Focus. Visit each glowing position without straining or forcing your gaze.', cues: [{ atSec: 14, text: 'Stay relaxed as the position changes.' }, { atSec: 24, text: 'Almost through all nine — keep it comfortable.' }] },
+  { id: 'saccade', icon: Zap, accent: '#fde68a', title: 'Quick Focus', durationSeconds: STEP_SECONDS[4], what: 'Shift focus smoothly.', coach: 'Move your eyes between the two glowing dots. Keep your head still.', intro: 'Quick Focus. Shift between horizontal, vertical, and diagonal targets at a comfortable pace.', cues: [{ atSec: 8, text: 'Horizontal — side to side.' }, { atSec: 16, text: 'Vertical — up and down.' }, { atSec: 24, text: 'Diagonal — corner to corner.' }] },
+  { id: 'convergence', icon: Minimize2, accent: '#fda4af', title: 'Near–Far Focus', durationSeconds: STEP_SECONDS[5], what: 'Follow the dot closer.', coach: 'Focus on the dot as it moves closer, then farther away.', intro: 'Near Far Focus. Follow the dot as it comes closer. If you see double, look away and start again.', cues: [{ atSec: 12, text: 'Stop if it doubles or blurs.' }, { atSec: 24, text: 'Bring it back, slowly.' }, { atSec: 35, text: 'Two more cycles.' }], important: true },
+  { id: 'nearfar', icon: ArrowLeftRight, accent: '#5eead4', title: 'Focus Change', durationSeconds: STEP_SECONDS[6], what: 'Change focus naturally.', coach: 'Shift your attention between the glowing points.', intro: 'Focus Change. Look at the near target, then shift to the far target. Keep the change comfortable.', cues: [{ atSec: 14, text: 'Now near… now far.' }, { atSec: 28, text: 'Keep switching — stay relaxed.' }], important: true },
 ];
 
 // Mid-session encouragement, shown on the transition beat AFTER this many
@@ -180,6 +199,31 @@ function StepIconBadge({ icon: Icon, accent }: { icon: LucideIcon; accent: strin
   );
 }
 
+/** Live "you are being tracked" cue during the active phase — a slow pulsing
+ * cyan dot + label, so the session clearly reads as in-progress (it hides
+ * while paused or between exercises). */
+function TrackingBadge() {
+  const pulse = useSharedValue(0.4);
+
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withTiming(1, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+    return () => cancelAnimation(pulse);
+  }, [pulse]);
+
+  const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
+
+  return (
+    <View style={styles.trackingBadge}>
+      <Animated.View style={[styles.trackingDot, pulseStyle]} />
+      <Text style={styles.trackingText}>TRACKING</Text>
+    </View>
+  );
+}
+
 function StepDots({ count, current }: { count: number; current: number }) {
   return <View style={styles.dotsRow}>{Array.from({ length: count }).map((_, i) => {
     const done = i < current; const active = i === current;
@@ -216,11 +260,14 @@ export default function CVSProtocolScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { recordCompletion, streak } = useEyeProgress(user?.uid);
+  const logEyeExercise = useProgressStore(state => state.logEyeExercise);
   const { play, stop: stopVoice, pause: pauseVoice, resume: resumeVoice } = useAudioGuide();
 
   const [phase, setPhase] = useState<Phase>('idle');
   const [stepIndex, setStepIndex] = useState(0);
-  const [secondsLeft, setSecondsLeft] = useState(STEPS[0].durationSeconds);
+  // Bump to force a fresh countdown without changing the step (Restart
+  // Exercise / re-run) — the step timer itself lives in useSessionClock.
+  const [clockNonce, setClockNonce] = useState(0);
   const [paused, setPaused] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
   // "✓ Circle Complete → Next: Square Tracking" beat between exercises.
@@ -237,11 +284,22 @@ export default function CVSProtocolScreen() {
   const [comfortAfter, setComfortAfter] = useState<EyeComfortRating | null>(null);
   useSessionKeepAwake(phase === 'active', 'mindpulse-cvs-protocol');
 
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Guard: 'Save & Finish' and 'Skip check-in' can both fire completeSession;
+  // this ref makes the completion write exactly-once per session.
+  const completedRef = useRef(false);
   const interstitialTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Background/lock handling: while the app is away no step timer may tick
+  // and no step may auto-advance. A step change interrupted by a background
+  // is deferred and replayed on return.
+  const isBackgroundedRef = useRef(false);
+  const pendingStepRef = useRef<number | null>(null);
+  const pendingRecoveryRef = useRef(false);
   const contentOpacity = useSharedValue(1);
   const completionScale = useSharedValue(0.85);
   const completionOpacity = useSharedValue(0);
+  // Smooth overall-session progress bar — animates toward each tick value
+  // instead of snapping the fill width once a second.
+  const progressAnim = useSharedValue(0);
   // Per-exercise coaching line: visible at the start, fades out after ~3s so
   // the screen stays clean while the user tracks the target.
   const coachOpacity = useSharedValue(0);
@@ -250,32 +308,69 @@ export default function CVSProtocolScreen() {
 
   const step = STEPS[stepIndex];
 
-  // Date.now() delta so background/resume doesn't skip seconds
-  const lastTickRef = useRef(Date.now());
-
-  function clearTimer() { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } }
-
-  useEffect(() => {
-    clearTimer();
-    if (phase !== 'active' || paused || interstitial) return;
-    if (secondsLeft <= 0) { goNext(); return; }
-    lastTickRef.current = Date.now();
-    timerRef.current = setInterval(() => {
-      // Consume only WHOLE elapsed seconds and advance the reference by
-      // exactly that much. The old code reset the reference on every 500ms
-      // tick, so the delta was always floor(0.5s) = 0 and the countdown
-      // never moved.
-      const delta = Math.floor((Date.now() - lastTickRef.current) / 1000);
-      if (delta > 0) {
-        lastTickRef.current += delta * 1000;
-        setSecondsLeft(s => Math.max(0, s - delta));
+  // ─── Background / lock handling ────────────────────────────────────────────
+  // The step timer, 3-2-1 countdown and 20-20-20 recovery all freeze while
+  // the app is away. On return the existing paused/resume UI takes over, so
+  // nothing auto-resumes and no time is lost while backgrounded. A step
+  // change interrupted mid-transition is replayed on return.
+  const { isBackgrounded } = useSessionLifecycle({
+    onPause: () => {
+      isBackgroundedRef.current = true;
+      // An in-flight 3-2-1 resume beat must not finish while away — it would
+      // auto-resume the session (no paused overlay on return, voice playing
+      // in the background). Cancel it so the user resumes deliberately.
+      if (cvsCancelResumeBeat(phase, resumeCountdown)) setResumeCountdown(null);
+      if (cvsShouldFreezeActive(phase) && !paused) {
+        // Freeze the live exercise (voice included) and surface the normal
+        // paused overlay on return — same UX as a manual pause.
+        pauseVoice();
+        setPaused(true);
+      } else if (cvsPauseVoiceOnBackground(phase)) {
+        pauseVoice();
       }
-    }, 250); // fast checks keep the display accurate even after backgrounding
-    return clearTimer;
-  }, [phase, paused, secondsLeft, interstitial]);
+    },
+    onResume: () => {
+      isBackgroundedRef.current = false;
+      // Voice-only phases (calibrate intro) simply continue on return.
+      if (cvsResumeVoiceOnForeground(phase)) resumeVoice();
+      // Replay any step change interrupted by the background.
+      if (cvsDeferredStepApplies(pendingStepRef.current, false)) {
+        const next = pendingStepRef.current as number;
+        pendingStepRef.current = null;
+        if (phase === 'active') {
+          clearInterstitialTimers();
+          applyStepAdvance(next);
+          setInterstitial(null);
+          contentOpacity.value = withTiming(1, { duration: 450 });
+        }
+      } else if (phase === 'active' && interstitial) {
+        // The step swap already ran; only the "complete → next" clear was
+        // deferred while away.
+        clearInterstitialTimers();
+        setInterstitial(null);
+        contentOpacity.value = withTiming(1, { duration: 450 });
+      }
+      if (pendingRecoveryRef.current) {
+        pendingRecoveryRef.current = false;
+        setPaused(false);
+        setRecoverySecs(20);
+        setPhase('recovery');
+      }
+    },
+  });
+
+  // The step countdown — wall-clock based, freezes on pause OR background,
+  // resumes from the exact remaining time, fires completion once per step.
+  // `clockNonce` bumps on explicit restarts (Restart Exercise / re-run).
+  const { secondsLeft } = useSessionClock({
+    totalSeconds: step.durationSeconds,
+    running: phase === 'active',
+    paused: cvsTimingBlocked('active', isBackgrounded, paused) || interstitial !== null,
+    resetKey: `${stepIndex}:${clockNonce}`,
+    onComplete: goNext,
+  });
 
   useEffect(() => () => {
-    clearTimer();
     for (const t of interstitialTimersRef.current) clearTimeout(t);
     stopVoice();
   }, [stopVoice]);
@@ -300,22 +395,45 @@ export default function CVSProtocolScreen() {
 
   // Rotate the micro-tip every few seconds while tracking.
   useEffect(() => {
-    if (phase !== 'active' || paused || interstitial) return;
+    if (phase !== 'active' || paused || interstitial || isBackgrounded) return;
     const interval = setInterval(
       () => setTipIdx(i => (i + 1) % ROTATING_TIPS.length),
       TIP_ROTATE_MS,
     );
     return () => clearInterval(interval);
-  }, [phase, paused, interstitial]);
+  }, [phase, paused, interstitial, isBackgrounded]);
 
   const elapsedBefore = STEPS.slice(0, stepIndex).reduce((s, x) => s + x.durationSeconds, 0);
   const elapsed = elapsedBefore + (step.durationSeconds - secondsLeft);
   const progressPct = Math.min(1, elapsed / TOTAL_DURATION);
 
+  useEffect(() => {
+    progressAnim.value = withTiming(progressPct, {
+      duration: 400,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [progressPct, progressAnim]);
+  const progressFillStyle = useAnimatedStyle(() => ({
+    width: `${Math.round(progressAnim.value * 100)}%`,
+  }));
+
+  function clearInterstitialTimers() {
+    for (const t of interstitialTimersRef.current) clearTimeout(t);
+    interstitialTimersRef.current = [];
+  }
+
+  /** Swap the exercise; its countdown is owned by useSessionClock, so the
+   * resetKey change (stepIndex) starts the new step fresh. */
+  function applyStepAdvance(next: number) {
+    setStepIndex(next);
+  }
+
   function goNext() {
-    clearTimer();
     const next = stepIndex + 1;
     if (next >= STEPS.length) {
+      // Final exercise done → 20-20-20 recovery. Never auto-advance into it
+      // while away; defer until the app returns.
+      if (isBackgroundedRef.current) { pendingRecoveryRef.current = true; return; }
       contentOpacity.value = withTiming(0, { duration: 320 });
       stopVoice();
       interstitialTimersRef.current.push(setTimeout(() => {
@@ -323,6 +441,12 @@ export default function CVSProtocolScreen() {
         setRecoverySecs(20);
         setPhase('recovery');
       }, 360));
+      return;
+    }
+    if (isBackgroundedRef.current) {
+      // Never auto-advance a step while backgrounded — defer the whole
+      // "complete → next" beat until the app returns.
+      pendingStepRef.current = next;
       return;
     }
     // Premium transition: fade the exercise out (~400ms), show the
@@ -335,10 +459,11 @@ export default function CVSProtocolScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     contentOpacity.value = withTiming(0, { duration: 400, easing: Easing.in(Easing.ease) });
     interstitialTimersRef.current.push(setTimeout(() => {
-      setStepIndex(next);
-      setSecondsLeft(STEPS[next].durationSeconds);
+      if (isBackgroundedRef.current) { pendingStepRef.current = next; return; }
+      applyStepAdvance(next);
     }, 420));
     interstitialTimersRef.current.push(setTimeout(() => {
+      if (isBackgroundedRef.current) return; // replayed on return
       setInterstitial(null);
       contentOpacity.value = withTiming(1, { duration: 450, easing: Easing.out(Easing.ease) });
       void Haptics.selectionAsync();
@@ -363,7 +488,9 @@ export default function CVSProtocolScreen() {
     setResumeCountdown(3);
   }
   useEffect(() => {
-    if (resumeCountdown === null) return;
+    // Frozen while backgrounded (belt & braces on top of the onPause cancel)
+    // so the beat can never complete while the app is away.
+    if (resumeCountdown === null || isBackgrounded) return;
     if (resumeCountdown <= 0) {
       const t = setTimeout(() => {
         setResumeCountdown(null);
@@ -374,7 +501,7 @@ export default function CVSProtocolScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const t = setTimeout(() => setResumeCountdown(n => (n ?? 1) - 1), 650);
     return () => clearTimeout(t);
-  }, [resumeCountdown]);
+  }, [resumeCountdown, isBackgrounded]);
 
   useEffect(() => {
     if (paused) {
@@ -393,9 +520,10 @@ export default function CVSProtocolScreen() {
     setPhase('countdown');
   }
 
-  // 3 → 2 → 1 → "Begin" → first exercise (light haptic per digit).
+  // 3 → 2 → 1 → "Begin" → first exercise (light haptic per digit). Frozen
+  // while the app is backgrounded; continues where it left off on return.
   useEffect(() => {
-    if (phase !== 'countdown') return;
+    if (phase !== 'countdown' || cvsTimingBlocked(phase, isBackgrounded, false)) return;
     if (prepNum <= 0) {
       // Let "Begin" breathe for a beat before the exercise fades in.
       const t = setTimeout(() => {
@@ -408,10 +536,12 @@ export default function CVSProtocolScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const t = setTimeout(() => setPrepNum(n => n - 1), 750);
     return () => clearTimeout(t);
-  }, [phase, prepNum, contentOpacity]);
+  }, [phase, prepNum, contentOpacity, isBackgrounded]);
 
   function requestStart() {
     void Haptics.selectionAsync();
+    // A fresh session may write a new completion record again.
+    completedRef.current = false;
     setComfortBefore(null);
     setComfortAfter(null);
     setPhase('checkin-before');
@@ -420,7 +550,7 @@ export default function CVSProtocolScreen() {
   function begin(before: EyeComfortRating | null = comfortBefore) {
     void Haptics.selectionAsync();
     setComfortBefore(before);
-    setStepIndex(0); setSecondsLeft(STEPS[0].durationSeconds); setPaused(false);
+    setStepIndex(0); setClockNonce(n => n + 1); setPaused(false);
     activeStartedRef.current = false;
     // Calibration holds while the recorded session intro speaks (~20s),
     // then 3-2-1 into the first exercise. 30s cap in case audio stalls.
@@ -436,16 +566,27 @@ export default function CVSProtocolScreen() {
   }
 
   function completeSession(after: EyeComfortRating | null) {
-    const record = {
-      completedAt: Date.now(),
-      sessionType: 'eye-reset' as const,
-      before: comfortBefore,
-      after,
-    };
+    // Completion can only run in the foreground — while backgrounded the
+    // check-in is unreachable anyway; belt & braces on top of completedRef.
+    if (!cvsCanComplete(isBackgrounded)) return;
     setComfortAfter(after);
     setPhase('done');
-    void recordCompletion('eye-reset');
-    void saveEyeComfortRecord(user?.uid, record);
+    // Writes are normalised: Eye Reset records the activity id
+    // 'cvs-protocol' (previously wrote the legacy 'eye-reset' type — see
+    // eyeSessionIds.ts, which still resolves both to the same recovery id
+    // for back-compat). The progress-store counter updates exactly once
+    // per completed session.
+    if (!completedRef.current) {
+      completedRef.current = true;
+      void recordCompletion('cvs-protocol');
+      logEyeExercise();
+      void saveEyeComfortRecord(user?.uid, {
+        completedAt: Date.now(),
+        sessionType: 'cvs-protocol',
+        before: comfortBefore,
+        after,
+      });
+    }
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     play('eyes/reset-complete', 500, 1, { protect: true });
     completionOpacity.value = withTiming(1, { duration: 420 });
@@ -453,14 +594,16 @@ export default function CVSProtocolScreen() {
   }
 
   useEffect(() => {
-    if (phase !== 'recovery') return;
+    // 20-20-20 recovery freezes while away — it must not auto-advance into
+    // the after-check-in while the app is backgrounded.
+    if (phase !== 'recovery' || cvsTimingBlocked(phase, isBackgrounded, false)) return;
     if (recoverySecs <= 0) {
       const t = setTimeout(finishSession, 900);
       return () => clearTimeout(t);
     }
     const t = setTimeout(() => setRecoverySecs(s => s - 1), 1000);
     return () => clearTimeout(t);
-  }, [phase, recoverySecs]);
+  }, [phase, recoverySecs, isBackgrounded]);
 
   function repeatSession() {
     void Haptics.selectionAsync();
@@ -468,7 +611,7 @@ export default function CVSProtocolScreen() {
     requestStart();
   }
 
-  function exitNow() { clearTimer(); stopVoice(); setExitConfirm(false); router.back(); }
+  function exitNow() { stopVoice(); setExitConfirm(false); router.back(); }
 
   const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
   const completionStyle = useAnimatedStyle(() => ({ opacity: completionOpacity.value, transform: [{ scale: completionScale.value }] }));
@@ -490,7 +633,7 @@ export default function CVSProtocolScreen() {
                 Exercise {stepIndex + 1} of {STEPS.length}
               </Animated.Text>
               <StepDots count={STEPS.length} current={stepIndex} />
-              <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.round(progressPct * 100)}%` }]} /></View>
+              <View style={styles.progressTrack}><Animated.View style={[styles.progressFill, progressFillStyle]} /></View>
             </View>
           ) : (
             <View style={styles.headerTitle}><Text style={styles.headerTitleText}>Eye Reset</Text></View>
@@ -695,6 +838,9 @@ export default function CVSProtocolScreen() {
                 </StepCountdownRing>
               </View>
 
+              {/* Live tracking cue — hidden while paused or between steps */}
+              {!paused && !interstitial && <TrackingBadge />}
+
               <View style={styles.remainingBlock}>
                 <View style={styles.remainingRow}>
                   {/* key remount = soft fade on every tick, no hard number snap */}
@@ -776,7 +922,7 @@ export default function CVSProtocolScreen() {
                     style={styles.pausedTextBtn}
                     onPress={() => {
                       void Haptics.selectionAsync();
-                      setSecondsLeft(step.durationSeconds);
+                      setClockNonce(n => n + 1);
                       setPaused(false);
                       // Fresh run of the exercise = fresh guidance.
                       play(STEP_CLIPS[step.id], 400, 1);
@@ -1119,6 +1265,18 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,224,255,0.35)',
     textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 24,
   },
+
+  // Live tracking cue
+  trackingBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 12, paddingVertical: 5,
+    borderRadius: 100,
+    backgroundColor: 'rgba(0,224,255,0.08)',
+    borderWidth: 1, borderColor: 'rgba(0,224,255,0.28)',
+    marginBottom: 10,
+  },
+  trackingDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: ACCENT },
+  trackingText: { fontSize: 9.5, fontWeight: '800', letterSpacing: 1.4, color: ACCENT },
 
   // Next-up preview chip (slot reserves the space even while empty)
   nextUpSlot: { height: 30, marginBottom: 10, justifyContent: 'center' },

@@ -386,7 +386,7 @@ export function getInsightMessage(focusArea: FocusArea, score: number, hour: num
   if (focusArea === 'Eyes') {
     if (score < 25) return `Your eyes could use some recovery — try the Eye Reset Protocol this ${tod}.`;
     if (score < 50) return 'Eye strain is building up. A couple of short breaks would help.';
-    return 'Your eyes are doing well — a Comet Trace session keeps the streak going.';
+    return 'Your eyes are doing well — an Eye Reset session keeps the streak going.';
   }
   if (focusArea === 'Sleep') {
     if (score < 25) return 'Your sleep routine needs some support — try logging tonight\'s session.';

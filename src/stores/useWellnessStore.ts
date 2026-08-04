@@ -75,10 +75,14 @@ interface WellnessState {
   everPerfectDay: boolean;
   everNightOwlSession: boolean;
   everComeback: boolean;
+  /** Reached a 3+ hit streak (Rush Mode) in Focus Switch, ever. */
+  everRushMode: boolean;
   /** Local YYYY-MM-DD the Perfect Day toast last fired — guards it to once/day. */
   lastPerfectDayDate: string | null;
   /** True after a streak reset, until a fresh streak reaches 3 (or resets again). */
   watchingComeback: boolean;
+  /** Achievement ids already reported via trackAchievementUnlocked — never re-fires. */
+  seenAchievementIds: string[];
 
   // Actions
   calculateWellnessScore: () => void;
@@ -97,6 +101,11 @@ interface WellnessState {
   recordPerfectDayIfApplicable: () => void;
   /** Marks the lifetime Night Owl badge — a no-op once already recorded. */
   recordNightOwlIfApplicable: () => void;
+  /** Marks the lifetime Rush Mode badge — a no-op once already recorded. */
+  recordRushModeIfApplicable: () => void;
+  /** Diffs `ids` against previously-seen achievements, records the new ones,
+   * and returns just the newly-unlocked ids for the caller to report. */
+  markAchievementsUnlocked: (ids: string[]) => string[];
 }
 
 export const useWellnessStore = create<WellnessState>()(
@@ -122,8 +131,10 @@ export const useWellnessStore = create<WellnessState>()(
       everPerfectDay: false,
       everNightOwlSession: false,
       everComeback: false,
+      everRushMode: false,
       lastPerfectDayDate: null,
       watchingComeback: false,
+      seenAchievementIds: [],
 
       calculateWellnessScore: () => {
         const { eyeScore, sleepScore, relaxScore, mindScore } = get();
@@ -240,6 +251,20 @@ export const useWellnessStore = create<WellnessState>()(
         if (get().everNightOwlSession) return;
         set({ everNightOwlSession: true });
       },
+
+      recordRushModeIfApplicable: () => {
+        if (get().everRushMode) return;
+        set({ everRushMode: true });
+      },
+
+      markAchievementsUnlocked: (ids) => {
+        const { seenAchievementIds } = get();
+        const newlyUnlocked = ids.filter((id) => !seenAchievementIds.includes(id));
+        if (newlyUnlocked.length > 0) {
+          set({ seenAchievementIds: [...seenAchievementIds, ...newlyUnlocked] });
+        }
+        return newlyUnlocked;
+      },
     }),
     {
       name: 'mindpulse-wellness',
@@ -256,8 +281,10 @@ export const useWellnessStore = create<WellnessState>()(
         everPerfectDay: state.everPerfectDay,
         everNightOwlSession: state.everNightOwlSession,
         everComeback: state.everComeback,
+        everRushMode: state.everRushMode,
         lastPerfectDayDate: state.lastPerfectDayDate,
         watchingComeback: state.watchingComeback,
+        seenAchievementIds: state.seenAchievementIds,
       }),
     },
   ),

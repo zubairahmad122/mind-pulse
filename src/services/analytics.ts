@@ -62,3 +62,30 @@ export function trackPaywallShown(featureId: string): void {
 export function trackPurchase(productId: string): void {
   trackEvent('purchase_success', { product_id: productId });
 }
+
+// ─── Engagement / retention ──────────────────────────────────────────────────
+
+/** Fired once per app session, from the check-in that runs on cold open. */
+export function trackAppOpen(): void {
+  trackEvent('app_open');
+}
+
+/** Fired the first time an achievement is ever earned (never repeats). */
+export function trackAchievementUnlocked(achievementId: string): void {
+  trackEvent('achievement_unlocked', { achievement_id: achievementId });
+}
+
+/** The weekly grace day covered a missed day — streak survived. */
+export function trackStreakSavedByFreeze(streak: number): void {
+  trackEvent('streak_saved_by_freeze', { streak });
+}
+
+/** Two+ days missed (or no freeze left) — streak reset to 1. */
+export function trackStreakBroken(): void {
+  trackEvent('streak_broken');
+}
+
+/** Today's assigned daily challenge was just completed. */
+export function trackChallengeCompleted(feature: string): void {
+  trackEvent('challenge_completed', { feature });
+}

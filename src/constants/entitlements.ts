@@ -4,8 +4,6 @@
  */
 
 export type FeatureId =
-  | 'eye_focus_sprint'
-  | 'eye_dichoptic'
   | 'relax_body_scan'
   | 'relax_tension_release'
   | 'relax_reset_wave'
@@ -23,10 +21,6 @@ export type EntitlementTier = 'free' | 'pro';
 export const PRO_ENTITLEMENT_ID = 'pro';
 
 export const ENTITLEMENTS: Record<FeatureId, EntitlementTier> = {
-  // Advanced eye games
-  eye_focus_sprint: 'pro',
-  eye_dichoptic: 'pro',
-
   // Deep relax sessions
   relax_body_scan: 'pro',
   relax_tension_release: 'pro',
@@ -50,8 +44,6 @@ export const ENTITLEMENTS: Record<FeatureId, EntitlementTier> = {
 
 /** Display names used by lock UIs (e.g. PaywallGate). */
 export const FEATURE_NAMES: Record<FeatureId, string> = {
-  eye_focus_sprint: 'Focus Sprint',
-  eye_dichoptic: 'Dichoptic Training',
   relax_body_scan: 'Body Scan',
   relax_tension_release: 'Tension Release',
   relax_sleep_drop: 'Sleep Drop',
@@ -66,8 +58,6 @@ export const FEATURE_NAMES: Record<FeatureId, string> = {
 
 /** One-line, feature-specific pitch shown on the locked-feature card — replaces the generic "This is a Pro feature." */
 export const FEATURE_DESCRIPTIONS: Record<FeatureId, string> = {
-  eye_focus_sprint: 'Play a near-and-far focus-switching game with comfort-first guidance. Available with MindPulse Pro.',
-  eye_dichoptic: 'Play a red/cyan color-coordination activity. This is not clinician-prescribed vision therapy. Available with MindPulse Pro.',
   relax_body_scan: 'A guided body scan to release tension zone by zone. Available with MindPulse Pro.',
   relax_tension_release: 'A guided session to release physical tension and reset your nervous system. Available with MindPulse Pro.',
   relax_sleep_drop: 'A calming wind-down session to help you drop into sleep. Available with MindPulse Pro.',

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { trackAppOpen } from '@/services/analytics';
 import { useProgressStore } from '@/stores/useProgressStore';
 
 /**
@@ -11,5 +12,6 @@ export function useDailyCheckIn(): void {
 
   useEffect(() => {
     checkIn();
+    trackAppOpen();
   }, [checkIn]);
 }

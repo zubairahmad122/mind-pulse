@@ -61,11 +61,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const googleSignInInProgress = useRef(false);
-  const revenueCatIdentified = useRef(false);
+  // Configure before rendering SubscriptionProvider. React child effects may
+  // run before this provider's effects, so configuring only in useEffect can
+  // race the first Purchases.getCustomerInfo() call.
+  configurePurchases();
 
   useEffect(() => {
-    configurePurchases();
-
     try {
       GoogleSignin.configure({
         webClientId: '742478012348-ehcquc3rscpo7rlt9dic2diq10sq8nug.apps.googleusercontent.com',
@@ -79,22 +80,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(u);
       if (u) {
         setIsGuestMode(false);
-
-        // Only identify real (non-anonymous) accounts. Leaving anonymous
-        // users on RevenueCat's own anonymous ID lets `logIn` below
-        // auto-alias any anonymous purchase history onto the signed-in
-        // account, and avoids minting a throwaway RC user per guest install.
-        if (!u.isAnonymous) {
-          revenueCatIdentified.current = true;
-          Purchases.logIn(u.uid).catch(err => {
-            console.warn('[RevenueCat] logIn failed', err);
-          });
-        }
-      } else if (revenueCatIdentified.current) {
-        revenueCatIdentified.current = false;
-        Purchases.logOut().catch(err => {
-          console.warn('[RevenueCat] logOut failed', err);
-        });
       }
       setLoading(false);
     });

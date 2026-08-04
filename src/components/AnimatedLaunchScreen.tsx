@@ -194,10 +194,12 @@ const styles = StyleSheet.create({
   },
   tagline: {
     marginTop: 12,
+    paddingHorizontal: 4,
     color: 'rgba(126,184,255,0.62)',
     fontFamily: FONTS.bodySemi,
     fontSize: 10,
     letterSpacing: 2.2,
+    textAlign: 'center',
   },
   loading: {
     position: 'absolute',

@@ -29,6 +29,20 @@ type Props = {
    * scroll to reach it. Only meaningful when `scroll` is true.
    */
   footer?: React.ReactNode;
+  /**
+   * Set false to freeze the scroll position — e.g. while an interactive game
+   * is running, so dragging near a moving target can't scroll the playfield
+   * out from under the player's finger. Only meaningful when `scroll` is true.
+   */
+  scrollEnabled?: boolean;
+  /**
+   * Indices (within `children`) of top-level items to pin at the top of the
+   * scroll area — e.g. `[0]` to keep the screen's own `ScreenHeader` visible
+   * while the rest of the content scrolls beneath it. Passed straight
+   * through to the underlying `ScrollView`. Only meaningful when `scroll` is
+   * true.
+   */
+  stickyHeaderIndices?: number[];
 };
 
 export function ScreenShell({
@@ -40,6 +54,8 @@ export function ScreenShell({
   pillar = 'mind',
   ambient,
   footer,
+  scrollEnabled = true,
+  stickyHeaderIndices,
 }: Props & { ambient?: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   // On tab screens this is the floating glass bar's reserved space; 0 elsewhere.
@@ -64,6 +80,8 @@ export function ScreenShell({
       ]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      scrollEnabled={scrollEnabled}
+      stickyHeaderIndices={stickyHeaderIndices}
     >
       {children}
     </ScrollView>
