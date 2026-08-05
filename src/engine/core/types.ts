@@ -29,82 +29,17 @@ export type EndReason = 'completed' | 'failed' | 'quit' | 'timeout';
  * Which sprite-sheet cell a node draws with. The engine only ever names a
  * shape; how that shape is rasterised is entirely the renderer's business,
  * which is what keeps `core/` free of Skia.
- *
- * Cells 0–3 are the generic primitives the runtime itself needs (particles,
- * glows, telegraph rings). Cells 4–19 are *silhouettes*: a hull reads as a
- * spacecraft, a drone reads as a hostile, a rock reads as debris. That
- * distinction is the whole reason they exist — a scene built only from discs
- * and rings reads as a benchmark no matter how well it is animated, because
- * the player has nothing to recognise. Adding shapes here costs nothing at
- * draw time: the atlas is still a single draw call, it just samples a
- * different cell.
- *
- * **Directional sprites point along −Y (up) at rotation 0.** A node aiming
- * along a heading therefore uses `rotation = heading + Math.PI / 2`.
  */
 export const Sprite = {
   Glow: 0,
   Disc: 1,
   Ring: 2,
   Square: 3,
-  /** Player spacecraft hull — swept-wing dart. */
-  Hull: 4,
-  /** Cockpit canopy, overlaid on the hull in a brighter tint. */
-  Canopy: 5,
-  /** Hostile drone — hexagonal body with forward mandibles. */
-  Drone: 6,
-  /** Energy gate — two facing staple brackets with a clear gap between. */
-  Gate: 7,
-  /**
-   * One arc segment of a segmented ring.
-   *
-   * Unlike every other cell, this shape is drawn *around* the cell centre
-   * rather than filling it: the node is positioned at the ring's centre and
-   * rotated, so N nodes at the same position with different rotations form a
-   * ring. Corridor frames and gate rings are built this way. See
-   * `RING_SEG_MID_RATIO` for turning a radius into a node size.
-   */
-  RingSeg: 8,
-  /** Trapezoid armour plate — hull plating on large ships and structures. */
-  ArmorPlate: 9,
-  /** Solid chevron — direction cues and speed marks. */
-  Chevron: 10,
-  /** Four-point sparkle for starfield and impact glints. */
-  Star: 11,
-  /** Rounded capsule — beams, engine trails and speed lines. */
-  Capsule: 12,
-  /** Filled hexagon — ship cores, turret housings, pickup interiors. */
-  Hex: 13,
-  /** Four-corner targeting bracket — attack telegraphs and lock-ons. */
-  Reticle: 14,
-  /** Elongated triangle — destruction debris. */
-  Shard: 15,
-  /** Irregular asteroid / relay wreckage. */
-  Rock: 16,
-  /** Structural beam with end caps — corridor pylons and barriers. */
-  Strut: 17,
-  /** Tapered projectile. */
-  Bolt: 18,
-  /** Pickup shell — a notched hexagonal pod. */
-  Pod: 19,
 } as const;
 export type SpriteId = (typeof Sprite)[keyof typeof Sprite];
 
 /** Number of distinct sprite cells — sizes the sprite sheet and its rects. */
-export const SPRITE_COUNT = 20;
-
-/**
- * Where `Sprite.RingSeg`'s arc sits, as a fraction of the node's size.
- *
- * The arc's mid-line is at 29px in a 64px cell, so a segment ring of radius R
- * needs `size = R / RING_SEG_MID_RATIO`. Exported from core because the
- * *game* decides ring radii and must be able to express them in px without
- * knowing anything else about how the sheet is rasterised.
- */
-export const RING_SEG_MID_RATIO = 29 / 64;
-
-/** Same idea for `Sprite.Ring`: its stroke circle sits at 29px of 64. */
-export const RING_RADIUS_RATIO = 29 / 64;
+export const SPRITE_COUNT = 4;
 
 /**
  * One simulated object.

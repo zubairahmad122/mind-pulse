@@ -150,38 +150,22 @@ function SkiaGameCanvasImpl({
     [onPointer],
   );
 
-  // `.runOnJS(true)` keeps the handlers on the JS thread, where the input
+  // `.runOnJS(true)` keeps the handler on the JS thread, where the input
   // queue lives. Touches arrive a handful of times a second, so the boundary
   // crossing is irrelevant here — unlike the per-frame scene, which is
   // exactly why that goes the other way through a shared value.
-  //
-  // Pan and Tap run *simultaneously* rather than racing. A racing tap would
-  // be swallowed the moment a drag was in progress, which is precisely when
-  // a game most needs it: one thumb steering, a second finger tapping to
-  // spend a resource. Running both means the drag is never interrupted and
-  // the tap still lands, and the two arrive on separate phases so a game
-  // never has to guess which one the player meant.
   const gesture = useMemo(
     () =>
-      Gesture.Simultaneous(
-        Gesture.Pan()
-          .minDistance(0)
-          .maxPointers(2)
-          .runOnJS(true)
-          .onBegin(e => emit('down', e.x, e.y))
-          .onUpdate(e => emit('move', e.x, e.y))
-          .onEnd(e => emit('up', e.x, e.y))
-          .onFinalize((e, success) => {
-            if (!success) emit('cancel', e.x, e.y);
-          }),
-        Gesture.Tap()
-          .maxDuration(260)
-          .maxDistance(18)
-          .runOnJS(true)
-          .onEnd((e, success) => {
-            if (success) emit('tap', e.x, e.y);
-          }),
-      ),
+      Gesture.Pan()
+        .minDistance(0)
+        .maxPointers(2)
+        .runOnJS(true)
+        .onBegin(e => emit('down', e.x, e.y))
+        .onUpdate(e => emit('move', e.x, e.y))
+        .onEnd(e => emit('up', e.x, e.y))
+        .onFinalize((e, success) => {
+          if (!success) emit('cancel', e.x, e.y);
+        }),
     [emit],
   );
 
@@ -201,12 +185,37 @@ function SkiaGameCanvasImpl({
           colors={colors}
           colorBlendMode="modulate"
         />
+        {font ? <UiThreadHeartbeat packed={packed} font={font} /> : null}
         {font
           ? popupSlots.map(i => <PopupSlot key={i} index={i} popups={popups} font={font} />)
           : null}
       </Canvas>
     </GestureDetector>
   );
+}
+
+/**
+ * Temporary diagnostic. Renders, on the canvas itself, what the UI thread
+ * currently sees in the packed buffer: node count, the first node's x, and
+ * the first float of the header. If these numbers are static while the JS-side
+ * HUD is clearly advancing, the shared value is not propagating; if they
+ * advance while sprites do not move, the fault is in the atlas inputs.
+ * Remove once the canvas is confirmed live.
+ */
+function UiThreadHeartbeat({
+  packed,
+  font,
+}: {
+  packed: SharedValue<Float32Array>;
+  font: NonNullable<ReturnType<typeof useFont>>;
+}) {
+  const text = useDerivedValue(() => {
+    const p = packed.value;
+    const n = p ? p[0] : -1;
+    const x = p && p.length > HEADER_LENGTH ? p[HEADER_LENGTH] : -1;
+    return `n=${n} x=${Math.round(x)} len=${p ? p.length : -1}`;
+  });
+  return <SkiaText x={12} y={28} text={text} font={font} color={WHITE} />;
 }
 
 function PopupSlot({

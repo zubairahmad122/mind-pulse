@@ -259,6 +259,7 @@ export default function EyeGameScreen() {
                 }
               : null
           }
+          personalBest={record?.value}
           recommendedNext={{
             label: 'Eye Reset · Guided relaxation',
             onPress: () => router.push(ROUTES.appCvsProtocol as never),
