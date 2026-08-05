@@ -3,7 +3,14 @@ import { getFirestore, doc, getDoc, setDoc } from '@react-native-firebase/firest
 
 const db = getFirestore();
 
-export type GameId = 'focus-sprint' | 'neon-cipher' | 'signal-ops';
+/**
+ * Ids of games that currently ship. Neon Cipher (`neon-cipher`) and Signal
+ * Ops (`signal-ops`) were removed — their retired keys are deliberately not
+ * listed here, so a stale personal best under one of them can never be read
+ * back or written again. Any storage/Firestore doc left behind is simply
+ * ignored; see `eyeRelax.test.ts` for the guard that keeps them retired.
+ */
+export type GameId = 'focus-sprint';
 
 export interface GameRecord {
   value: number;    // score, higher = better

@@ -14,10 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { FocusSprint, type FocusSwitchDifficulty } from '@/components/eye/games/FocusSprint';
 import { GameOverScreen, type GameEndStats } from '@/components/eye/games/GameOverScreen';
-import { NeonCipher } from '@/components/eye/games/NeonCipher';
-import { SignalOps } from '@/components/eye/games/SignalOps';
 import { AmbientBackground } from '@/components/ui';
-import { GradientCTA } from '@/components/ui/GradientCTA';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { FOCUS_SWITCH_DEFAULT_RACE_CPU, getEyeActivity } from '@/constants/eyeRelax';
@@ -38,7 +35,7 @@ import { useProgressStore } from '@/stores/useProgressStore';
 function GameView({
   id, running, onGameEnd, onFocusSession,
   focusDifficulty, onFocusDifficultyChange, onFocusActiveChange, raceCpu, onRaceCpuChange,
-  pauseRequest, onRoundActiveChange, onSetupActionChange,
+  pauseRequest, onRoundActiveChange,
 }: {
   id: string;
   running: boolean;
@@ -51,10 +48,6 @@ function GameView({
   onRaceCpuChange?: (raceCpu: boolean) => void;
   pauseRequest?: number;
   onRoundActiveChange?: (active: boolean) => void;
-  /** Neon Cipher only — lets its pre-session Start CTA render as this
-   *  screen's sticky bottom action bar instead of scrolling with the setup
-   *  form (see `ScreenShell`'s `footer` slot below). */
-  onSetupActionChange?: (action: { label: string; onPress: () => void } | null) => void;
 }) {
   switch (id) {
     case 'focus-sprint':
@@ -68,27 +61,6 @@ function GameView({
           onActiveChange={onFocusActiveChange}
           initialRaceCpu={raceCpu}
           onRaceCpuChange={onRaceCpuChange}
-          pauseRequest={pauseRequest}
-          onRoundActiveChange={onRoundActiveChange}
-        />
-      );
-    case 'neon-cipher':
-      return (
-        <NeonCipher
-          running={running}
-          onGameEnd={onGameEnd}
-          onSession={onFocusSession}
-          pauseRequest={pauseRequest}
-          onRoundActiveChange={onRoundActiveChange}
-          onSetupActionChange={onSetupActionChange}
-        />
-      );
-    case 'signal-ops':
-      return (
-        <SignalOps
-          running={running}
-          onGameEnd={onGameEnd}
-          onSession={onFocusSession}
           pauseRequest={pauseRequest}
           onRoundActiveChange={onRoundActiveChange}
         />
@@ -148,12 +120,12 @@ export default function EyeGameScreen() {
   // a moving target so the page can stop scrolling for just that instant,
   // not for the whole round.
   const [sessionInProgress, setSessionInProgress] = useState(false);
-  // Neon Cipher's pre-session Start CTA, reported up so it can render as a
-  // sticky bottom bar (ScreenShell's `footer` slot) instead of scrolling
-  // away with the setup form. Null whenever that screen isn't showing.
-  const [setupAction, setSetupAction] = useState<{ label: string; onPress: () => void } | null>(null);
 
-  const gameId = (id ?? 'focus-sprint') as GameId;
+  // Every shipping game persists under its own id today, but only
+  // `focus-sprint` remains — a stale deep link to a removed game (`neon-cipher`,
+  // `signal-ops`) fails the `activity` lookup below and renders "Activity not
+  // found" before this id is ever used for persistence.
+  const gameId = (activity?.id ?? 'focus-sprint') as GameId;
   const { record, isNewRecord, submit } = useGameRecord(user?.uid, gameId);
 
   const isDone = gameEndStats !== null;
@@ -183,7 +155,6 @@ export default function EyeGameScreen() {
       safeBottom
       pillar="eye"
       ambient={<AmbientBackground subtle />}
-      footer={setupAction ? <GradientCTA label={setupAction.label} onPress={setupAction.onPress} /> : undefined}
       // Docked outside the ScrollView (see `header`'s doc comment on
       // ScreenShell for why: a sticky child *inside* the ScrollView is
       // clipped to that inner padded content box, so it can never actually
@@ -267,7 +238,6 @@ export default function EyeGameScreen() {
           onRaceCpuChange={setRaceCpu}
           pauseRequest={pauseRequest}
           onRoundActiveChange={setRoundActive}
-          onSetupActionChange={setSetupAction}
         />
       </View>
 

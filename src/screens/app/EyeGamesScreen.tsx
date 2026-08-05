@@ -94,14 +94,10 @@ export default function EyeGamesScreen() {
   // in a loop) — one call per id plus a small lookup is the smallest
   // correct fix. Extend this the same way if another game is added.
   const focus = useGameRecord(user?.uid, 'focus-sprint');
-  const neonCipher = useGameRecord(user?.uid, 'neon-cipher');
-  const signalOps = useGameRecord(user?.uid, 'signal-ops');
   const recordsByGameId: Record<string, typeof focus> = {
     'focus-sprint': focus,
-    'neon-cipher': neonCipher,
-    'signal-ops': signalOps,
   };
-  const anyRecordExists = Boolean(focus.record || neonCipher.record || signalOps.record);
+  const anyRecordExists = Boolean(focus.record);
 
   const open = (id: string) => router.push(ROUTES.appEyeGame(id) as never);
 

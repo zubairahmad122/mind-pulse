@@ -37,23 +37,8 @@ export type EyeActivity = {
 export const FOCUS_SWITCH_DEFAULT_RACE_CPU = true;
 
 export const FOCUS_SWITCH_DURATION_SECONDS = 60;
-export const NEON_CIPHER_DEFAULT_DURATION_SECONDS = 60;
-export const SIGNAL_OPS_DURATION_SECONDS = 180;
 
 export const EYE_GAMES: EyeActivity[] = [
-  {
-    // Flagship — listed first.
-    id: 'signal-ops',
-    title: 'Signal Ops',
-    subtitle: 'A multi-stage visual attention mission',
-    durationSeconds: SIGNAL_OPS_DURATION_SECONDS,
-    description: 'A 3-minute mission combining visual search and rapid attention switching across multiple stages.',
-    kind: 'game',
-    emoji: '📡',
-    isPremium: false,
-    accent: PILLAR_COLORS.eye,
-    route: ROUTES.appEyeGame('signal-ops'),
-  },
   {
     // Id stays `focus-sprint` so existing links and personal bests migrate.
     id: 'focus-sprint',
@@ -66,18 +51,6 @@ export const EYE_GAMES: EyeActivity[] = [
     isPremium: false,
     accent: PILLAR_COLORS.eye,
     route: ROUTES.appEyeGame('focus-sprint'),
-  },
-  {
-    id: 'neon-cipher',
-    title: 'Neon Cipher',
-    subtitle: 'Find the matching symbol before time runs out.',
-    durationSeconds: NEON_CIPHER_DEFAULT_DURATION_SECONDS,
-    description: 'A visual search and short-term memory game — see a target symbol, then find it in a field of similar-looking symbols.',
-    kind: 'game',
-    emoji: '🔷',
-    isPremium: false,
-    accent: PILLAR_COLORS.eye,
-    route: ROUTES.appEyeGame('neon-cipher'),
   },
 ];
 
