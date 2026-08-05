@@ -14,13 +14,27 @@
 export interface PerfSnapshot {
   fpsMedian: number;
   fpsP5: number;
+  /**
+   * 95th-percentile frame time in ms.
+   *
+   * On a high-refresh panel this is the honest tail metric. Frame times
+   * quantize to whole vsync intervals (8.33ms at 120Hz), so percentile *FPS*
+   * lands in the gaps between buckets — 60 / 40 / 30 — and a threshold like
+   * "p5 FPS >= 45" is unsatisfiable by anything short of a perfectly even
+   * frame. Measuring the tail in milliseconds asks the question the player
+   * actually feels: how long is a bad frame?
+   */
+  p95FrameMs: number;
   worstFrameMs: number;
   /** Frames slower than 32ms (i.e. a dropped frame at 60Hz). */
   longFrames: number;
+  /** Long frames as a percentage of every frame seen since reset. */
+  longFramePct: number;
   /** Frames slower than 100ms — the gate forbids these after warmup. */
   stallFrames: number;
   avgStepsPerFrame: number;
   samples: number;
+  totalFrames: number;
   entityCount: number;
   particleCount: number;
   nodeCount: number;
@@ -96,14 +110,23 @@ export function createPerfSampler(window = 180): PerfSampler {
       let worst = 0;
       for (let i = 0; i < n; i++) if (scratch[i] > worst) worst = scratch[i];
 
+      // Nearest-rank p95 of frame *time*: index into the ascending-sorted
+      // window, so 95% of frames were at least this fast.
+      const p95Index = n === 0 ? 0 : Math.min(n - 1, Math.max(0, Math.ceil(0.95 * n) - 1));
+      const p95 = n === 0 ? 0 : scratch[p95Index];
+
       return {
         fpsMedian: percentileFps(scratch, n, 0.5),
         fpsP5: percentileFps(scratch, n, 0.05),
+        p95FrameMs: Math.round(p95 * 10) / 10,
         worstFrameMs: Math.round(worst * 10) / 10,
         longFrames,
+        longFramePct:
+          stepFrames === 0 ? 0 : Math.round((longFrames / stepFrames) * 1000) / 10,
         stallFrames,
         avgStepsPerFrame: stepFrames === 0 ? 0 : Math.round((stepsSum / stepFrames) * 100) / 100,
         samples: n,
+        totalFrames: stepFrames,
         entityCount,
         particleCount,
         nodeCount,
