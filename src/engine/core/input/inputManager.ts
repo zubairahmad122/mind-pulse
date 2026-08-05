@@ -14,7 +14,17 @@
  * Events are pooled: `enqueue` writes into a ring buffer rather than
  * allocating, so a frantic multi-touch burst can't trigger GC mid-session.
  */
-export type PointerPhase = 'down' | 'move' | 'up' | 'cancel';
+/**
+ * `tap` is deliberately *not* derivable from down/up.
+ *
+ * A game where one finger is already holding a drag still needs a discrete
+ * "press" for a second action (a special attack, a bomb). Reconstructing
+ * that from the drag stream means guessing at durations and travel
+ * thresholds, and guessing wrong steers the ship on what the player meant as
+ * a tap. So the platform's own tap recogniser gets its own phase, and games
+ * treat it as a separate control rather than as a short drag.
+ */
+export type PointerPhase = 'down' | 'move' | 'up' | 'cancel' | 'tap';
 
 export interface PointerEvent {
   pointerId: number;

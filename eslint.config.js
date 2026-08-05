@@ -42,4 +42,37 @@ module.exports = defineConfig([
       }],
     },
   },
+  {
+    // Gameplay purity boundary.
+    //
+    // `src/features/eyeArcade/**` holds game *rules* — beats, route logic,
+    // damage, scoring, and the draw pass that turns state into a
+    // `RenderFrame`. Same contract as `engine/core`, one level up: a whole
+    // encounter must be playable in a plain Node test with no renderer and
+    // no React attached, which is exactly what
+    // `cometCommand/__tests__/encounter.test.ts` does.
+    //
+    // The engine itself is fair game to import (that is the point); React,
+    // Skia and Expo are not. Screens live in `src/screens/`, and platform
+    // capability arrives through `engine/core/ports/`.
+    files: ["src/features/eyeArcade/**/*.ts"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        paths: [
+          { name: "react", message: "gameplay must stay pure — the shell lives in src/screens." },
+          { name: "react-native", message: "gameplay must stay pure — the shell lives in src/screens." },
+          { name: "react-native-reanimated", message: "gameplay must stay pure — renderer concern." },
+          { name: "react-native-gesture-handler", message: "gameplay must stay pure — feed it via InputManager." },
+          { name: "@shopify/react-native-skia", message: "gameplay must stay renderer-agnostic — emit a RenderFrame." },
+        ],
+        patterns: [
+          { group: ["expo", "expo-*", "@expo/*"], message: "gameplay must stay pure — use a port in engine/core/ports." },
+          {
+            group: ["@/engine/renderers/*", "@/components/*", "@/screens/*", "@/hooks/*"],
+            message: "gameplay must not depend on the renderer or the app shell.",
+          },
+        ],
+      }],
+    },
+  },
 ]);
