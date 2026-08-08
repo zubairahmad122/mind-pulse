@@ -22,6 +22,12 @@ export type EyeActivity = {
   isPremium: boolean;
   /** Entitlement gating this activity. Omit for free, ungated activities. */
   featureId?: FeatureId;
+  /**
+   * Overrides the card's duration badge text (e.g. "1–2 min" for a game
+   * whose length varies). Falls back to `formatActivityDuration(durationSeconds)`
+   * when omitted.
+   */
+  durationLabel?: string;
   /** Pillar accent — the Eyes pillar is cyan (`PILLAR_COLORS.eye`) everywhere. */
   accent: string;
   route: string;
@@ -51,6 +57,19 @@ export const EYE_GAMES: EyeActivity[] = [
     isPremium: false,
     accent: PILLAR_COLORS.eye,
     route: ROUTES.appEyeGame('focus-sprint'),
+  },
+  {
+    id: 'schulte-nexus',
+    title: 'Schulte Nexus',
+    subtitle: 'Dynamic number-search challenges with changing rules',
+    durationSeconds: 90,
+    durationLabel: '1–2 min',
+    description: 'Dynamic number-search challenges with changing rules.',
+    kind: 'game',
+    emoji: '🔢',
+    isPremium: false,
+    accent: PILLAR_COLORS.eye,
+    route: ROUTES.appSchulteNexus,
   },
 ];
 

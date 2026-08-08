@@ -29,6 +29,8 @@ type Props = {
   letterSpacing?: number;
   /** ~20% shorter button — for dense layouts (e.g. exercise players). */
   compact?: boolean;
+  /** Impact haptic fired on press. Defaults to Medium (the app-wide default). */
+  hapticFeedback?: Haptics.ImpactFeedbackStyle;
   /** Keep full opacity while disabled — for status-style CTAs ("Following…"). */
   keepBright?: boolean;
   /**
@@ -63,6 +65,7 @@ export function GradientCTA({
   letterSpacing = 1,
   compact = false,
   keepBright = false,
+  hapticFeedback = Haptics.ImpactFeedbackStyle.Medium,
   height,
   style,
 }: Props) {
@@ -78,7 +81,7 @@ export function GradientCTA({
 
   const handlePress = () => {
     if (isDisabled) return;
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    void Haptics.impactAsync(hapticFeedback);
     onPress();
   };
 

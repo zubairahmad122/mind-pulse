@@ -99,8 +99,8 @@ describe('removed games — Neon Cipher and Signal Ops migration', () => {
     'src/utils/peripheralAlertEngine.ts',
   ];
 
-  it('the games library ships Focus Switch only', () => {
-    expect(EYE_GAMES.map(game => game.id)).toEqual(['focus-sprint']);
+  it('the games library ships Focus Switch and Schulte Nexus only', () => {
+    expect(EYE_GAMES.map(game => game.id)).toEqual(['focus-sprint', 'schulte-nexus']);
     expect(ALL_EYE_ACTIVITIES).toBe(EYE_GAMES);
   });
 

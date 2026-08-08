@@ -1,4 +1,4 @@
-import { ChevronRight, Clock3, Gamepad2, Sparkles } from 'lucide-react-native';
+import { ChevronRight, Clock3, Sparkles } from 'lucide-react-native';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { AmbientBackground } from '@/components/ui/AmbientBackground';
@@ -9,7 +9,6 @@ import { SectionLabel } from '@/components/ui/SectionLabel';
 import {
   EYE_BREAK_ACTIVITY,
   formatActivityDuration,
-  getEyeActivity,
   getRecoverySession,
 } from '@/constants/eyeRelax';
 import { colors } from '@/constants/colors';
@@ -23,7 +22,7 @@ import { useRouter } from 'expo-router';
 
 const EYE_COLOR = PILLAR_COLORS.eye;
 
-type ExerciseKind = 'session' | 'game';
+type ExerciseKind = 'session';
 
 type ExerciseItem = {
   id: string;
@@ -43,13 +42,10 @@ type ExerciseCategory = {
 
 // Static seed data — these ids are always present in eyeRelax.ts, so the
 // non-null assertions below can't actually fail at runtime.
-const focusSwitch = getEyeActivity('focus-sprint')!;
 const eyeReset = getRecoverySession('cvs-protocol')!;
 
 /**
- * The Eye exercise library, grouped by purpose. Games that train the same
- * muscles/reflexes as the categories are cross-listed with a small "Game"
- * tag so users can find the full library on the Games screen too.
+ * The Eye exercise library, grouped by purpose.
  *
  * Every title/subtitle/duration/emoji/route below is read from the single
  * eye-activity metadata source (`@/constants/eyeRelax`) — never hardcode a
@@ -68,23 +64,6 @@ const CATEGORIES: ExerciseCategory[] = [
         emoji: EYE_BREAK_ACTIVITY.emoji,
         kind: 'session',
         route: EYE_BREAK_ACTIVITY.route,
-      },
-    ],
-  },
-  {
-    id: 'focus',
-    title: 'Focus Training',
-    items: [
-      {
-        id: focusSwitch.id,
-        title: focusSwitch.title,
-        // Shorter than the metadata subtitle on purpose — this row is a
-        // single clipped line, so the full sentence would truncate here.
-        subtitle: 'Shift near and far focus',
-        duration: formatActivityDuration(focusSwitch.durationSeconds),
-        emoji: focusSwitch.emoji,
-        kind: 'game',
-        route: focusSwitch.route,
       },
     ],
   },
@@ -120,15 +99,7 @@ function ExerciseRow({
             <Text style={styles.rowEmoji}>{item.emoji}</Text>
           </View>
           <View style={styles.rowInfo}>
-            <View style={styles.rowTitleRow}>
-              <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
-              {item.kind === 'game' && (
-                <View style={styles.gameTag}>
-                  <Gamepad2 size={9} color="rgba(245,247,251,0.55)" strokeWidth={2.4} />
-                  <Text style={styles.gameTagText}>GAME</Text>
-                </View>
-              )}
-            </View>
+            <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
             <Text style={styles.rowSub} numberOfLines={1}>{item.subtitle}</Text>
           </View>
           <View style={styles.rowMeta}>
@@ -239,21 +210,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#f6f8fc',
     flexShrink: 1,
-  },
-  gameTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 5,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  gameTagText: {
-    fontSize: 7.5,
-    fontWeight: '800',
-    letterSpacing: 0.7,
-    color: 'rgba(245,247,251,0.55)',
   },
   rowSub: {
     fontSize: 12,

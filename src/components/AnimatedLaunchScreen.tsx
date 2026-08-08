@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import AnimatedBackground from '@/components/AnimatedBackground';
@@ -6,6 +6,7 @@ import { BACKGROUND, FONTS, PILLAR_COLORS } from '@/constants/designSystem';
 
 type AnimatedLaunchScreenProps = {
   ready: boolean;
+  onReady: () => void;
   onFinish: () => void;
 };
 
@@ -13,12 +14,20 @@ const MINIMUM_DISPLAY_TIME = 1200;
 
 export function AnimatedLaunchScreen({
   ready,
+  onReady,
   onFinish,
 }: AnimatedLaunchScreenProps) {
   const [minimumTimeElapsed, setMinimumTimeElapsed] = useState(false);
   const [entrance] = useState(() => new Animated.Value(0));
   const [breathe] = useState(() => new Animated.Value(0));
   const [exit] = useState(() => new Animated.Value(1));
+  const finishedRef = useRef(false);
+
+  const finish = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    onFinish();
+  }, [onFinish]);
 
   useEffect(() => {
     Animated.timing(entrance, {
@@ -58,20 +67,29 @@ export function AnimatedLaunchScreen({
 
   useEffect(() => {
     if (!ready || !minimumTimeElapsed) return;
-    Animated.timing(exit, {
+    const animation = Animated.timing(exit, {
       toValue: 0,
       duration: 360,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) onFinish();
     });
-  }, [exit, minimumTimeElapsed, onFinish, ready]);
+    // Native-driven animations can be interrupted when Android backgrounds or
+    // resumes the app. Always remove the overlay; otherwise it can remain fully
+    // transparent above the app forever.
+    animation.start(finish);
+    const fallback = setTimeout(finish, 600);
+
+    return () => {
+      clearTimeout(fallback);
+      animation.stop();
+    };
+  }, [exit, finish, minimumTimeElapsed, ready]);
 
   return (
     <Animated.View
       accessibilityLabel="Mind Pulse is starting"
       accessibilityRole="progressbar"
+      onLayout={onReady}
       style={[styles.container, { opacity: exit }]}
     >
       <AnimatedBackground />

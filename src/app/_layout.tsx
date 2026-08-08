@@ -4,7 +4,7 @@
 
 import './global.css';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -49,6 +49,7 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const [launchFinished, setLaunchFinished] = useState(false);
+  const nativeSplashHidden = useRef(false);
   const [fontsLoaded, fontsError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -58,11 +59,12 @@ function RootLayoutNav() {
     SpaceGrotesk_700Bold,
   });
 
-  useEffect(() => {
+  const finishLaunch = useCallback(() => setLaunchFinished(true), []);
+  const hideNativeSplash = useCallback(() => {
+    if (nativeSplashHidden.current) return;
+    nativeSplashHidden.current = true;
     SplashScreen.hide();
   }, []);
-
-  const finishLaunch = useCallback(() => setLaunchFinished(true), []);
 
   useEffect(() => {
     if (loading) return;
@@ -88,18 +90,23 @@ function RootLayoutNav() {
 
   const appReady = (fontsLoaded || Boolean(fontsError)) && !loading;
 
-  if (!launchFinished) {
-    return <AnimatedLaunchScreen ready={appReady} onFinish={finishLaunch} />;
-  }
-
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        animation: 'fade',
-        contentStyle: { backgroundColor: COLORS.bg },
-      }}
-    />
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: 'fade',
+          contentStyle: { backgroundColor: COLORS.bg },
+        }}
+      />
+      {!launchFinished && (
+        <AnimatedLaunchScreen
+          ready={appReady}
+          onReady={hideNativeSplash}
+          onFinish={finishLaunch}
+        />
+      )}
+    </>
   );
 }
 

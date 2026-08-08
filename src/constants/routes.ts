@@ -25,6 +25,7 @@ export const ROUTES = {
   appEyeGames: '/(app)/eye-games',
   appEyeExercises: '/(app)/eye-exercises',
   appCvsProtocol: '/(app)/cvs-protocol',
+  appSchulteNexus: '/(app)/schulte-nexus',
   appEyeBreak: '/(app)/eye-break',
   appGrounding: '/(app)/stress/grounding',
   appCalmWave: '/(app)/relax/player?sessionId=calm-flow',
