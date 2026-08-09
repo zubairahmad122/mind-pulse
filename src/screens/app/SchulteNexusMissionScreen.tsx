@@ -1,4 +1,3 @@
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { Clock, Crown, Lock, Pause, Play, RotateCcw, Trophy, XCircle } from 'lucide-react-native';
@@ -220,12 +219,6 @@ function BoardLockOverlay({
 
   return (
     <Animated.View pointerEvents="none" style={[styles.boardLockOverlay, overlayStyle]}>
-      <BlurView
-        intensity={45}
-        tint="dark"
-        experimentalBlurMethod="dimezisBlurView"
-        style={StyleSheet.absoluteFill}
-      />
       <View style={styles.boardLockScrim} />
 
       <View style={styles.boardLockCenter}>

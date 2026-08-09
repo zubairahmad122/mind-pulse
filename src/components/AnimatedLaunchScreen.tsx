@@ -85,6 +85,25 @@ export function AnimatedLaunchScreen({
     };
   }, [exit, finish, minimumTimeElapsed, ready]);
 
+  // Hard ceiling, independent of `ready`: this overlay is full-screen and
+  // opaque (zIndex 100) over the entire app. The effect above never even
+  // runs until `ready` (fonts + auth) resolves, so a stuck font load or a
+  // Firebase `onAuthStateChanged` that never fires on a given device/build
+  // would otherwise leave it parked over the app forever with no recovery —
+  // indistinguishable from a dead app, even though whatever screen is
+  // underneath is still alive and responding to taps. This guarantees the
+  // splash is gone within a bounded time no matter what upstream is slow or
+  // broken.
+  useEffect(() => {
+    const ceiling = setTimeout(() => {
+      exit.stopAnimation();
+      exit.setValue(0);
+      finish();
+    }, 8000);
+    return () => clearTimeout(ceiling);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot ceiling, must not reset if `finish`'s identity happens to change.
+  }, []);
+
   return (
     <Animated.View
       accessibilityLabel="Mind Pulse is starting"
