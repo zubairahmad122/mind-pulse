@@ -36,6 +36,9 @@ export default function AppTabsLayout() {
           {/* Hidden tabs — accessible via push, not shown in bar */}
           <Tabs.Screen name="report" options={{ href: null }} />
           <Tabs.Screen name="recovery" options={{ href: null }} />
+          {/* Streaks/achievements — was the "Challenges" tab; Mind took its
+              slot in the bar, so it's reachable via push only now. */}
+          <Tabs.Screen name="streaks" options={{ href: null }} />
         </Tabs>
       </TabBarSpaceProvider>
     </SleepLockProvider>

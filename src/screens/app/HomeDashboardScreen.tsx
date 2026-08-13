@@ -1,6 +1,7 @@
-import { DailyTip } from '@/components/home/DailyTip';
 import { DailyChallenge } from '@/components/home/DailyChallenge';
 import { FeatureGrid } from '@/components/home/FeatureGrid';
+import { ResetPickerSheet } from '@/components/home/ResetPickerSheet';
+import { ScreenBalanceCard } from '@/components/home/ScreenBalanceCard';
 import { TodaysJourneyCard } from '@/components/home/TodaysJourneyCard';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { AmbientBackground, SectionLabel } from '@/components/ui';
@@ -13,7 +14,6 @@ import { FONTS, PILLAR_COLORS, SPACING, TYPOGRAPHY } from '@/constants/designSys
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useProgressStore } from '@/stores/useProgressStore';
-import { useDailyTip } from '@/hooks/useDailyTip';
 import { useEyeScore } from '@/hooks/useEyeScore';
 import { useGreeting } from '@/hooks/useGreeting';
 import { useMindScore } from '@/hooks/useMindScore';
@@ -67,10 +67,6 @@ export default function HomeDashboardScreen() {
   const theme          = pulseScoreTheme(mindPulseScore);
   const focusArea      = getFocusArea(eyes, sleepScore, mind);
 
-  const { tip: dailyTip } = useDailyTip({
-    mindPulseScore, eyeScore: eyes, sleepScore, mindScore: mind, focusArea, anyLoading,
-  });
-
   const savedRef = useRef(false);
   useEffect(() => {
     if (anyLoading || !user?.uid || savedRef.current) return;
@@ -84,6 +80,7 @@ export default function HomeDashboardScreen() {
   const streak = useWellnessStore((s) => s.streak);
   const [showOnboardingPaywall, setShowOnboardingPaywall] = useState(false);
   const [showStreakPaywall, setShowStreakPaywall]         = useState(false);
+  const [showResetPicker, setShowResetPicker]             = useState(false);
 
   useEffect(() => {
     if (isPremium || !user?.uid) return;
@@ -195,6 +192,7 @@ export default function HomeDashboardScreen() {
           <SectionLabel first>QUICK ACTIONS</SectionLabel>
           <FeatureGrid
             showStartHere={!hasCompletedAnySession}
+            onResetPress={() => setShowResetPicker(true)}
             weeklySessions={{
               'eye-exercise': weeklySessions.eye,
               'eye-games': weeklySessions.eyeGames,
@@ -221,15 +219,15 @@ export default function HomeDashboardScreen() {
         </View>
       </StaggerItem>
 
-      {/* ── Daily Tip ────────────────────────────────────────────── */}
+      {/* ── Screen Balance ──────────────────────────────────────────── */}
       <StaggerItem index={5}>
         <View style={{ marginTop: SPACING.section }}>
-          <SectionLabel first>TODAY&apos;S TIP</SectionLabel>
-          <DailyTip tip={dailyTip} focusArea={focusArea} />
+          <SectionLabel first>SCREEN BALANCE</SectionLabel>
+          <ScreenBalanceCard uid={user?.uid} onTakeReset={() => setShowResetPicker(true)} />
         </View>
       </StaggerItem>
 
-      {/* Bottom runway so the tip card clears the floating tab bar */}
+      {/* Bottom runway so the card clears the floating tab bar */}
       <View style={{ height: SPACING.screenBottom }} />
 
       <SoftPaywallModal
@@ -249,6 +247,7 @@ export default function HomeDashboardScreen() {
         onUpgrade={() => { dismissStreakPaywall(); goToPremium(); }}
         onDismiss={dismissStreakPaywall}
       />
+      <ResetPickerSheet visible={showResetPicker} onClose={() => setShowResetPicker(false)} />
     </ScreenShell>
   );
 }

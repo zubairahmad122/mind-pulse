@@ -258,6 +258,23 @@ describe('Adaptive Mission Director', () => {
     expect(calculateOverallRating(r1, failed)).toBe(r1);
   });
 
+  it('26. recordMissionAttempt reports the real previous-best time, never an invented one', () => {
+    const c = sampleChallenge();
+    const profile = createStartingSkillProfile();
+
+    const firstRun = recordMissionAttempt(profile, attempt(c, { completionTimeMs: 20_000 }));
+    expect(firstRun.attempt.wasPersonalBest).toBe(true);
+    expect(firstRun.previousBestMs).toBeNull();
+
+    const slowerRun = recordMissionAttempt(firstRun.profile, attempt(c, { completionTimeMs: 25_000 }));
+    expect(slowerRun.attempt.wasPersonalBest).toBe(false);
+    expect(slowerRun.previousBestMs).toBe(20_000);
+
+    const fasterRun = recordMissionAttempt(slowerRun.profile, attempt(c, { completionTimeMs: 15_000 }));
+    expect(fasterRun.attempt.wasPersonalBest).toBe(true);
+    expect(fasterRun.previousBestMs).toBe(20_000);
+  });
+
   it('novelty scoring penalizes back-to-back repeats and hard-rejects completed signatures', () => {
     const targetSequence = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     const semanticKey = createSemanticKey('ascending', targetSequence, 9);

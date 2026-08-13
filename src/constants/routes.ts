@@ -5,11 +5,16 @@ export const ROUTES = {
   appSleep: '/(app)/(tabs)/sleep',
   appSleepTracker: '/(app)/sleep-tracker',
   appRelax: '/(app)/(tabs)/relax',
-  appMind: '/(app)/(tabs)/relax',
+  // The Mind hub — repurposed from the old "Eye Games" screen; lives on the
+  // `challenges` tab route (bottom-nav label is "Mind", see navigation.ts).
+  appMind: '/(app)/(tabs)/challenges',
   appReport: '/(app)/(tabs)/report',
   appRecovery: '/(app)/(tabs)/recovery',
   appEyeRelax: '/(app)/(tabs)/eye-relax',
-  appChallenges: '/(app)/(tabs)/challenges',
+  // Streaks/achievements screen — moved off the bottom tab bar (Mind took
+  // its slot) onto a hidden tab, reachable the same way as before via this
+  // route constant.
+  appChallenges: '/(app)/(tabs)/streaks',
   appProfile: '/(app)/(tabs)/profile',
   appHistory: '/(app)/history',
   appAchievements: '/(app)/achievements',
@@ -26,7 +31,16 @@ export const ROUTES = {
   appEyeExercises: '/(app)/eye-exercises',
   appCvsProtocol: '/(app)/cvs-protocol',
   appSchulteNexus: '/(app)/schulte-nexus',
+  appMills: '/(app)/mills',
+  appMillsSetup: '/(app)/mills/setup',
+  appMillsMatch: '/(app)/mills/match',
+  appMillsRules: '/(app)/mills/rules',
+  appMillsResults: '/(app)/mills/results',
   appEyeBreak: '/(app)/eye-break',
+  // Screen Balance MVP — Move and Go Offline resets.
+  appMoveReset: '/(app)/move-reset',
+  appOfflineReset: '/(app)/offline-reset',
+  appOfflineSession: '/(app)/offline-session',
   appGrounding: '/(app)/stress/grounding',
   appCalmWave: '/(app)/relax/player?sessionId=calm-flow',
   appTensionRelease: '/(app)/stress/tension-release',

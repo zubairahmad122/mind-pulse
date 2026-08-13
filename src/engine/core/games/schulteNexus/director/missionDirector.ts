@@ -99,6 +99,8 @@ export function personalBestClassKey(
 export interface RecordMissionAttemptResult {
   readonly profile: SchultePlayerSkillProfile;
   readonly attempt: SchulteMissionAttempt;
+  /** The best time for this attempt's class before this attempt, if one existed. */
+  readonly previousBestMs: number | null;
 }
 
 /** Records one attempt and returns the updated profile plus the attempt with `wasPersonalBest` resolved. */
@@ -159,6 +161,7 @@ export function recordMissionAttempt(
       ladderIndex,
     },
     attempt,
+    previousBestMs: existingBest?.timeMs ?? null,
   };
 }
 

@@ -109,6 +109,13 @@ function normalizeToCurrentSchema(payload: StoredPayloadLike): SchultePersistedS
   };
 }
 
+/** Validates+normalizes an arbitrary payload the same way regardless of which store it came from. */
+function readStoredPayload(parsed: unknown): SchultePersistedState | null {
+  if (!isPlausibleStoredPayload(parsed)) return null;
+  if (!KNOWN_SCHEMA_VERSIONS.has(parsed.schemaVersion)) return null;
+  return normalizeToCurrentSchema(parsed);
+}
+
 /**
  * Loads persisted Schulte state, falling back to a fresh default on missing
  * data, corrupted JSON, a structurally invalid payload, or a schema version
@@ -120,12 +127,7 @@ export async function loadSchulteState(uid: string | undefined): Promise<Schulte
   try {
     const raw = await AsyncStorage.getItem(storageKey(uid));
     if (!raw) return freshState();
-
-    const parsed: unknown = JSON.parse(raw);
-    if (!isPlausibleStoredPayload(parsed)) return freshState();
-    if (!KNOWN_SCHEMA_VERSIONS.has(parsed.schemaVersion)) return freshState();
-
-    return normalizeToCurrentSchema(parsed);
+    return readStoredPayload(JSON.parse(raw)) ?? freshState();
   } catch {
     return freshState();
   }
@@ -149,12 +151,12 @@ export async function saveSchulteState(uid: string | undefined, state: SchultePe
 export async function recordPersistedAttempt(
   uid: string | undefined,
   attemptInput: Omit<SchulteMissionAttempt, 'wasPersonalBest'>,
-): Promise<{ state: SchultePersistedState; attempt: SchulteMissionAttempt }> {
+): Promise<{ state: SchultePersistedState; attempt: SchulteMissionAttempt; previousBestMs: number | null }> {
   const current = await loadSchulteState(uid);
-  const { profile, attempt } = directorRecordMissionAttempt(current.profile, attemptInput);
+  const { profile, attempt, previousBestMs } = directorRecordMissionAttempt(current.profile, attemptInput);
   const state: SchultePersistedState = { ...current, profile, updatedAt: Date.now() };
   await saveSchulteState(uid, state);
-  return { state, attempt };
+  return { state, attempt, previousBestMs };
 }
 
 /**
@@ -165,13 +167,13 @@ export async function recordPersistedAttempt(
 export async function recordPersistedLevelAttempt(
   uid: string | undefined,
   attemptInput: Omit<SchulteMissionAttempt, 'wasPersonalBest'>,
-): Promise<{ state: SchultePersistedState; attempt: SchulteMissionAttempt }> {
+): Promise<{ state: SchultePersistedState; attempt: SchulteMissionAttempt; previousBestMs: number | null }> {
   const current = await loadSchulteState(uid);
-  const { profile, attempt } = directorRecordMissionAttempt(current.profile, attemptInput);
+  const { profile, attempt, previousBestMs } = directorRecordMissionAttempt(current.profile, attemptInput);
   const levelState = applySchulteLevelProgress(current.levelState, attempt);
   const state: SchultePersistedState = { ...current, profile, levelState, updatedAt: Date.now() };
   await saveSchulteState(uid, state);
-  return { state, attempt };
+  return { state, attempt, previousBestMs };
 }
 
 /**
@@ -229,6 +231,25 @@ export async function selectPersistedNextLevelMission(
  */
 export async function resetSchulteState(uid: string | undefined): Promise<SchultePersistedState> {
   const state = freshState();
+  await saveSchulteState(uid, state);
+  return state;
+}
+
+/**
+ * Internal/debug seam only — do not leave a persistent affordance for this in
+ * production UI. Jumps `levelState` straight to `level` with a fresh 0/100
+ * progress bar, leaving `profile` (rating/mastery/personal bests) untouched.
+ */
+export async function debugSetSchulteLevel(uid: string | undefined, level: number): Promise<SchultePersistedState> {
+  const current = await loadSchulteState(uid);
+  const levelState: SchulteLevelState = {
+    currentLevel: level,
+    levelProgress: 0,
+    highestUnlockedLevel: Math.max(current.levelState.highestUnlockedLevel, level),
+    missionsCompletedAtCurrentLevel: 0,
+    missionInLevel: 0,
+  };
+  const state: SchultePersistedState = { ...current, levelState, updatedAt: Date.now() };
   await saveSchulteState(uid, state);
   return state;
 }

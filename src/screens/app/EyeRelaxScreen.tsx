@@ -56,7 +56,7 @@ import {
   Circle,
   Eye,
   Flame,
-  Gamepad2,
+  Focus,
   Minus,
   Monitor,
   Pause,
@@ -775,10 +775,10 @@ export default function EyeRelaxScreen() {
               onPress={() => router.push(ROUTES.appEyeExercises as never)}
             />
             <QuickActionCard
-              label="Games"
-              icon={Gamepad2}
+              label="Focus Switch"
+              icon={Focus}
               accent={EYE_COLOR}
-              onPress={() => router.push(ROUTES.appEyeGames as never)}
+              onPress={() => router.push(ROUTES.appEyeGame('focus-sprint') as never)}
             />
           </View>
         </StaggerItem>

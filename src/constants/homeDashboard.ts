@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import { ROUTES } from './routes';
 import { PILLAR_COLORS } from './designSystem';
 import { formatActivityDuration, getEyeActivity, getRecoverySession } from './eyeRelax';
-import { Moon, Music, Eye, Heart } from 'lucide-react-native';
+import { Moon, Music, Eye, Heart, Grid3X3 } from 'lucide-react-native';
 
 export type QuickAction = {
   id: string;
@@ -20,6 +20,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
   // eye card (was a mismatched green here).
   { id: 'eye', label: 'Eye Exercise', description: 'Reduce strain & refocus', accent: PILLAR_COLORS.eye, icon: Eye, route: '/(app)/(tabs)/eye-relax' },
   { id: 'stress', label: 'Breathing Exercise', description: 'Calm your nervous system', accent: '#FF6B9D', icon: Heart, route: ROUTES.appBoxBreathing },
+  { id: 'mills', label: 'Play Mills', description: 'Local two-player strategy', accent: '#37D5D0', icon: Grid3X3, route: ROUTES.appMills },
 ];
 
 export type PlanItem = { id: string; title: string; subtitle: string; emoji: string; route: string };

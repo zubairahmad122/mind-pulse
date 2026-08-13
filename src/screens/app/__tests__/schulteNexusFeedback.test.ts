@@ -53,4 +53,27 @@ describe('Schulte Nexus transient tap feedback', () => {
     expect(result).toMatchObject({ progressGain: 32, wasLevelUp: true, wasPersonalBest: true });
     expect(getCompletionCtaLabel(result)).toBe('Continue to Level 5');
   });
+
+  it('never invents a previous-best time when none was supplied', () => {
+    const result = createResultPresentation({
+      previousLevel: 4,
+      newLevel: 4,
+      previousProgress: 42,
+      newProgress: 66,
+      wasPersonalBest: true,
+    });
+    expect(result.previousBestMs).toBeNull();
+  });
+
+  it('passes through a real previous-best time when the director reports one', () => {
+    const result = createResultPresentation({
+      previousLevel: 4,
+      newLevel: 4,
+      previousProgress: 42,
+      newProgress: 66,
+      wasPersonalBest: true,
+      previousBestMs: 25_120,
+    });
+    expect(result.previousBestMs).toBe(25_120);
+  });
 });

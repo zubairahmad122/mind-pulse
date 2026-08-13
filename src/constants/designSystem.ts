@@ -118,6 +118,8 @@ export const PILLAR_COLORS = {
   mind: '#9D5CFF',
   sleep: '#7B7FFF',
   challenge: '#FFAE1A',
+  /** Screen Balance / Reset — soft cyan-teal, distinct from eye's pure cyan and mind's purple. */
+  reset: '#3DE8D0',
 } as const;
 
 export const STATUS_COLORS = {

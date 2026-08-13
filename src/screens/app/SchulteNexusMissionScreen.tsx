@@ -246,8 +246,8 @@ function PremiumRequiredCard({ level, onBack }: { level: number; onBack: () => v
       <Text style={styles.completeTitle}>LEVEL {level}</Text>
       <Text style={styles.completeSubtitle}>Adaptive Sequence Missions</Text>
       <Text style={styles.completeSubtitle}>Premium required to continue.</Text>
-      <GradientCTA label="Explore Premium" onPress={onBack} style={styles.completeCtaGap} />
-      <GradientCTA label="Back to Games" variant="secondary" onPress={onBack} />
+      <GradientCTA label="Explore Premium" onPress={onBack} height={54} style={styles.completeCtaGap} />
+      <GradientCTA label="Back to Games" variant="secondary" onPress={onBack} height={54} />
     </GlassCard>
   );
 }
@@ -259,8 +259,8 @@ function ErrorState({ onRetry, onBack }: { onRetry: () => void; onBack: () => vo
     <GlassCard tint={SURFACE_TINT.card} style={styles.completeCard}>
       <Text style={styles.completeTitle}>Challenge unavailable</Text>
       <Text style={styles.completeSubtitle}>Something went wrong loading the mission.</Text>
-      <GradientCTA label="Try Again" onPress={onRetry} style={styles.completeCtaGap} />
-      <GradientCTA label="Back" variant="secondary" onPress={onBack} />
+      <GradientCTA label="Try Again" onPress={onRetry} height={54} style={styles.completeCtaGap} />
+      <GradientCTA label="Back" variant="secondary" onPress={onBack} height={54} />
     </GlassCard>
   );
 }
@@ -879,6 +879,11 @@ function Completion({
         <View style={styles.personalBestBadge}>
           <Text style={styles.personalBestText}>★ NEW PERSONAL BEST</Text>
           <Text style={styles.personalBestTime}>{formatDuration(durationMs)}</Text>
+          {resultPresentation?.previousBestMs != null && (
+            <Text style={styles.personalBestPrevious}>
+              Previous best: {formatDuration(resultPresentation.previousBestMs)}
+            </Text>
+          )}
         </View>
       )}
 
@@ -1329,13 +1334,14 @@ export default function SchulteNexusMissionScreen() {
 
     void (async () => {
       try {
-        const { state: newState, attempt } = await recordPersistedLevelAttempt(uid, attemptInput);
+        const { state: newState, attempt, previousBestMs } = await recordPersistedLevelAttempt(uid, attemptInput);
         const presentation = createResultPresentation({
           previousLevel: persistedState.levelState.currentLevel,
           newLevel: newState.levelState.currentLevel,
           previousProgress: persistedState.levelState.levelProgress,
           newProgress: newState.levelState.levelProgress,
           wasPersonalBest: attempt.wasPersonalBest,
+          previousBestMs,
         });
         setPersistedState(newState);
         setResultPresentation(presentation);
@@ -1480,6 +1486,7 @@ export default function SchulteNexusMissionScreen() {
                       label="Resume"
                       icon={<Play size={16} color="#FFFFFF" strokeWidth={2.4} />}
                       onPress={handleTogglePause}
+                      height={54}
                     />
                   </GlassCard>
                 </View>
@@ -2062,6 +2069,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     color: '#FFFFFF',
+  },
+  personalBestPrevious: {
+    marginTop: 2,
+    fontSize: 10.5,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: 'rgba(255,255,255,0.55)',
   },
 
   // Level progress section

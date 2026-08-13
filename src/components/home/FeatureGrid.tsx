@@ -2,8 +2,8 @@ import { ROUTES } from '@/constants';
 import { colors } from '@/constants/colors';
 import { DURATION, ICON_CONTAINERS, ICON_SIZES, PILLAR_COLORS } from '@/constants/designSystem';
 import { useRouter } from 'expo-router';
-import { Brain, Eye, Gamepad2, Leaf, Moon } from 'lucide-react-native';
-import { memo, useEffect, useRef, useState } from 'react';
+import { Brain, Eye, Leaf, Moon, RefreshCw } from 'lucide-react-native';
+import { memo, useEffect, useState } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Pillar = {
@@ -11,16 +11,21 @@ type Pillar = {
   label: string;
   icon: React.ComponentType<{ size: number; color: string; strokeWidth?: number }>;
   color: string;
-  route: string;
+  /** Navigates to a route. Mutually exclusive with `onPress` — a pillar has exactly one of the two. */
+  route?: string;
+  /** Runs an in-place action (e.g. opening a sheet) instead of navigating. */
+  onPress?: () => void;
 };
 
-const PILLARS: Pillar[] = [
-  { id: 'eye-exercise', label: 'Eye Exercise', icon: Eye, color: PILLAR_COLORS.eye, route: ROUTES.appEyeRelax },
-  { id: 'eye-games',    label: 'Eye Games',    icon: Gamepad2, color: '#F59E0B', route: ROUTES.appEyeRelax },
-  { id: 'relax',        label: 'Relax',        icon: Leaf, color: PILLAR_COLORS.relax, route: ROUTES.appRelax },
-  { id: 'mind',         label: 'Mind',         icon: Brain, color: PILLAR_COLORS.mind, route: ROUTES.appBoxBreathing },
-  { id: 'sleep',        label: 'Sleep',        icon: Moon, color: PILLAR_COLORS.sleep, route: ROUTES.appSleep },
-];
+function buildPillars(onResetPress?: () => void): Pillar[] {
+  return [
+    { id: 'eye-exercise', label: 'Eye Care', icon: Eye, color: PILLAR_COLORS.eye, route: ROUTES.appEyeRelax },
+    { id: 'mind',         label: 'Mind',     icon: Brain, color: PILLAR_COLORS.mind, route: ROUTES.appMind },
+    { id: 'reset',        label: 'Reset',    icon: RefreshCw, color: PILLAR_COLORS.reset, onPress: onResetPress },
+    { id: 'relax',        label: 'Relax',    icon: Leaf, color: PILLAR_COLORS.relax, route: ROUTES.appRelax },
+    { id: 'sleep',        label: 'Sleep',    icon: Moon, color: PILLAR_COLORS.sleep, route: ROUTES.appSleep },
+  ];
+}
 
 const CARD_WIDTH = ICON_CONTAINERS.quickAction + 12;
 const CARD_GAP = 0;
@@ -28,6 +33,8 @@ const CARD_GAP = 0;
 interface Props {
   weeklySessions?: Record<string, number>;
   showStartHere?: boolean;
+  /** Opens the (shared) reset-picker sheet — Reset is an in-place action, not a route. */
+  onResetPress?: () => void;
 }
 
 const TOTAL_DOTS = 7;
@@ -64,9 +71,9 @@ function PillarCard({
   showDots?: boolean;
 }) {
   const router = useRouter();
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const iconOpacity = useRef(new Animated.Value(1)).current;
+  const [pulseAnim] = useState(() => new Animated.Value(1));
+  const [scaleAnim] = useState(() => new Animated.Value(1));
+  const [iconOpacity] = useState(() => new Animated.Value(1));
   const [entryAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
@@ -103,7 +110,7 @@ function PillarCard({
   return (
     <TouchableOpacity
       activeOpacity={1}
-      onPress={() => router.push(pillar.route as never)}
+      onPress={() => { if (pillar.onPress) pillar.onPress(); else if (pillar.route) router.push(pillar.route as never); }}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={styles.cell}
@@ -151,7 +158,8 @@ function PillarCard({
   );
 }
 
-export const FeatureGrid = memo(function FeatureGrid({ weeklySessions = {}, showStartHere = false }: Props) {
+export const FeatureGrid = memo(function FeatureGrid({ weeklySessions = {}, showStartHere = false, onResetPress }: Props) {
+  const pillars = buildPillars(onResetPress);
   return (
     <View>
       {/* No edge-fade overlay here on purpose — every attempt at a color-matched
@@ -167,7 +175,7 @@ export const FeatureGrid = memo(function FeatureGrid({ weeklySessions = {}, show
         decelerationRate="fast"
         contentContainerStyle={styles.scrollContent}
       >
-        {PILLARS.map((p, index) => {
+        {pillars.map((p, index) => {
           const Icon = p.icon;
           const sessions = weeklySessions[p.id] ?? 0;
           return (
@@ -179,7 +187,7 @@ export const FeatureGrid = memo(function FeatureGrid({ weeklySessions = {}, show
               index={index}
               showPulse={showStartHere && p.id === 'eye-exercise'}
               showStartBadge={showStartHere && p.id === 'eye-exercise'}
-              showDots={!showStartHere}
+              showDots={!showStartHere && p.id !== 'reset'}
             />
           );
         })}
@@ -216,11 +224,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   label: {
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: '700',
     color: colors.text.primary,
     textAlign: 'center',
-    lineHeight: 12,
+    lineHeight: 11,
     letterSpacing: 0.1,
   },
   // ── "First step" dot indicator (replaces floating badge) ───────────────────

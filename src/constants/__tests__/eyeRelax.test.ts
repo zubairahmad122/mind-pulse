@@ -155,7 +155,7 @@ describe('drift prevention — no duplicate eye-activity metadata source', () =>
   // title/duration/colour instead of reading from `eyeRelax.ts`.
   const consumerFiles = [
     'src/screens/app/EyeExercisesScreen.tsx',
-    'src/screens/app/EyeGamesScreen.tsx',
+    'src/screens/app/MindScreen.tsx',
     'src/screens/app/eye-game/[id].tsx',
     'src/screens/app/CVSProtocolScreen.tsx',
     'src/constants/homeDashboard.ts',

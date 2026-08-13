@@ -36,6 +36,8 @@ export interface SchulteResultPresentation {
   progressGain: number;
   wasLevelUp: boolean;
   wasPersonalBest: boolean;
+  /** The prior best time for this run's class, only set when a real one exists — never invented. */
+  previousBestMs: number | null;
 }
 
 export function createResultPresentation(input: {
@@ -44,12 +46,18 @@ export function createResultPresentation(input: {
   previousProgress: number;
   newProgress: number;
   wasPersonalBest: boolean;
+  previousBestMs?: number | null;
 }): SchulteResultPresentation {
   const wasLevelUp = input.newLevel > input.previousLevel;
   const progressGain = wasLevelUp
     ? 100 - input.previousProgress + input.newProgress
     : input.newProgress - input.previousProgress;
-  return { ...input, progressGain: Math.max(0, progressGain), wasLevelUp };
+  return {
+    ...input,
+    progressGain: Math.max(0, progressGain),
+    wasLevelUp,
+    previousBestMs: input.previousBestMs ?? null,
+  };
 }
 
 export function getCompletionCtaLabel(result: SchulteResultPresentation): string {

@@ -8,6 +8,7 @@ import {
   type SchulteMissionAttempt,
 } from '@/engine/core/games/schulteNexus/director';
 import {
+  debugSetSchulteLevel,
   loadSchulteState,
   markMissionCompleted,
   recordPersistedAttempt,
@@ -266,5 +267,98 @@ describe('Schulte Nexus persistence', () => {
     // Level state also updated
     expect(state.levelState.missionsCompletedAtCurrentLevel).toBe(1);
     expect(state.levelState.levelProgress).toBeGreaterThan(0);
+  });
+
+  // ─── Level persistence bug-hunt: every field survives a simulated restart ──
+  //
+  // Each `loadSchulteState(UID)` call below is a fresh read with no in-memory
+  // state reused from a prior call — the same shape a real app remount uses
+  // (mount effect / handleNextChallenge / handleRetryError all call
+  // `loadSchulteState` fresh, never a cached JS object) — so these faithfully
+  // simulate "close and reopen the app" without needing to mount the screen.
+
+  it('LP-5. missionInLevel survives a simulated restart after one completed mission', async () => {
+    const challenge = sampleChallenge();
+    await recordPersistedLevelAttempt(UID, attemptFor(challenge));
+
+    const reloaded = await loadSchulteState(UID); // simulated restart
+    expect(reloaded.levelState.missionInLevel).toBe(1);
+  });
+
+  it('LP-6. advancing Level 1 → Level 2 survives a simulated restart, and highestUnlockedLevel/missionInLevel reset with it', async () => {
+    // Each clean, fast completion grants 40 progress (see calculateSchulteLevelProgress);
+    // three in a row cross the 100-point level-up threshold.
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+
+    const reloaded = await loadSchulteState(UID); // simulated restart
+    expect(reloaded.levelState.currentLevel).toBe(2);
+    expect(reloaded.levelState.levelProgress).toBe(20);
+    expect(reloaded.levelState.highestUnlockedLevel).toBe(2);
+    expect(reloaded.levelState.missionsCompletedAtCurrentLevel).toBe(0);
+    expect(reloaded.levelState.missionInLevel).toBe(0);
+  });
+
+  it('LP-7. profile.missionIndex (personal mission index) keeps counting through a level-up and survives restart', async () => {
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+
+    const reloaded = await loadSchulteState(UID);
+    expect(reloaded.profile.missionIndex).toBe(3);
+  });
+
+  it('LP-8. completed-signature history is preserved across a level-up, not reset by the fresh default', async () => {
+    const first = sampleChallenge();
+    await recordPersistedLevelAttempt(UID, attemptFor(first));
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+
+    const reloaded = await loadSchulteState(UID);
+    // sampleChallenge() is deterministic per call, so all 3 attempts share one
+    // signature here — dedup collapses it to a single entry (see test 3/4).
+    expect(reloaded.profile.completedSignatures).toContain(first.signature);
+    expect(reloaded.profile.completedSignatures.length).toBe(1);
+    // A level-up must never silently fall back to a fresh/default state.
+    expect(reloaded.levelState.currentLevel).not.toBe(1);
+    expect(reloaded.profile.missionIndex).not.toBe(0);
+  });
+
+  it('LP-9. "Next Challenge" flow: loading state right after a level-up resolves the next mission from the saved (not default) level', async () => {
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+
+    // Mirrors handleNextChallenge(): fresh load, then resolve off the loaded level/missionInLevel.
+    const state = await loadSchulteState(UID);
+    expect(state.levelState.currentLevel).toBe(2);
+
+    const result = resolveNextSchulteLevelMission({
+      profile: state.profile,
+      userStableId: UID,
+      level: state.levelState.currentLevel,
+      missionInLevel: state.levelState.missionInLevel,
+      isPremium: false,
+      mode: 'next',
+    });
+    expect(result.challenge).not.toBeNull();
+  });
+
+  it('debugSetSchulteLevel jumps the level with a fresh progress bar, preserves profile, and survives reload (internal seam)', async () => {
+    await recordPersistedLevelAttempt(UID, attemptFor(sampleChallenge()));
+    const before = await loadSchulteState(UID);
+
+    await debugSetSchulteLevel(UID, 5);
+    const reloaded = await loadSchulteState(UID);
+
+    expect(reloaded.levelState.currentLevel).toBe(5);
+    expect(reloaded.levelState.levelProgress).toBe(0);
+    expect(reloaded.levelState.highestUnlockedLevel).toBe(5);
+    expect(reloaded.levelState.missionsCompletedAtCurrentLevel).toBe(0);
+    expect(reloaded.levelState.missionInLevel).toBe(0);
+    // Skill profile (rating/mastery/history) is untouched by the debug jump.
+    expect(reloaded.profile.missionIndex).toBe(before.profile.missionIndex);
+    expect(reloaded.profile.completedSignatures).toEqual(before.profile.completedSignatures);
   });
 });
