@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setNativeSmartResetLastResetCompletedAt } from './screenUsageService';
 
 /**
  * Screen Balance MVP — local-only stats and the Go Offline timer's
@@ -83,6 +84,7 @@ export async function recordResetCompleted(
   } catch {
     // Best-effort — the completed session itself already happened.
   }
+  void setNativeSmartResetLastResetCompletedAt(next.lastResetCompletedAt);
   return next;
 }
 

@@ -19,14 +19,19 @@ import { useGreeting } from '@/hooks/useGreeting';
 import { useMindScore } from '@/hooks/useMindScore';
 import { useSleepScore } from '@/hooks/useSleepScore';
 import { saveDailyScore } from '@/services/dailyScorePersistence';
+import type { ResetType } from '@/services/screenBalancePersistence';
 import {
     calculateMindPulseScore,
     getFocusArea,
     pulseScoreTheme,
 } from '@/utils/scoring';
+import {
+  recommendedResetFromParam,
+  smartResetNotificationKey,
+} from '@/utils/smartResetNotificationRoute';
 import { useWellnessStore } from '@/stores/useWellnessStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { User, Flame } from 'lucide-react-native';
@@ -38,6 +43,11 @@ const STREAK_PAYWALL_KEY     = '@mindpulse/streak-paywall-shown';
 
 export default function HomeDashboardScreen() {
   const router        = useRouter();
+  const params        = useLocalSearchParams<{
+    smartReset?: string;
+    recommendedReset?: string;
+    notificationId?: string;
+  }>();
   const { user }      = useAuth();
   const { isPremium } = useSubscription();
   const displayName   = user?.displayName ?? user?.email?.split('@')[0] ?? null;
@@ -81,6 +91,8 @@ export default function HomeDashboardScreen() {
   const [showOnboardingPaywall, setShowOnboardingPaywall] = useState(false);
   const [showStreakPaywall, setShowStreakPaywall]         = useState(false);
   const [showResetPicker, setShowResetPicker]             = useState(false);
+  const [recommendedReset, setRecommendedReset]           = useState<ResetType | undefined>(undefined);
+  const consumedSmartResetNotificationRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (isPremium || !user?.uid) return;
@@ -108,6 +120,15 @@ export default function HomeDashboardScreen() {
     if (user?.uid) void AsyncStorage.setItem(`${STREAK_PAYWALL_KEY}:${user.uid}`, '1');
   };
   const goToPremium = () => router.push(ROUTES.appPremium as never);
+
+  useEffect(() => {
+    if (params.smartReset !== '1') return;
+    const notificationKey = smartResetNotificationKey(params.notificationId);
+    if (consumedSmartResetNotificationRef.current === notificationKey) return;
+    consumedSmartResetNotificationRef.current = notificationKey;
+    setRecommendedReset(recommendedResetFromParam(params.recommendedReset));
+    setShowResetPicker(true);
+  }, [params.notificationId, params.recommendedReset, params.smartReset]);
 
   return (
     <ScreenShell scroll={true} ambient={<AmbientBackground subtle />}>
@@ -192,7 +213,7 @@ export default function HomeDashboardScreen() {
           <SectionLabel first>QUICK ACTIONS</SectionLabel>
           <FeatureGrid
             showStartHere={!hasCompletedAnySession}
-            onResetPress={() => setShowResetPicker(true)}
+            onResetPress={() => { setRecommendedReset(undefined); setShowResetPicker(true); }}
             weeklySessions={{
               'eye-exercise': weeklySessions.eye,
               'eye-games': weeklySessions.eyeGames,
@@ -223,7 +244,10 @@ export default function HomeDashboardScreen() {
       <StaggerItem index={5}>
         <View style={{ marginTop: SPACING.section }}>
           <SectionLabel first>SCREEN BALANCE</SectionLabel>
-          <ScreenBalanceCard uid={user?.uid} onTakeReset={() => setShowResetPicker(true)} />
+          <ScreenBalanceCard
+            uid={user?.uid}
+            onTakeReset={reset => { setRecommendedReset(reset); setShowResetPicker(true); }}
+          />
         </View>
       </StaggerItem>
 
@@ -247,7 +271,11 @@ export default function HomeDashboardScreen() {
         onUpgrade={() => { dismissStreakPaywall(); goToPremium(); }}
         onDismiss={dismissStreakPaywall}
       />
-      <ResetPickerSheet visible={showResetPicker} onClose={() => setShowResetPicker(false)} />
+      <ResetPickerSheet
+        visible={showResetPicker}
+        onClose={() => setShowResetPicker(false)}
+        recommendedReset={recommendedReset}
+      />
     </ScreenShell>
   );
 }

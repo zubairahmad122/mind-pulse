@@ -41,6 +41,7 @@ export const ROUTES = {
   appMoveReset: '/(app)/move-reset',
   appOfflineReset: '/(app)/offline-reset',
   appOfflineSession: '/(app)/offline-session',
+  appScreenBalance: '/(app)/screen-balance',
   appGrounding: '/(app)/stress/grounding',
   appCalmWave: '/(app)/relax/player?sessionId=calm-flow',
   appTensionRelease: '/(app)/stress/tension-release',

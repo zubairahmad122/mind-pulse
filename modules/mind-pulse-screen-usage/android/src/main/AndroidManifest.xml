@@ -1,0 +1,42 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+
+  <!--
+    Not a runtime-prompt permission — the user must explicitly grant Usage
+    Access from Android Settings (see MindPulseScreenUsageModule.openUsageAccessSettings).
+    `tools:ignore="ProtectedPermissions"` silences the lint warning that this
+    is a signature/privileged permission; declaring it is what makes MindPulse
+    show up as a row in the system's Usage Access settings list.
+  -->
+  <uses-permission
+    android:name="android.permission.PACKAGE_USAGE_STATS"
+    tools:ignore="ProtectedPermissions" />
+
+  <!--
+    Android 11+ package-visibility rules hide `PackageManager` lookups
+    (app labels, launcher resolution) for packages this app hasn't declared
+    a matching <queries> entry for, even though UsageStatsManager itself
+    still freely reports their package names in usage events. Without
+    these, most "Most Used Today" entries fall back to a raw package id
+    instead of a resolved label, and the current launcher can't be
+    identified to exclude it from that list.
+  -->
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.MAIN" />
+      <category android:name="android.intent.category.LAUNCHER" />
+    </intent>
+    <intent>
+      <action android:name="android.intent.action.MAIN" />
+      <category android:name="android.intent.category.HOME" />
+    </intent>
+  </queries>
+
+  <application>
+    <service
+      android:name=".SmartResetReminderJobService"
+      android:enabled="true"
+      android:exported="true"
+      android:permission="android.permission.BIND_JOB_SERVICE" />
+  </application>
+
+</manifest>

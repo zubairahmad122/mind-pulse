@@ -16,12 +16,13 @@ import { EYE_BREAK_ACTIVITY, formatActivityDuration } from '@/constants/eyeRelax
 import { formatSessionDuration, getSessionById } from '@/constants/relaxSessions';
 import { PILLAR_COLORS, RADIUS, STATUS_COLORS, SURFACE_TINT } from '@/constants/designSystem';
 import { GLASS_CARD } from '@/constants/theme';
+import type { ResetType } from '@/services/screenBalancePersistence';
 
 const RESET_COLOR = PILLAR_COLORS.reset;
 const BREATHE_SESSION = getSessionById('box-breathing');
 
 type ResetOption = {
-  id: string;
+  id: ResetType;
   icon: LucideIcon;
   accent: string;
   title: string;
@@ -74,8 +75,19 @@ const OPTIONS: ResetOption[] = [
  * flow. Both the Home Quick Action ("Reset" pillar) and the Screen Balance
  * card's "Take a Reset" CTA open this same sheet rather than growing their
  * own copies. Same Modal/backdrop/handle convention as `CompanionActivitySheet`.
+ *
+ * `recommendedReset`, when set, marks exactly one row "Recommended" — the
+ * ordering and options themselves never change, only that one label.
  */
-export function ResetPickerSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+export function ResetPickerSheet({
+  visible,
+  onClose,
+  recommendedReset,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  recommendedReset?: ResetType;
+}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -112,13 +124,18 @@ export function ResetPickerSheet({ visible, onClose }: { visible: boolean; onClo
           <View style={styles.options}>
             {OPTIONS.map(option => {
               const Icon = option.icon;
+              const isRecommended = option.id === recommendedReset;
               return (
                 <TouchableOpacity
                   key={option.id}
                   onPress={() => open(option.route)}
                   activeOpacity={0.8}
                   accessibilityRole="button"
-                  accessibilityLabel={`${option.title}, ${option.duration}, ${option.description}`}
+                  accessibilityLabel={
+                    isRecommended
+                      ? `${option.title}, ${option.duration}, ${option.description}, Recommended`
+                      : `${option.title}, ${option.duration}, ${option.description}`
+                  }
                   style={styles.option}
                 >
                   <View style={[styles.optionIcon, { backgroundColor: option.accent + '18', borderColor: option.accent + '38' }]}>
@@ -128,6 +145,11 @@ export function ResetPickerSheet({ visible, onClose }: { visible: boolean; onClo
                     <View style={styles.optionTitleRow}>
                       <Text style={styles.optionTitle}>{option.title}</Text>
                       <Text style={styles.optionDuration}>{option.duration}</Text>
+                      {isRecommended && (
+                        <View style={styles.recommendedBadge}>
+                          <Text style={styles.recommendedBadgeText}>Recommended</Text>
+                        </View>
+                      )}
                     </View>
                     <Text style={styles.optionDescription} numberOfLines={1}>{option.description}</Text>
                   </View>
@@ -234,6 +256,21 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontWeight: '600',
     color: 'rgba(255,255,255,0.4)',
+  },
+  recommendedBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: RESET_COLOR + '1F',
+    borderWidth: 1,
+    borderColor: RESET_COLOR + '40',
+  },
+  recommendedBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: RESET_COLOR,
+    textTransform: 'uppercase',
   },
   optionDescription: {
     fontSize: 12,

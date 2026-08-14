@@ -17,6 +17,7 @@ import { ROUTES } from '@/constants';
 import { useStreakSync } from '@/hooks/useStreakSync';
 import { useDailyCheckIn } from '@/hooks/useDailyCheckIn';
 import { useEveningReminderSync } from '@/hooks/useEveningReminderSync';
+import { useSmartResetReminderSync } from '@/hooks/useSmartResetReminderSync';
 import { useSurpriseBadgeSync } from '@/hooks/useSurpriseBadgeSync';
 import { useWellnessCloudSync } from '@/hooks/useWellnessCloudSync';
 import { useAuth } from '@/context/AuthContext';
@@ -29,6 +30,7 @@ export default function AppStackLayout() {
   useStreakSync();
   useDailyCheckIn();
   useEveningReminderSync();
+  useSmartResetReminderSync();
   useSurpriseBadgeSync();
   useWellnessCloudSync();
 
