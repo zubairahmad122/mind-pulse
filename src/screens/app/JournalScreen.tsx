@@ -153,7 +153,7 @@ export default function JournalScreen() {
         ) : (
           <>
             {recentEntries.map(entry => (
-              <GlassCard key={entry.id} style={styles.entryCard}>
+              <GlassCard key={entry.id} simple style={styles.entryCard}>
                 <Text style={styles.entryDate}>
                   {entry.date.toLocaleDateString(undefined, {
                     month: 'short',
@@ -170,7 +170,7 @@ export default function JournalScreen() {
             {archivedEntries.length > 0 && (
               <PaywallGate featureId="journal_archive">
                 {archivedEntries.map(entry => (
-                  <GlassCard key={entry.id} style={styles.entryCard}>
+                  <GlassCard key={entry.id} simple style={styles.entryCard}>
                     <Text style={styles.entryDate}>
                       {entry.date.toLocaleDateString(undefined, {
                         month: 'short',

@@ -33,7 +33,7 @@ export default function AchievementsScreen() {
         <>
           <Text style={styles.sectionLabel}>✦ Unlocked</Text>
           {earned.map(a => (
-            <GlassCard key={a.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 14 }}>
+            <GlassCard key={a.id} simple style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 14 }}>
               <View style={styles.badge}>
                 <View style={styles.badgeInner}>
                   <a.icon size={22} color={ACCENT} strokeWidth={2} />
@@ -57,7 +57,7 @@ export default function AchievementsScreen() {
         <>
           <Text style={[styles.sectionLabel, { marginTop: 16 }]}>🔒 Locked</Text>
           {locked.map(a => (
-            <GlassCard key={a.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 14, opacity: 0.45 }}>
+            <GlassCard key={a.id} simple style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 14, opacity: 0.45 }}>
               <View style={styles.lockedBadge}>
                 <a.icon size={20} color={COLORS.textMuted} strokeWidth={2} />
               </View>
