@@ -1,14 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
-import Animated, {
-  Easing,
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
+import { StyleSheet, View } from 'react-native';
 import Svg, {
   Defs,
   RadialGradient,
@@ -39,35 +30,17 @@ function Nebula() {
   );
 }
 
+/**
+ * Static — was a continuously-running Reanimated "breathing" opacity/scale
+ * loop, mounted on every screen via ScreenShell. That's a perpetual repaint
+ * of a full-screen SVG gradient with no ability to ever stop, which competes
+ * with scroll for GPU/compositor time. The loop was decorative (subtle
+ * opacity/scale drift), so it's dropped in favor of a fixed, mid-cycle look
+ * — same visual composition, zero ongoing render cost.
+ */
 export default function AnimatedBackground() {
-  const progress = useSharedValue(0);
-  const breathe = useSharedValue(1);
-
-  useEffect(() => {
-    progress.value = withRepeat(
-      withTiming(1, { duration: 18000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
-    );
-    breathe.value = withRepeat(
-      withTiming(1.015, { duration: 9000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
-    );
-  }, []);
-
-  // Gentle opacity breathing on the whole nebula layer — keeps it alive without
-  // any visible banding.
-  const nebulaStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0.7, 1]),
-  }));
-
-  const containerStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: breathe.value }],
-  }));
-
   return (
-    <Animated.View style={[StyleSheet.absoluteFill, containerStyle]} pointerEvents="none">
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
       {/* Frozen global background (spec section 2) — identical on every screen. */}
       <LinearGradient
         colors={BACKGROUND.overlay}
@@ -76,9 +49,7 @@ export default function AnimatedBackground() {
       />
 
       {/* Single smooth radial nebula glow (no hard edges, no stars). */}
-      <Animated.View style={[StyleSheet.absoluteFill, nebulaStyle]}>
-        <Nebula />
-      </Animated.View>
-    </Animated.View>
+      <Nebula />
+    </View>
   );
 }

@@ -1,14 +1,4 @@
-import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedProps,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  type SharedValue,
-} from 'react-native-reanimated';
 import Svg, {
   Defs,
   LinearGradient as SvgLinearGradient,
@@ -48,56 +38,28 @@ function AmbientGlow({ accent }: { accent: string }) {
   );
 }
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-
-function AmbientBeam({
-  deg,
-  index,
-  phase,
-}: {
-  deg: number;
-  index: number;
-  phase: SharedValue<number>;
-}) {
-  const animatedProps = useAnimatedProps(() => ({
-    opacity: (0.5 + 0.5 * Math.sin(phase.value + index * 1.6)) * 0.18,
-  }));
+/**
+ * Static beam — was per-frame `sin()` opacity via Reanimated `useAnimatedProps`,
+ * which forced the whole SVG canvas to repaint every frame forever (unlike a
+ * plain View's opacity, an SVG shape's opacity isn't a free GPU-compositor
+ * property). Frozen at the animation's midpoint opacity — same look, no
+ * ongoing render cost.
+ */
+function AmbientBeam({ deg, index }: { deg: number; index: number }) {
+  const opacity = (0.5 + 0.5 * Math.sin(index * 1.6)) * 0.18;
   return (
-    <AnimatedPath
+    <Path
       d="M150,150 L132,10 L168,10 Z"
       fill="url(#ambientBeam)"
-      animatedProps={animatedProps}
+      opacity={opacity}
       transform={`rotate(${deg} 150 150)`}
     />
   );
 }
 
 function AmbientBeams({ accent }: { accent: string }) {
-  const rotation = useSharedValue(0);
-  const phase = useSharedValue(0);
-
-  useEffect(() => {
-    rotation.value = withRepeat(
-      withTiming(-360, { duration: 300_000, easing: Easing.linear }),
-      -1,
-      false,
-    );
-    phase.value = withRepeat(
-      withTiming(Math.PI * 2, { duration: 10_500, easing: Easing.linear }),
-      -1,
-      false,
-    );
-  }, [phase, rotation]);
-
-  const rotationStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
-
   return (
-    <Animated.View
-      pointerEvents="none"
-      style={[styles.beams, rotationStyle]}
-    >
+    <View pointerEvents="none" style={styles.beams}>
       <Svg width={300} height={300} viewBox="0 0 300 300">
         <Defs>
           <SvgLinearGradient id="ambientBeam" x1="0%" y1="100%" x2="0%" y2="0%">
@@ -106,10 +68,10 @@ function AmbientBeams({ accent }: { accent: string }) {
           </SvgLinearGradient>
         </Defs>
         {BEAM_ANGLES.map((deg, i) => (
-          <AmbientBeam key={i} deg={deg} index={i} phase={phase} />
+          <AmbientBeam key={i} deg={deg} index={i} />
         ))}
       </Svg>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -121,11 +83,13 @@ interface AmbientBackgroundProps {
 }
 
 /**
- * Animated ambient layer for screens using the current pillar's accent color.
+ * Static ambient layer for screens using the current pillar's accent color.
  *
- * Renders only the slow-rotating, very faint light beams — a subtle per-pillar
- * accent over the shared deep-space background. (The old centered glow ball and
- * floating particles were removed for a cleaner, calmer look.)
+ * Renders the slow-rotating, very faint light beams as a fixed frame — a
+ * subtle per-pillar accent over the shared deep-space background. (The old
+ * centered glow ball and floating particles were removed for a cleaner,
+ * calmer look; the beam/glow rotation and pulse animations were removed for
+ * scroll performance — see `AmbientBeam` above.)
  *
  * Positioned absolutely — place as a direct child of the screen container,
  * before the content, so it sits behind everything.
