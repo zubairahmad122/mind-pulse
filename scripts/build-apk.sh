@@ -12,7 +12,7 @@ fi
 cd android
 ./gradlew assembleRelease
 
-APK_PATH="app/build/outputs/apk/release/app-release.apk"
+APK_PATH="app/build/outputs/apk/release/app-arm64-v8a-release.apk"
 if [ -f "$APK_PATH" ]; then
   echo ""
   echo "APK ready: android/$APK_PATH"

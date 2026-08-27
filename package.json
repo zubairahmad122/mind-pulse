@@ -75,7 +75,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "build:apk": "bash scripts/build-apk.sh",
-    "install:apk": "adb install -r android/app/build/outputs/apk/release/app-release.apk",
+    "install:apk": "adb install -r android/app/build/outputs/apk/release/app-arm64-v8a-release.apk",
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "jest",

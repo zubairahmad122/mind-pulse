@@ -74,6 +74,7 @@
         }
       ],
       "./plugins/withAlarmRingtones",
+      "./plugins/withAbiSplit",
       "expo-asset",
       "@react-native-community/datetimepicker",
       [
