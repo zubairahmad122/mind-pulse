@@ -106,7 +106,7 @@ export default function JournalScreen() {
           ))}
         </ScrollView>
 
-        <Text style={styles.sectionTitle}>What's on your mind?</Text>
+        <Text style={styles.sectionTitle}>What&apos;s on your mind?</Text>
         <TextInput
           style={styles.input}
           multiline
