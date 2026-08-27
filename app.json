@@ -1,0 +1,111 @@
+{
+  "expo": {
+    "name": "Well Mode",
+    "slug": "mind-pulse",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/expo.icon/Assets/icon.png",
+    "scheme": "mindpulse",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "icon": "./assets/expo.icon/Assets/icon.png",
+      "bundleIdentifier": "com.zubzen.sleepy",
+      "supportsTablet": true
+    },
+    "android": {
+      "googleServicesFile": "./google-services.json",
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "backgroundColor": "#182749",
+        "foregroundImage": "./assets/expo.icon/Assets/adaptive-fg.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.zubzen.mindpulse",
+      "blockedPermissions": [
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
+      "permissions": [
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/expo.icon/Assets/icon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-dev-client",
+      "@react-native-firebase/app",
+      "@react-native-google-signin/google-signin",
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-transparent.png",
+          "imageWidth": 1,
+          "resizeMode": "contain",
+          "backgroundColor": "#080D1A",
+          "dark": {
+            "backgroundColor": "#080D1A"
+          }
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-image",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#7B61FF",
+          "sounds": [
+            "./assets/sounds/alarm.wav"
+          ]
+        }
+      ],
+      "./plugins/withAlarmRingtones",
+      "expo-asset",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "ndkVersion": "27.1.12297006",
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36
+          }
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "zubzen"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e8fbd1ea-ebd9-4a3e-b2fe-0554fe45b18d"
+      }
+    },
+    "owner": "zubair1122"
+  }
+}

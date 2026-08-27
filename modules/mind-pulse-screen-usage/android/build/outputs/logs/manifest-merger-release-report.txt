@@ -1,0 +1,54 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:1:1-42:12
+INJECTED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:1:1-42:12
+	package
+		INJECTED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml
+	xmlns:tools
+		ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:1:70-116
+	xmlns:android
+		ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:1:11-69
+uses-permission#android.permission.PACKAGE_USAGE_STATS
+ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:10:3-12:43
+	tools:ignore
+		ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:12:5-40
+	android:name
+		ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:11:5-58
+queries
+ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:23:3-32:13
+intent#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:24:5-27:14
+action#android.intent.action.MAIN
+ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:25:7-59
+	android:name
+		ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:25:15-56
+category#android.intent.category.LAUNCHER
+ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:26:7-67
+	android:name
+		ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:26:17-64
+intent#action:name:android.intent.action.MAIN+category:name:android.intent.category.HOME
+ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:28:5-31:14
+category#android.intent.category.HOME
+ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:30:7-63
+	android:name
+		ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:30:17-60
+application
+ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:34:3-40:17
+service#expo.modules.mindpulsescreenusage.SmartResetReminderJobService
+ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:35:5-39:66
+	android:enabled
+		ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:37:7-29
+	android:exported
+		ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:38:7-30
+	android:permission
+		ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:39:7-63
+	android:name
+		ADDED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:36:7-51
+uses-sdk
+INJECTED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml
+INJECTED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /home/zubiidev/Desktop/desk/mind-pulse-backup/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml

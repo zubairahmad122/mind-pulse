@@ -1,0 +1,164 @@
+import { Platform } from 'react-native';
+import type { SleepAlarmSupport } from '@/types/alarm.types';
+import { requestAllAlarmPermissions } from './alarmPermissions';
+import { getNativeAlarmModule } from './nativeAlarm';
+
+const ALARM_SOUND = 'alarm.wav';
+const NOTIFICATION_CHANNEL_ID = 'sleep-wake-alarms-ringing-v3';
+const SLEEP_ALARM_NOTIFICATION_PREFIX = 'sleep-wake-alarm-';
+const MIN_ALARM_MS = 5_000;
+const MIN_TEST_ALARM_MS = 2_000;
+
+type NotificationsModule = typeof import('expo-notifications');
+
+let notificationsModule: NotificationsModule | null | undefined;
+
+async function getNotifications(): Promise<NotificationsModule | null> {
+  if (notificationsModule !== undefined) return notificationsModule;
+  try {
+    const mod = await import('expo-notifications');
+    mod.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+    notificationsModule = mod;
+    return mod;
+  } catch {
+    notificationsModule = null;
+    return null;
+  }
+}
+
+async function setupNotificationChannel(Notifications: NotificationsModule): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
+    name: 'Sleep wake alarms',
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 700, 250, 700, 250, 1200],
+    sound: ALARM_SOUND,
+    enableVibrate: true,
+  });
+}
+
+export async function getSleepAlarmSupport(): Promise<SleepAlarmSupport> {
+  const native = getNativeAlarmModule();
+  if (native) {
+    const status = await native.getPermissionStatus();
+    return status.ready ? 'granted' : 'denied';
+  }
+
+  const Notifications = await getNotifications();
+  if (!Notifications) return 'unavailable';
+
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  if (existing === 'granted') {
+    await setupNotificationChannel(Notifications);
+    return 'granted';
+  }
+
+  const { status } = await Notifications.requestPermissionsAsync();
+  if (status === 'granted') {
+    await setupNotificationChannel(Notifications);
+    return 'granted';
+  }
+  return 'denied';
+}
+
+/** Request system permissions if needed; returns updated support level. */
+export async function prepareAlarmPermissions(): Promise<SleepAlarmSupport> {
+  const native = getNativeAlarmModule();
+  if (native) {
+    // "ready" reflects exact-alarm access only — a missing notification
+    // permission must never block scheduling, since the alarm still rings
+    // without it. But that also means notifications are never re-requested
+    // once exact-alarm is already granted unless we check them separately
+    // here — otherwise the alarm rings with no visible notification or
+    // full-screen intent, and the user only finds it by opening the app.
+    let status = await native.getPermissionStatus();
+    if (!status.ready || !status.notifications) {
+      status = await requestAllAlarmPermissions();
+    }
+    return status.ready ? 'granted' : 'denied';
+  }
+
+  let support = await getSleepAlarmSupport();
+  if (support === 'denied') {
+    await requestAllAlarmPermissions();
+    support = await getSleepAlarmSupport();
+  }
+  return support;
+}
+
+export async function stopAlarmRinging(): Promise<void> {
+  await getNativeAlarmModule()?.stopRinging().catch(() => undefined);
+}
+
+export async function cancelSleepAlarms(): Promise<void> {
+  await getNativeAlarmModule()?.cancelAlarm().catch(() => undefined);
+
+  const Notifications = await getNotifications();
+  if (Notifications) {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const sleepAlarmIds = scheduled
+      .map(request => request.identifier)
+      .filter(identifier => identifier.startsWith(SLEEP_ALARM_NOTIFICATION_PREFIX));
+    await Promise.all(
+      sleepAlarmIds.map(identifier =>
+        Notifications.cancelScheduledNotificationAsync(identifier)
+      ),
+    );
+  }
+}
+
+export async function scheduleWakeAlarm(
+  wakeAt: Date,
+  label: string,
+  options?: { isTest?: boolean; ringtoneId?: string | null },
+): Promise<string | null> {
+  const msUntil = wakeAt.getTime() - Date.now();
+  const minMs = options?.isTest ? MIN_TEST_ALARM_MS : MIN_ALARM_MS;
+  if (msUntil < minMs) return null;
+
+  const native = getNativeAlarmModule();
+  if (native) {
+    await cancelSleepAlarms();
+    // Do not hide native scheduling errors. Callers must be able to tell the
+    // user that no alarm was armed instead of silently starting sleep tracking.
+    return native.scheduleAlarm(wakeAt.getTime(), label, options?.ringtoneId ?? null);
+  }
+
+  const Notifications = await getNotifications();
+  if (!Notifications) return null;
+
+  await cancelSleepAlarms();
+  await setupNotificationChannel(Notifications);
+
+  return Notifications.scheduleNotificationAsync({
+    identifier: `${SLEEP_ALARM_NOTIFICATION_PREFIX}${wakeAt.getTime()}`,
+    content: {
+      title: 'Time to wake up',
+      body: label,
+      sound: ALARM_SOUND,
+      priority: Notifications.AndroidNotificationPriority.MAX,
+      ...(Platform.OS === 'android' ? { channelId: NOTIFICATION_CHANNEL_ID } : {}),
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: wakeAt,
+    },
+  });
+}
+
+export async function scheduleTestWakeAlarm(delaySeconds: number): Promise<string | null> {
+  const sec = Math.max(3, Math.round(delaySeconds));
+  const wakeAt = new Date(Date.now() + sec * 1000);
+  return scheduleWakeAlarm(wakeAt, `Test alarm — rings in ${sec}s`, { isTest: true });
+}
+
+export function formatWakeTime(date: Date): string {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}

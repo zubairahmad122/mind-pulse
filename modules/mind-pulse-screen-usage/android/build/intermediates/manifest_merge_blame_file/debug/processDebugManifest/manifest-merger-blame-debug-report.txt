@@ -1,0 +1,69 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    xmlns:tools="http://schemas.android.com/tools"
+4    package="expo.modules.mindpulsescreenusage" >
+5
+6    <uses-sdk android:minSdkVersion="24" />
+7
+8    <!--
+9    Not a runtime-prompt permission — the user must explicitly grant Usage
+10    Access from Android Settings (see MindPulseScreenUsageModule.openUsageAccessSettings).
+11    `tools:ignore="ProtectedPermissions"` silences the lint warning that this
+12    is a signature/privileged permission; declaring it is what makes MindPulse
+13    show up as a row in the system's Usage Access settings list.
+14    -->
+15    <uses-permission
+15-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:10:3-12:43
+16        android:name="android.permission.PACKAGE_USAGE_STATS"
+16-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:11:5-58
+17        tools:ignore="ProtectedPermissions" />
+17-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:12:5-40
+18
+19    <!--
+20    Android 11+ package-visibility rules hide `PackageManager` lookups
+21    (app labels, launcher resolution) for packages this app hasn't declared
+22    a matching <queries> entry for, even though UsageStatsManager itself
+23    still freely reports their package names in usage events. Without
+24    these, most "Most Used Today" entries fall back to a raw package id
+25    instead of a resolved label, and the current launcher can't be
+26    identified to exclude it from that list.
+27    -->
+28    <queries>
+28-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:23:3-32:13
+29        <intent>
+29-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:24:5-27:14
+30            <action android:name="android.intent.action.MAIN" />
+30-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:25:7-59
+30-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:25:15-56
+31
+32            <category android:name="android.intent.category.LAUNCHER" />
+32-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:26:7-67
+32-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:26:17-64
+33        </intent>
+34        <intent>
+34-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:28:5-31:14
+35            <action android:name="android.intent.action.MAIN" />
+35-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:25:7-59
+35-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:25:15-56
+36
+37            <category android:name="android.intent.category.HOME" />
+37-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:30:7-63
+37-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:30:17-60
+38        </intent>
+39    </queries>
+40
+41    <application>
+41-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:34:3-40:17
+42        <service
+42-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:35:5-39:66
+43            android:name="expo.modules.mindpulsescreenusage.SmartResetReminderJobService"
+43-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:36:7-51
+44            android:enabled="true"
+44-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:37:7-29
+45            android:exported="true"
+45-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:38:7-30
+46            android:permission="android.permission.BIND_JOB_SERVICE" />
+46-->/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-screen-usage/android/src/main/AndroidManifest.xml:39:7-63
+47    </application>
+48
+49</manifest>

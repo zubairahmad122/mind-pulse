@@ -1,0 +1,289 @@
+import {
+  EmailAuthProvider,
+  createUserWithEmailAndPassword,
+  linkWithCredential,
+  updateProfile,
+} from '@react-native-firebase/auth';
+import { getAuth } from '@/lib/firebase';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { AuthHeroLayout, GoogleSignInButton } from '@/components/auth';
+import { Input } from '@/components/ui';
+import { COLORS, FONTS, ROUTES } from '@/constants';
+import {
+  BUTTON,
+  GLASS_CARD,
+  PILLAR_COLORS,
+  RADIUS,
+} from '@/constants/designSystem';
+import { GoogleSignInCancelledError, useAuth } from '@/context/AuthContext';
+import { migrateGuestData } from '@/services/guestMigration';
+
+export default function CreateAccountScreen() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { user: currentUser, signInWithGoogle, refreshUser } = useAuth();
+  const router = useRouter();
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+
+  const handleGoogle = async () => {
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      if (error instanceof GoogleSignInCancelledError) return;
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Could not sign in with Google.';
+      Alert.alert('Sign In Failed', message);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleSignUp = async () => {
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      Alert.alert('Missing Fields', 'Please fill in all fields.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const auth = getAuth();
+      const isAnonymous = currentUser?.isAnonymous ?? false;
+
+      if (isAnonymous) {
+        // Link anonymous account to email/password. The uid is preserved, so
+        // Firestore data and AsyncStorage caches already belong to this account —
+        // no migration needed (re-running it would duplicate synced history).
+        const credential = EmailAuthProvider.credential(email.trim(), password);
+        const result = await linkWithCredential(currentUser!, credential);
+        await updateProfile(result.user, { displayName: name.trim() });
+        await refreshUser();
+      } else {
+        // Brand new account (anonymous sign-in was unavailable) — migrate any
+        // guest data saved under the ':guest' AsyncStorage keys.
+        const { user } = await createUserWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password,
+        );
+        await updateProfile(user, { displayName: name.trim() });
+        await refreshUser();
+        void migrateGuestData(user.uid);
+      }
+    } catch (error: any) {
+      Alert.alert(
+        'Sign Up Error',
+        error.message ?? 'Could not create account.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formBusy = loading || googleLoading;
+
+  return (
+    <AuthHeroLayout
+      onBackPress={() => router.replace(ROUTES.authSignIn)}
+      heroImage={require('@/assets/expo.icon/Assets/playstore.png')}
+      simpleHero
+      appBackground
+    >
+      <Text style={styles.title}>Create Account</Text>
+      <Text style={styles.subtitle}>
+        Start tracking your mind, sleep & eyes — all in one place.
+      </Text>
+
+      <View style={styles.form}>
+        <Input
+          label="Full Name"
+          icon="person-outline"
+          placeholder="Your full name"
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+          returnKeyType="next"
+          editable={!formBusy}
+          fieldStyle={styles.inputField}
+          labelStyle={styles.inputLabel}
+          focusColor={PILLAR_COLORS.relax}
+          style={styles.inputText}
+          onSubmitEditing={() => emailRef.current?.focus()}
+        />
+        <Input
+          ref={emailRef}
+          label="Email Address"
+          icon="mail-outline"
+          placeholder="you@example.com"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="next"
+          editable={!formBusy}
+          fieldStyle={styles.inputField}
+          labelStyle={styles.inputLabel}
+          focusColor={PILLAR_COLORS.relax}
+          style={styles.inputText}
+          onSubmitEditing={() => passwordRef.current?.focus()}
+        />
+        <Input
+          ref={passwordRef}
+          label="Password"
+          icon="lock-closed-outline"
+          placeholder="Min. 6 characters"
+          value={password}
+          onChangeText={setPassword}
+          secureToggle
+          autoCapitalize="none"
+          returnKeyType="done"
+          editable={!formBusy}
+          fieldStyle={styles.inputField}
+          labelStyle={styles.inputLabel}
+          focusColor={PILLAR_COLORS.relax}
+          style={styles.inputText}
+          onSubmitEditing={handleSignUp}
+        />
+
+        <View>
+          <TouchableOpacity
+            onPress={handleSignUp}
+            activeOpacity={0.88}
+            disabled={formBusy}
+            style={styles.createBtn}
+          >
+            <LinearGradient
+              colors={BUTTON.primaryGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.createGradient}
+            >
+              <Text style={styles.createLabel}>Create Account</Text>
+              <Svg width={17} height={17} viewBox="0 0 24 24">
+                <Path
+                  d="M5 12h14M13 6l6 6-6 6"
+                  fill="none"
+                  stroke="#fff"
+                  strokeWidth={2.2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.divider} />
+          <Text style={styles.dividerText}>Continue with</Text>
+          <View style={styles.divider} />
+        </View>
+
+        <GoogleSignInButton
+          onPress={handleGoogle}
+          loading={googleLoading}
+          disabled={loading}
+          style={styles.googleButton}
+        />
+
+        <TouchableOpacity
+          onPress={() => router.replace(ROUTES.authSignIn)}
+          activeOpacity={0.7}
+          disabled={formBusy}
+        >
+          <Text style={styles.footer}>
+            Already have an account?{' '}
+            <Text style={styles.footerLink}>Sign In</Text>
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </AuthHeroLayout>
+  );
+}
+
+const styles = StyleSheet.create({
+  title: {
+    fontFamily: FONTS.heading,
+    fontSize: 32,
+    lineHeight: 38,
+    color: COLORS.text,
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  subtitle: {
+    fontFamily: FONTS.body,
+    fontSize: 15,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.7)',
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  form: { gap: 14 },
+  inputField: {
+    height: 60,
+    borderRadius: 16,
+    paddingRight: 20,
+    backgroundColor: GLASS_CARD.bg,
+    borderColor: GLASS_CARD.border,
+  },
+  inputText: { paddingLeft: 4 },
+  inputLabel: {
+    fontFamily: FONTS.bodySemi,
+    fontSize: 13,
+    letterSpacing: 2,
+    color: 'rgba(245,247,251,0.6)',
+  },
+  createBtn: {
+    height: 60,
+    borderRadius: RADIUS.button,
+    overflow: 'hidden',
+    shadowColor: PILLAR_COLORS.relax,
+    shadowOffset: { width: 0, height: 7 },
+    shadowRadius: 16,
+    shadowOpacity: 0.28,
+    elevation: 5,
+  },
+  createGradient: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  createLabel: {
+    fontFamily: FONTS.bodyBold,
+    fontSize: 16,
+    color: '#fff',
+    letterSpacing: 0.2,
+  },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  divider: { flex: 1, height: 1, backgroundColor: COLORS.border },
+  dividerText: { color: COLORS.textMuted, fontSize: 12 },
+  googleButton: {
+    height: 60,
+    minHeight: 60,
+    borderRadius: RADIUS.button,
+    borderColor: GLASS_CARD.border,
+    backgroundColor: GLASS_CARD.bg,
+  },
+  footer: { color: COLORS.textMuted, fontSize: 14, textAlign: 'center' },
+  footerLink: { color: COLORS.purple, fontWeight: '700' },
+});

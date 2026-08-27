@@ -1,0 +1,92 @@
+{
+  "project_info": {
+    "project_number": "742478012348",
+    "project_id": "smart-sleepy-ae3ca",
+    "storage_bucket": "smart-sleepy-ae3ca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:742478012348:android:c9ae78184a1167c56215b9",
+        "android_client_info": {
+          "package_name": "com.zubzen.mindpulse"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "742478012348-vpskp7dht70mdlhaljqjmkbersfe49tq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zubzen.mindpulse",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "742478012348-ehcquc3rscpo7rlt9dic2diq10sq8nug.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChkKYphxYQa-siGDNuy10mjsvhYyskNZY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "742478012348-ehcquc3rscpo7rlt9dic2diq10sq8nug.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:742478012348:android:b2a86e56b8837ab56215b9",
+        "android_client_info": {
+          "package_name": "com.zubzen.sleepy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "742478012348-irpths01uk88f447q14tarr512d9v6tl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zubzen.sleepy",
+            "certificate_hash": "85ea97292a10ea836402ab63c6427d9c0026d4a0"
+          }
+        },
+        {
+          "client_id": "742478012348-l39dtgdjtr622g1ldoug2nfqb6o2l3le.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zubzen.sleepy",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "742478012348-ehcquc3rscpo7rlt9dic2diq10sq8nug.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChkKYphxYQa-siGDNuy10mjsvhYyskNZY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "742478012348-ehcquc3rscpo7rlt9dic2diq10sq8nug.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

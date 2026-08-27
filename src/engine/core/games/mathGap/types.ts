@@ -1,0 +1,9 @@
+export type MathOperator="add"|"subtract"|"multiply"|"divide";
+export type MathExpression={type:"value";value:number}|{type:"binary";operator:MathOperator;left:number;right:number}|{type:"twoStep";first:{operator:"add"|"subtract"|"multiply";left:number;right:number};second:{operator:"add"|"subtract";right:number}};
+export type MathGapRule="bigger"|"smaller"|"closest"; export type MathGapSide="left"|"right";
+export type MathGapChallenge={id:string;left:MathExpression;right:MathExpression;leftValue:number;rightValue:number;rule:MathGapRule;targetValue?:number;correctSide:MathGapSide;timeLimitMs:number;difficultyScore:number;gap:number;signature:string};
+export type MathGapSkillState={rating:number;recentAccuracy:number;medianResponseMs:number;timeoutRate:number;additionRating:number;subtractionRating:number;multiplicationRating:number;comparisonRating:number;ruleSwitchRating:number};
+export type MathGapRoundResult={challengeId:string;correct:boolean;timedOut:boolean;responseMs:number;score:number;streak:number;difficulty:number;rule:MathGapRule;operator?:MathOperator;gap:number};
+export type MathGapSessionRecord={id:string;startedAt:string;completedAt:string;score:number;xpEarned:number;accuracy:number;averageResponseMs:number;correctCount:number;totalChallenges:number;bestFlow:number;highestTier:number;levelBefore:number;levelAfter:number;results:MathGapRoundResult[]};
+export type MathGapProgress={version:number;level:number;xp:number;lifetimeXp:number;totalSessions:number;bestScore:number;bestAccuracy:number;fastestAverageMs?:number;bestFlow:number;highestTier:number;skill:MathGapSkillState;unlockedRules:MathGapRule[];lastPlayedAt?:string;recentSessions:MathGapSessionRecord[];sessionHistory:MathGapSessionRecord[]};
+export type MathGapPhase="intro"|"active"|"feedback"|"ruleShift"|"paused"|"complete";

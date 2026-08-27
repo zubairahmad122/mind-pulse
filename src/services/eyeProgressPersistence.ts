@@ -1,0 +1,158 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from '@react-native-firebase/firestore';
+import { withTimeout } from '@/utils/withTimeout';
+
+const db = getFirestore();
+
+export type EyeSessionType = 'cvs-protocol' | 'eye-reset';
+
+export interface EyeSessionRecord {
+  dateKey: string;
+  completedAt: number;
+  type: EyeSessionType;
+}
+
+function todayKey(): string {
+  return new Date().toLocaleDateString('sv');
+}
+
+function sessionKey(uid?: string): string {
+  return `@mindpulse/eye-sessions:${uid ?? 'guest'}`;
+}
+
+function enforcerKey(uid?: string): string {
+  return `@mindpulse/eye-break-enforcer:${uid ?? 'guest'}`;
+}
+
+function notifIdKey(uid?: string): string {
+  return `@mindpulse/eye-break-notif-id:${uid ?? 'guest'}`;
+}
+
+/** Firestore ref for a user's eye sessions subcollection. */
+function eyeSessionsRef(uid: string) {
+  return collection(db, 'users', uid, 'eyeSessions');
+}
+
+/** Load from local cache (fast). */
+async function loadSessions(uid?: string): Promise<EyeSessionRecord[]> {
+  try {
+    const raw = await AsyncStorage.getItem(sessionKey(uid));
+    return raw ? (JSON.parse(raw) as EyeSessionRecord[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Save to local cache (with 90-day pruning). */
+async function saveSessions(uid: string | undefined, records: EyeSessionRecord[]): Promise<void> {
+  const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+  const pruned = records.filter(r => r.completedAt >= cutoff);
+  try {
+    await AsyncStorage.setItem(sessionKey(uid), JSON.stringify(pruned));
+  } catch {
+    // ignore
+  }
+}
+
+export async function recordEyeCompletion(
+  uid: string | undefined,
+  type: EyeSessionType,
+): Promise<void> {
+  const record: EyeSessionRecord = {
+    dateKey: todayKey(),
+    completedAt: Date.now(),
+    type,
+  };
+
+  // Firestore (cloud backup) — only for logged-in users
+  if (uid) {
+    try {
+      await withTimeout(addDoc(eyeSessionsRef(uid), record), 8000);
+    } catch {
+      // offline — local cache is sufficient
+    }
+  }
+
+  // Local cache (always)
+  const sessions = await loadSessions(uid);
+  await saveSessions(uid, [record, ...sessions]);
+}
+
+/** Merge cloud sessions with any local-only sessions that haven't synced yet, deduped and sorted. */
+function mergeSessions(cloud: EyeSessionRecord[], local: EyeSessionRecord[]): EyeSessionRecord[] {
+  const seen = new Set(cloud.map(r => `${r.completedAt}:${r.type}`));
+  const localOnly = local.filter(r => !seen.has(`${r.completedAt}:${r.type}`));
+  return [...cloud, ...localOnly].sort((a, b) => b.completedAt - a.completedAt);
+}
+
+export async function loadEyeSessions(uid?: string): Promise<EyeSessionRecord[]> {
+  const local = await loadSessions(uid);
+
+  // For logged-in users: try Firestore first for cross-device sync
+  if (uid) {
+    try {
+      const snap = await withTimeout(
+        getDocs(query(eyeSessionsRef(uid), orderBy('completedAt', 'desc'), limit(300))),
+        8000,
+      );
+      const cloud = snap.docs.map(d => d.data() as EyeSessionRecord);
+      if (cloud.length > 0) {
+        // Merge in any local sessions that haven't synced to Firestore yet,
+        // so a recent offline session isn't dropped when cloud data arrives.
+        const merged = mergeSessions(cloud, local);
+        void saveSessions(uid, merged);
+        return merged;
+      }
+    } catch {
+      // offline — fall through to local cache
+    }
+  }
+  return local;
+}
+
+export async function getEyeBreakEnforcerEnabled(uid?: string): Promise<boolean> {
+  try {
+    const val = await AsyncStorage.getItem(enforcerKey(uid));
+    return val === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export async function setEyeBreakEnforcerEnabled(
+  uid: string | undefined,
+  enabled: boolean,
+): Promise<void> {
+  try {
+    await AsyncStorage.setItem(enforcerKey(uid), enabled ? 'true' : 'false');
+  } catch {
+    // ignore
+  }
+}
+
+export async function saveEyeBreakNotifId(
+  uid: string | undefined,
+  id: string,
+): Promise<void> {
+  try {
+    await AsyncStorage.setItem(notifIdKey(uid), id);
+  } catch {
+    // ignore
+  }
+}
+
+export async function loadEyeBreakNotifId(uid?: string): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(notifIdKey(uid));
+  } catch {
+    return null;
+  }
+}
+
+export async function clearEyeBreakNotifId(uid?: string): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(notifIdKey(uid));
+  } catch {
+    // ignore
+  }
+}

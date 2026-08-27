@@ -1,0 +1,70 @@
+import type { ReactNode } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SPACING, TYPOGRAPHY } from '@/constants/designSystem';
+
+type Props = {
+  children: ReactNode;
+  /** Optional trailing action (e.g. "See all"). */
+  action?: { label: string; onPress: () => void };
+  /** First label on a screen drops the large top margin so it hugs the header. */
+  first?: boolean;
+  /** Accent used for the trailing action label. Defaults to a soft blue. */
+  accent?: string;
+  /**
+   * Override the default top margin (`first ? 4 : SPACING.section`) — for
+   * screens where the preceding card already carries its own bottom margin,
+   * so the two don't compound into an oversized gap. Defaults to the
+   * standard rhythm everywhere this isn't passed.
+   */
+  spacingTop?: number;
+};
+
+/**
+ * Unified section header — a small uppercase eyebrow label with a hairline rule
+ * that fills the remaining width, plus an optional trailing action.
+ *
+ * Use this for EVERY section divider across the app so the vertical rhythm and
+ * label styling stay perfectly consistent (replaces the various ad-hoc
+ * `SectionLabel` / `SectionHeader` implementations that lived inside screens).
+ */
+export function SectionLabel({ children, action, first = false, accent = '#60a5fa', spacingTop }: Props) {
+  return (
+    <View style={[styles.row, { marginTop: spacingTop ?? (first ? 4 : SPACING.section) }]}>
+      <Text style={styles.label}>{children}</Text>
+      <View style={styles.line} />
+      {action && (
+        <TouchableOpacity onPress={action.onPress} activeOpacity={0.7} style={styles.actionWrap}>
+          <Text style={[styles.action, { color: accent }]}>{action.label}</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+    marginLeft: 2,
+  },
+  label: {
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+    fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
+    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+    textTransform: TYPOGRAPHY.sectionLabel.textTransform,
+    color: 'rgba(245,247,251,0.6)',
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+  },
+  actionWrap: { paddingLeft: 4 },
+  action: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+});
