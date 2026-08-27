@@ -6,3 +6,4 @@ android/build/
 ios/build/
 *.log
 .DS_Store
+.env
