@@ -81,6 +81,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(u);
       if (u) {
         setIsGuestMode(false);
+        // Link RevenueCat's identity to the real account so entitlements
+        // (e.g. an active Pro subscription) are found after a reinstall,
+        // a new device, or a fresh sign-in — without this, RevenueCat only
+        // ever sees its own per-device anonymous ID, which has no purchase
+        // history, and the app reads back as Free until the user manually
+        // taps "Restore Purchases".
+        if (!u.isAnonymous && purchasesConfigured) {
+          Purchases.logIn(u.uid).catch(err => {
+            console.warn('[RevenueCat] logIn failed', err);
+          });
+        }
       }
       setLoading(false);
     });
@@ -160,6 +171,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch {
         // ignore
+      }
+      if (purchasesConfigured) {
+        try {
+          await Purchases.logOut();
+        } catch (err) {
+          console.warn('[RevenueCat] logOut failed', err);
+        }
       }
     }
 
