@@ -47,7 +47,7 @@ export default function TimeFlowOverviewScreen() {
             </Text>
           </View>
           <View style={styles.art}>
-            <Image source={require('@/assets/images/icons/time-flow.png')} resizeMode="contain" style={styles.heroImage} />
+            <Image source={require('@/assets/images/icons/time-flow.webp')} resizeMode="contain" style={styles.heroImage} />
           </View>
         </View>
         <GlassCard simple tint={SURFACE_TINT.card} style={styles.progress}>

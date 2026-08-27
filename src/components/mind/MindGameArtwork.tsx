@@ -82,7 +82,7 @@ export const TimeFlowCardArtwork = memo(function TimeFlowCardArtwork({ size = 76
     })}
   </Svg>;
 });
-export const MathGapCardArtwork = memo(function MathGapCardArtwork({size=76}:ArtworkProps){return <Image source={require('@/assets/images/icons/math-gap.png')} resizeMode="contain" style={{width:size,height:size}} accessible={false}/>});
+export const MathGapCardArtwork = memo(function MathGapCardArtwork({size=76}:ArtworkProps){return <Image source={require('@/assets/images/icons/math-gap.webp')} resizeMode="contain" style={{width:size,height:size}} accessible={false}/>});
 
 export const MindGameArtwork = memo(function MindGameArtwork({
   gameId,

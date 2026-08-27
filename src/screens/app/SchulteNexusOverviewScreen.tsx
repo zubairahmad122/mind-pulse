@@ -36,7 +36,7 @@ export default function SchulteNexusOverviewScreen() {
           <Text style={styles.heroTitle}>Find the next number.</Text>
           <Text style={styles.description}>Move through each sequence with speed and precision.</Text>
         </View>
-        <View style={styles.art}><Image source={require('@/assets/images/icons/schulte-nexus.png')} resizeMode="contain" style={styles.heroImage} /></View>
+        <View style={styles.art}><Image source={require('@/assets/images/icons/schulte-nexus.webp')} resizeMode="contain" style={styles.heroImage} /></View>
       </View>
       <GlassCard simple tint={SURFACE_TINT.card} style={styles.progressCard}>
         <View style={styles.progressHeading}><Text style={styles.level}>LEVEL {level}</Text><Text style={styles.xp}>{progress} / 100</Text></View>

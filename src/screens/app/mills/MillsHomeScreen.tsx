@@ -35,7 +35,7 @@ export default function MillsHomeScreen() {
         <Text style={styles.heroTitle}>Think three moves ahead.</Text>
         <Text style={styles.description}>Build mills, control the board, and outlast your opponent.</Text>
       </View>
-      <View style={styles.art}><Image source={require('@/assets/images/icons/mills.png')} resizeMode="contain" style={styles.heroImage} /></View>
+      <View style={styles.art}><Image source={require('@/assets/images/icons/mills.webp')} resizeMode="contain" style={styles.heroImage} /></View>
     </View>
     <GlassCard simple tint={SURFACE_TINT.card} style={styles.modeCard}>
       <View style={styles.modeHeading}>

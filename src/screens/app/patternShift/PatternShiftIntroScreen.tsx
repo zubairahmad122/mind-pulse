@@ -37,7 +37,7 @@ export default function PatternShiftIntroScreen() {
           <Text style={styles.heroTitle}>Read the structure.</Text>
           <Text style={styles.description}>Spot subtle changes in connected patterns.</Text>
         </View>
-        <View style={styles.heroArt}><Image source={require('@/assets/images/icons/pattren-shift .png')} resizeMode="contain" style={styles.heroImage} /></View>
+        <View style={styles.heroArt}><Image source={require('@/assets/images/icons/pattren-shift .webp')} resizeMode="contain" style={styles.heroImage} /></View>
       </View>
       <GlassCard simple tint={SURFACE_TINT.card} style={styles.progressCard}>
         <View style={styles.progressHeading}>
