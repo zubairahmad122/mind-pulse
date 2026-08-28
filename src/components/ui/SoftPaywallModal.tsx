@@ -47,96 +47,116 @@ export function SoftPaywallModal({
       onRequestClose={onDismiss}
     >
       <View style={styles.overlay}>
-        <Animated.View
-          entering={FadeInUp.springify().damping(20).stiffness(150)}
-          exiting={FadeOutDown.duration(200)}
-          style={[
-            styles.sheet,
-            isWelcome && styles.welcomeSheet,
-            { paddingBottom: Math.max(insets.bottom + 12, isWelcome ? 24 : spacing.xxl) },
-          ]}
-        >
-          {isWelcome && (
-            <Svg pointerEvents="none" style={StyleSheet.absoluteFill} width="100%" height="100%">
-              <Defs>
-                <RadialGradient id="welcomeGlow" cx="50%" cy="12%" rx="70%" ry="72%">
-                  <Stop offset="0" stopColor="#1CD7FF" stopOpacity="0.16" />
-                  <Stop offset="0.48" stopColor="#486BFF" stopOpacity="0.07" />
-                  <Stop offset="0.78" stopColor="#8A5CFF" stopOpacity="0.05" />
-                  <Stop offset="1" stopColor="#0B102A" stopOpacity="0" />
-                </RadialGradient>
-              </Defs>
-              <Rect width="100%" height="100%" fill="url(#welcomeGlow)" />
-            </Svg>
-          )}
-          <View style={styles.handleBar} />
+        {/* Clipping shape lives on a static (non-transformed) View — Android
+            can't reliably clip rounded corners on a layer that's actively
+            being transform-animated, which showed up as a glitch along one
+            edge of the card while the spring entrance was still settling. */}
+        <View style={[styles.sheetClip, isWelcome && styles.welcomeSheetClip]}>
+          <Animated.View
+            entering={FadeInUp.springify().damping(20).stiffness(150)}
+            exiting={FadeOutDown.duration(200)}
+            style={[
+              styles.sheet,
+              isWelcome && styles.welcomeSheet,
+              { paddingBottom: Math.max(insets.bottom + 12, isWelcome ? 24 : spacing.xxl) },
+            ]}
+          >
+            {isWelcome && (
+              <Svg pointerEvents="none" style={StyleSheet.absoluteFill} width="100%" height="100%">
+                <Defs>
+                  <RadialGradient id="welcomeGlow" cx="50%" cy="12%" rx="70%" ry="72%">
+                    <Stop offset="0" stopColor="#1CD7FF" stopOpacity="0.16" />
+                    <Stop offset="0.48" stopColor="#486BFF" stopOpacity="0.07" />
+                    <Stop offset="0.78" stopColor="#8A5CFF" stopOpacity="0.05" />
+                    <Stop offset="1" stopColor="#0B102A" stopOpacity="0" />
+                  </RadialGradient>
+                </Defs>
+                <Rect width="100%" height="100%" fill="url(#welcomeGlow)" />
+              </Svg>
+            )}
+            <View style={styles.handleBar} />
 
-          {isWelcome ? (
-            <>
-              <View style={styles.proMarkGlow} />
-              <LinearGradient
-                colors={['#42E8FF', '#3887FF', '#805CFF']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.proMarkBorder}
-              >
-                <View style={styles.proMarkInner}>
-                  <HeartPulse size={25} color="#69EAFF" strokeWidth={2.15} />
-                  <Sparkles size={12} color="#A99BFF" strokeWidth={2.2} style={styles.proSparkle} />
-                </View>
-              </LinearGradient>
-
-              <Text style={[styles.title, styles.welcomeTitle]}>{title}</Text>
-              <Text numberOfLines={3} style={[styles.subtitle, styles.welcomeSubtitle]}>
-                {subtitle}
-              </Text>
-
-              <View style={styles.benefits}>
-                <BenefitRow icon={<HeartPulse size={16} color="#56E3FF" strokeWidth={2} />} label="Guided wellness sessions" />
-                <BenefitRow icon={<Sparkles size={16} color="#56E3FF" strokeWidth={2} />} label="Deep relax & sleep sessions" />
-                <BenefitRow icon={<TrendingUp size={16} color="#56E3FF" strokeWidth={2} />} label="Deeper progress insights" />
-              </View>
-
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel={ctaLabel}
-                onPress={onUpgrade}
-                activeOpacity={0.86}
-                style={styles.welcomeCtaShadow}
-              >
-                <LinearGradient
-                  colors={['#43E4FF', '#3E91FF', '#536CFF']}
-                  start={{ x: 0, y: 0.25 }}
-                  end={{ x: 1, y: 0.75 }}
-                  style={styles.welcomeCta}
+            {isWelcome ? (
+              <>
+                <Svg
+                  pointerEvents="none"
+                  width={140}
+                  height={140}
+                  style={styles.proMarkGlow}
                 >
-                  <View style={styles.ctaTopHighlight} />
-                  <Text style={styles.welcomeCtaText}>{ctaLabel}</Text>
-                  <ArrowRight size={19} color="#FFFFFF" strokeWidth={2.5} />
+                  <Defs>
+                    <RadialGradient id="proMarkGlow" cx="50%" cy="50%" r="50%">
+                      <Stop offset="0%" stopColor="#42E8FF" stopOpacity="0.3" />
+                      <Stop offset="55%" stopColor="#3887FF" stopOpacity="0.12" />
+                      <Stop offset="100%" stopColor="#3887FF" stopOpacity="0" />
+                    </RadialGradient>
+                  </Defs>
+                  <Rect width={140} height={140} fill="url(#proMarkGlow)" />
+                </Svg>
+                <LinearGradient
+                  colors={['#42E8FF', '#3887FF', '#805CFF']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.proMarkBorder}
+                >
+                  <View style={styles.proMarkInner}>
+                    <HeartPulse size={25} color="#69EAFF" strokeWidth={2.15} />
+                    <Sparkles size={12} color="#A99BFF" strokeWidth={2.2} style={styles.proSparkle} />
+                  </View>
                 </LinearGradient>
-              </TouchableOpacity>
 
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={onDismiss}
-                activeOpacity={0.7}
-                style={styles.freeAction}
-              >
-                <Text style={styles.freeActionText}>Continue with Free</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <Text style={styles.emoji}>{emoji}</Text>
-              <Text style={styles.title}>{title}</Text>
-              <Text style={styles.subtitle}>{subtitle}</Text>
-              <GradientCTA label={ctaLabel} onPress={onUpgrade} style={styles.upgradeBtn} />
-              <TouchableOpacity onPress={onDismiss} activeOpacity={0.7}>
-                <Text style={styles.dismissText}>Maybe later</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </Animated.View>
+                <Text style={[styles.title, styles.welcomeTitle]}>{title}</Text>
+                <Text numberOfLines={3} style={[styles.subtitle, styles.welcomeSubtitle]}>
+                  {subtitle}
+                </Text>
+
+                <View style={styles.benefits}>
+                  <BenefitRow icon={<HeartPulse size={16} color="#56E3FF" strokeWidth={2} />} label="Guided wellness sessions" />
+                  <BenefitRow icon={<Sparkles size={16} color="#56E3FF" strokeWidth={2} />} label="Deep relax & sleep sessions" />
+                  <BenefitRow icon={<TrendingUp size={16} color="#56E3FF" strokeWidth={2} />} label="Deeper progress insights" />
+                </View>
+
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={ctaLabel}
+                  onPress={onUpgrade}
+                  activeOpacity={0.86}
+                  style={styles.welcomeCtaShadow}
+                >
+                  <LinearGradient
+                    colors={['#43E4FF', '#3E91FF', '#536CFF']}
+                    start={{ x: 0, y: 0.25 }}
+                    end={{ x: 1, y: 0.75 }}
+                    style={styles.welcomeCta}
+                  >
+                    <View style={styles.ctaTopHighlight} />
+                    <Text style={styles.welcomeCtaText}>{ctaLabel}</Text>
+                    <ArrowRight size={19} color="#FFFFFF" strokeWidth={2.5} />
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={onDismiss}
+                  activeOpacity={0.7}
+                  style={styles.freeAction}
+                >
+                  <Text style={styles.freeActionText}>Continue with Free</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.emoji}>{emoji}</Text>
+                <Text style={styles.title}>{title}</Text>
+                <Text style={styles.subtitle}>{subtitle}</Text>
+                <GradientCTA label={ctaLabel} onPress={onUpgrade} style={styles.upgradeBtn} />
+                <TouchableOpacity onPress={onDismiss} activeOpacity={0.7}>
+                  <Text style={styles.dismissText}>Maybe later</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </Animated.View>
+        </View>
       </View>
     </Modal>
   );
@@ -154,31 +174,41 @@ function BenefitRow({ icon, label }: { icon: React.ReactNode; label: string }) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(2,4,15,0.68)',
+    backgroundColor: 'rgba(2,4,15,0.94)',
     justifyContent: 'flex-end',
   },
-  welcomeSheet: {
+  // Clipping shape + shadow — kept on a static View, never the animated one
+  // (see the render-time comment above), so Android's corner clip stays
+  // stable through the whole entrance/exit transform.
+  // Uniform borderWidth (not per-edge borderTop/Left/RightWidth) — mixing
+  // different per-edge widths with a corner borderRadius renders a visible
+  // seam at the rounded corner on Android instead of a smooth arc. The
+  // bottom edge sits below the visible sheet (behind the safe-area padding)
+  // so a matching bottom border is imperceptible in practice.
+  sheetClip: {
     overflow: 'hidden',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: GLASS_CARD.border,
+    borderTopLeftRadius: RADIUS.card,
+    borderTopRightRadius: RADIUS.card,
+  },
+  welcomeSheetClip: {
     backgroundColor: '#0B102A',
     borderColor: 'rgba(92,126,255,0.28)',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 9,
     shadowColor: '#1E5EFF',
     shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.2,
     shadowRadius: 30,
     elevation: 24,
   },
+  welcomeSheet: {
+    paddingHorizontal: 24,
+    paddingTop: 9,
+  },
   sheet: {
-    backgroundColor: COLORS.surface,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: GLASS_CARD.border,
-    borderTopLeftRadius: RADIUS.card,
-    borderTopRightRadius: RADIUS.card,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xxl,
@@ -224,11 +254,7 @@ const styles = StyleSheet.create({
   },
   proMarkGlow: {
     position: 'absolute',
-    top: 30,
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    backgroundColor: 'rgba(42,190,255,0.09)',
+    top: 1,
   },
   proMarkBorder: {
     width: 58,

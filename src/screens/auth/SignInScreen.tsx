@@ -105,7 +105,7 @@ export default function SignInScreen() {
                 <Svg
                   width="100%"
                   height="100%"
-                  viewBox="0 0 128 112"
+                  viewBox="0 0 108 100"
                   style={StyleSheet.absoluteFill}
                   pointerEvents="none"
                 >
@@ -129,7 +129,7 @@ export default function SignInScreen() {
                       <Stop offset="100%" stopColor="#1A8FFF" stopOpacity={0} />
                     </RadialGradient>
                   </Defs>
-                  <Rect width="128" height="112" fill="url(#signInIconGlow)" />
+                  <Rect width="108" height="100" fill="url(#signInIconGlow)" />
                 </Svg>
                 <Image
                   source={require('@/assets/expo.icon/Assets/playstore.png')}
@@ -221,6 +221,7 @@ export default function SignInScreen() {
                     onPress={() => router.push(ROUTES.authForgotPassword)}
                     activeOpacity={0.7}
                     disabled={formBusy}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
                     <Text style={styles.forgotText}>Forgot Password?</Text>
                   </TouchableOpacity>
@@ -313,18 +314,17 @@ const styles = StyleSheet.create({
   logoHeader: {
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingBottom: 18,
+    paddingBottom: 14,
   },
   iconWrap: {
-    width: 128,
-    height: 112,
+    width: 108,
+    height: 100,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
   brandIcon: {
-    width: 128,
-    height: 128,
+    width: 92,
+    height: 92,
     shadowColor: '#00D4FF',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.14,
@@ -404,11 +404,13 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: 'rgba(245,247,251,0.6)',
   },
-  forgot: { alignSelf: 'flex-end', marginTop: -4 },
+  forgot: { alignSelf: 'flex-end', marginTop: -6, marginBottom: -6 },
   forgotText: {
     color: COLORS.purpleLight,
-    fontFamily: FONTS.bodySemi,
-    fontSize: 13,
+    fontFamily: FONTS.bodyBold,
+    fontWeight: '700',
+    fontSize: 13.5,
+    letterSpacing: 0.1,
   },
   signInShadow: {
     borderRadius: RADIUS.button,

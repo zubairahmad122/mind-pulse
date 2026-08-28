@@ -12,7 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { GlassCard } from '@/components/ui/GlassCard';
 import { GradientCTA } from '@/components/ui/GradientCTA';
 import { colors } from '@/constants/colors';
 import {
@@ -57,7 +56,7 @@ export function AlarmPermissionModal({
 }: Props) {
   return (
     <View style={styles.overlay}>
-      <GlassCard noPadding style={styles.card}>
+      <View style={styles.card}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           bounces={false}
@@ -121,7 +120,7 @@ export function AlarmPermissionModal({
             <Text style={styles.laterText}>Not now</Text>
           </TouchableOpacity>
         </ScrollView>
-      </GlassCard>
+      </View>
     </View>
   );
 }
@@ -129,18 +128,32 @@ export function AlarmPermissionModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(3,4,10,0.82)',
+    backgroundColor: 'rgba(3,4,10,0.9)',
     justifyContent: 'center',
     paddingHorizontal: 20,
     paddingVertical: 32,
   },
+  // Solid fill, not the shared translucent+blurred GlassCard: this renders
+  // inside a `transparent` RN `Modal`, which is its own native window on
+  // Android — `BlurView` can't sample the window behind it there, so the
+  // "glass" card was just a low-opacity tint with the live screen showing
+  // straight through it, unblurred. An opaque surface (same pattern as
+  // `SoftPaywallModal`'s sheet) keeps this legible regardless.
   card: {
     width: '100%',
     maxWidth: 430,
     maxHeight: '92%',
     alignSelf: 'center',
     borderRadius: RADIUS.card,
+    borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.background.secondary,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
   },
   cardInner: {
     padding: 24,
