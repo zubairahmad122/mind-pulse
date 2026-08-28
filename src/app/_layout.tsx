@@ -32,6 +32,7 @@ import { SubscriptionProvider } from '@/context/SubscriptionContext';
 import { RelaxProvider } from '@/context/RelaxContext';
 import { PaywallProvider } from '@/components/paywall/PaywallProvider';
 import { AnimatedLaunchScreen } from '@/components/AnimatedLaunchScreen';
+import { initAds } from '@/services/ads/initAds';
 
 Sentry.init({
   dsn: 'https://4d1abf4f165aaf226f6a58a70cdf65d7@o4511705450414080.ingest.de.sentry.io/4511705459261520',
@@ -43,6 +44,7 @@ Sentry.init({
 });
 
 SplashScreen.preventAutoHideAsync();
+initAds();
 
 function RootLayoutNav() {
   const { user, isGuestMode, loading } = useAuth();

@@ -33,6 +33,7 @@ import {
 import { spacing } from '@/constants/spacing';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/context/SubscriptionContext';
+import { useSessionCompleteInterstitial } from '@/services/ads/useSessionCompleteInterstitial';
 import { useGameFeedbackPrefs } from '@/hooks/useGameFeedbackPrefs';
 import { useGameSounds } from '@/hooks/useGameSounds';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -988,6 +989,10 @@ export default function SchulteNexusMissionScreen() {
   const [persistedState, setPersistedState] = useState<SchultePersistedState | null>(null);
   const [challenge, setChallenge] = useState<SchulteChallenge | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
+  const { maybeShow: maybeShowInterstitial } = useSessionCompleteInterstitial();
+  useEffect(() => {
+    if (phase === 'complete') void maybeShowInterstitial();
+  }, [phase, maybeShowInterstitial]);
   const [lockedValues, setLockedValues] = useState<ReadonlySet<number>>(() => new Set());
   const [targetIndex, setTargetIndex] = useState(0);
   const [errors, setErrors] = useState(0);

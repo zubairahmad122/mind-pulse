@@ -13,6 +13,10 @@ import { FONTS, PILLAR_COLORS, SURFACE_TINT } from "@/constants/designSystem";
 import { ROUTES } from "@/constants/routes";
 import { spacing } from "@/constants/spacing";
 import { useAuth } from "@/context/AuthContext";
+import { useSubscription } from "@/context/SubscriptionContext";
+import { usePaywall } from "@/hooks/usePaywall";
+import { resolveLevelAccess } from "@/engine/core/progression/freeLevelGate";
+import { useRewardedUnlock } from "@/services/ads/useRewardedUnlock";
 import {
   freshTimeFlowProgress,
   xpForLevel,
@@ -22,6 +26,8 @@ import { loadTimeFlowProgress } from "@/services/timeFlowPersistence";
 export default function TimeFlowOverviewScreen() {
   const router = useRouter(),
     { user } = useAuth(),
+    { isPremium } = useSubscription(),
+    { showPaywall } = usePaywall(),
     [progress, setProgress] = useState<TimeFlowProgress>(
       freshTimeFlowProgress(),
     ),
@@ -30,6 +36,18 @@ export default function TimeFlowOverviewScreen() {
     void loadTimeFlowProgress(user?.uid).then(setProgress);
   }, [user?.uid]);
   const threshold = xpForLevel(progress.level);
+  const access = resolveLevelAccess(progress.level, isPremium);
+  const startSession = () => {
+    if (!access.canPlay) {
+      showPaywall("mind_game_level_lock");
+      return;
+    }
+    router.push(ROUTES.appTimeFlowGame as never);
+  };
+  const { isLoaded: rewardLoaded, isEarnedReward, show: showRewarded } = useRewardedUnlock();
+  useEffect(() => {
+    if (isEarnedReward) router.push(ROUTES.appTimeFlowGame as never);
+  }, [isEarnedReward, router]);
   return (
     <>
       <ScreenShell
@@ -77,11 +95,21 @@ export default function TimeFlowOverviewScreen() {
           </View>
         </GlassCard>
         <GradientCTA
-          label="Start Session"
-          onPress={() => router.push(ROUTES.appTimeFlowGame as never)}
+          label={access.canPlay ? "Start Session" : "Unlock with Pro"}
+          onPress={startSession}
           style={styles.cta}
         />
-        <Text style={styles.duration}>2–3 min</Text>
+        <Text style={styles.duration}>
+          {access.canPlay ? "2–3 min" : `Level ${access.requiredLevel} requires Well Mode Pro`}
+        </Text>
+        {!access.canPlay && rewardLoaded && (
+          <GradientCTA
+            variant="secondary"
+            label="Watch Ad to Play Once"
+            onPress={() => showRewarded()}
+            style={{ marginTop: 10 }}
+          />
+        )}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="How to play TimeFlow"

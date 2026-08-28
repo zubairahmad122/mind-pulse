@@ -26,6 +26,8 @@ export interface AlarmRingtoneOption {
   /** Fallback remote URL (used when local asset is unavailable) */
   remoteUrl: string;
   color: string;
+  /** Behind the `alarm_premium_sounds` entitlement — see src/constants/entitlements.ts */
+  isPremium?: boolean;
 }
 
 export interface VibrationPatternOption {
@@ -87,6 +89,7 @@ export const ALARM_RINGTONES: AlarmRingtoneOption[] = [
     soundFile: 'peaceful-morning.mp3',
     remoteUrl: '',
     color: '#FFB74D',
+    isPremium: true,
   },
   {
     id: 'wind-chime',
@@ -96,6 +99,7 @@ export const ALARM_RINGTONES: AlarmRingtoneOption[] = [
     soundFile: 'wind-chime.mp3',
     remoteUrl: '',
     color: '#66BB6A',
+    isPremium: true,
   },
   {
     id: 'night-bells',
@@ -105,6 +109,7 @@ export const ALARM_RINGTONES: AlarmRingtoneOption[] = [
     soundFile: 'night-bells.mp3',
     remoteUrl: '',
     color: '#a78bfa',
+    isPremium: true,
   },
   {
     id: 'soft-ringtone',
@@ -132,6 +137,7 @@ export const ALARM_RINGTONES: AlarmRingtoneOption[] = [
     soundFile: 'marimba-melody.mp3',
     remoteUrl: '',
     color: '#CE93D8',
+    isPremium: true,
   },
   {
     id: 'marimba-pulse',
@@ -141,6 +147,7 @@ export const ALARM_RINGTONES: AlarmRingtoneOption[] = [
     soundFile: 'marimba-pulse.mp3',
     remoteUrl: '',
     color: '#BA68C8',
+    isPremium: true,
   },
   {
     id: 'digital-pulse',
@@ -159,6 +166,7 @@ export const ALARM_RINGTONES: AlarmRingtoneOption[] = [
     soundFile: 'energy-pulse.mp3',
     remoteUrl: '',
     color: '#FFD54F',
+    isPremium: true,
   },
   {
     id: 'sharp-alert',

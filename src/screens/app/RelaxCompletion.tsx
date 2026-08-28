@@ -18,6 +18,7 @@ import Animated, {
 
 import { EMOTIONAL_STATES, type EmotionalState } from '@/constants/emotionalStates';
 import { getSessionById, getRecommendedSession, getSessionRoute } from '@/constants/relaxSessions';
+import { useSessionCompleteInterstitial } from '@/services/ads/useSessionCompleteInterstitial';
 import { colors } from '@/constants/colors';
 import { PILLAR_COLORS } from '@/constants/designSystem';
 import { ROUTES } from '@/constants/routes';
@@ -49,6 +50,11 @@ export default function RelaxCompletion() {
   useEffect(() => {
     return () => stopVoice();
   }, [stopVoice]);
+
+  const { maybeShow } = useSessionCompleteInterstitial();
+  useEffect(() => {
+    void maybeShow();
+  }, [maybeShow]);
 
   // Celebration animations
   const heroScale = useSharedValue(0.5);

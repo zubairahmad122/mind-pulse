@@ -13,12 +13,18 @@ import { FONTS, PILLAR_COLORS, SURFACE_TINT } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/context/AuthContext';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { usePaywall } from '@/hooks/usePaywall';
+import { resolveLevelAccess } from '@/engine/core/progression/freeLevelGate';
+import { useRewardedUnlock } from '@/services/ads/useRewardedUnlock';
 import { freshPatternShiftProgress, xpForLevel, type PatternShiftProgress } from '@/engine/core/games/patternShift';
 import { loadPatternShiftProgress } from '@/services/patternShiftPersistence';
 
 export default function PatternShiftIntroScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { isPremium } = useSubscription();
+  const { showPaywall } = usePaywall();
   const [progress, setProgress] = useState<PatternShiftProgress>(freshPatternShiftProgress());
   const [showHelp, setShowHelp] = useState(false);
 
@@ -27,6 +33,18 @@ export default function PatternShiftIntroScreen() {
   }, [user?.uid]);
 
   const threshold = xpForLevel(progress.playerLevel);
+  const access = resolveLevelAccess(progress.playerLevel, isPremium);
+  const startSession = () => {
+    if (!access.canPlay) {
+      showPaywall('mind_game_level_lock');
+      return;
+    }
+    router.push(ROUTES.appPatternShiftGame as never);
+  };
+  const { isLoaded: rewardLoaded, isEarnedReward, show: showRewarded } = useRewardedUnlock();
+  useEffect(() => {
+    if (isEarnedReward) router.push(ROUTES.appPatternShiftGame as never);
+  }, [isEarnedReward, router]);
 
   return <>
     <ScreenShell pillar="mind" ambient={<AmbientBackground subtle />} safeBottom>
@@ -53,8 +71,11 @@ export default function PatternShiftIntroScreen() {
           <CompactStat label="TIER" value={String(progress.highestDifficulty)} />
         </View>
       </GlassCard>
-      <GradientCTA label="Start Session" onPress={() => router.push(ROUTES.appPatternShiftGame as never)} style={styles.cta} />
-      <Text style={styles.duration}>2–4 min</Text>
+      <GradientCTA label={access.canPlay ? 'Start Session' : 'Unlock with Pro'} onPress={startSession} style={styles.cta} />
+      <Text style={styles.duration}>{access.canPlay ? '2–4 min' : `Level ${access.requiredLevel} requires Well Mode Pro`}</Text>
+      {!access.canPlay && rewardLoaded && (
+        <GradientCTA variant="secondary" label="Watch Ad to Play Once" onPress={() => showRewarded()} style={{ marginTop: 10 }} />
+      )}
       <Pressable accessibilityRole="button" accessibilityLabel="How to play Pattern Shift" onPress={() => setShowHelp(true)} style={styles.howPressable}>
         {({ pressed }) => <View style={[styles.howRow, pressed && styles.howRowPressed]}>
           <View style={styles.howIcon}><Info size={18} color="#7DEBFA" /></View>

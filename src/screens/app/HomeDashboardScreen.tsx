@@ -1,3 +1,4 @@
+import { HomeBannerAd } from '@/components/ads/HomeBannerAd';
 import { DailyChallenge } from '@/components/home/DailyChallenge';
 import { FeaturedSection } from '@/components/home/FeaturedSection';
 import { FeatureGrid } from '@/components/home/FeatureGrid';
@@ -258,6 +259,8 @@ export default function HomeDashboardScreen() {
           />
         </View>
       </StaggerItem>
+
+      <HomeBannerAd />
 
       {/* Bottom runway so the card clears the floating tab bar */}
       <View style={{ height: SPACING.screenBottom }} />

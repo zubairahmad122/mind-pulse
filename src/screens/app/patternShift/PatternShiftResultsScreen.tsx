@@ -13,6 +13,7 @@ import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/context/AuthContext';
 import { freshPatternShiftProgress, xpForLevel, type PatternShiftProgress, type PatternShiftSessionRecord } from '@/engine/core/games/patternShift';
 import { loadPatternShiftProgress } from '@/services/patternShiftPersistence';
+import { useSessionCompleteInterstitial } from '@/services/ads/useSessionCompleteInterstitial';
 
 export default function PatternShiftResultsScreen() {
   const router = useRouter();
@@ -23,6 +24,11 @@ export default function PatternShiftResultsScreen() {
   useEffect(() => {
     void loadPatternShiftProgress(user?.uid).then(setProgress);
   }, [user?.uid]);
+
+  const { maybeShow } = useSessionCompleteInterstitial();
+  useEffect(() => {
+    void maybeShow();
+  }, [maybeShow]);
 
   const record = progress.sessionHistory.find(item => item.id === id) ?? progress.sessionHistory.at(-1);
   const comparison = useMemo(() => {

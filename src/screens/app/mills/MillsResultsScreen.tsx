@@ -9,6 +9,7 @@ import { FONTS } from '@/constants/designSystem';
 import { MILLS_THEME as T } from '@/constants/millsTheme';
 import { ROUTES } from '@/constants';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useSessionCompleteInterstitial } from '@/services/ads/useSessionCompleteInterstitial';
 
 /** One restrained spark of the win burst — radial fade-and-drift, not confetti. */
 function Particle({ angle, color, delay }: { angle: number; color: string; delay: number }) {
@@ -35,6 +36,8 @@ export default function MillsResultsScreen() {
   const router=useRouter();
   const insets=useSafeAreaInsets();
   const reducedMotion=useReducedMotion();
+  const{maybeShow}=useSessionCompleteInterstitial();
+  useEffect(()=>{void maybeShow()},[maybeShow]);
   const isDraw=p.result==='draw';
   const winnerId=p.winner==='P2'?'P2':'P1';
   const winner=winnerId==='P1'?p.p1:p.p2;

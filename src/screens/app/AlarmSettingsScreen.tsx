@@ -25,6 +25,8 @@ import { HeroCard } from '@/components/ui/HeroCard';
 import { GradientCTA } from '@/components/ui/GradientCTA';
 import { ALARM_RINGTONES, SNOOZE_DURATIONS, SMART_ALARM_WINDOWS, VIBRATION_PATTERNS, getRingtoneRequire, type AlarmRingtoneOption, type VibrationPatternOption } from '@/constants/alarmSounds';
 import { useAlarmSettings } from '@/hooks/useAlarmSettings';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { usePaywall } from '@/hooks/usePaywall';
 import { colors } from '@/constants/colors';
 import { FONTS, PILLAR_COLORS, SPACING, TYPOGRAPHY } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
@@ -978,6 +980,9 @@ export default function AlarmSettingsScreen() {
     setAlarmLabel,
   } = useAlarmSettings();
 
+  const { isPremium } = useSubscription();
+  const { showPaywall } = usePaywall();
+
   // ── Selected ringtone ──────────────────────────────────────────────────────
   const selectedRingtoneOption = ALARM_RINGTONES.find(r => r.id === selectedRingtone) ?? ALARM_RINGTONES[0];
 
@@ -1087,7 +1092,13 @@ export default function AlarmSettingsScreen() {
                 </View>
                 <ToggleSwitch
                   value={smartAlarm}
-                  onToggle={() => setSmartAlarm(!smartAlarm)}
+                  onToggle={() => {
+                    if (!smartAlarm && !isPremium) {
+                      showPaywall('alarm_smart_wake_window');
+                      return;
+                    }
+                    setSmartAlarm(!smartAlarm);
+                  }}
                 />
               </View>
 
@@ -1193,6 +1204,11 @@ export default function AlarmSettingsScreen() {
         selectedId={selectedRingtone}
         previewingId={previewingId}
         onSelect={id => {
+          const ringtone = ALARM_RINGTONES.find(r => r.id === id);
+          if (ringtone?.isPremium && !isPremium) {
+            showPaywall('alarm_premium_sounds');
+            return;
+          }
           void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           setSelectedRingtone(id);
           handleStopPreview();
