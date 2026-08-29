@@ -1,6 +1,14 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
+  ext {
+    // play-services-ads (react-native-google-mobile-ads' transitive dep) ships
+    // Kotlin 2.3.0-metadata .kotlin_module files; the version React Native's
+    // gradle plugin resolves by default (2.1.x) can't read that metadata,
+    // failing :react-native-google-mobile-ads:compileReleaseKotlin with
+    // "Module was compiled with an incompatible version of Kotlin."
+    kotlinVersion = "2.3.20"
+  }
   repositories {
     google()
     mavenCentral()
@@ -9,7 +17,7 @@ buildscript {
         classpath 'com.google.gms:google-services:4.4.4'
     classpath('com.android.tools.build:gradle')
     classpath('com.facebook.react:react-native-gradle-plugin')
-    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
   }
 }
 

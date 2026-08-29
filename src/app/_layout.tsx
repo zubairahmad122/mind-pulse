@@ -94,13 +94,15 @@ function RootLayoutNav() {
 
   return (
     <>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: 'fade',
-          contentStyle: { backgroundColor: COLORS.bg },
-        }}
-      />
+      {appReady && (
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: 'fade',
+            contentStyle: { backgroundColor: COLORS.bg },
+          }}
+        />
+      )}
       {!launchFinished && (
         <AnimatedLaunchScreen
           ready={appReady}
