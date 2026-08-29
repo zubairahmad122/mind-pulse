@@ -9,6 +9,7 @@ import {
     Flame,
     Hand,
     Leaf,
+    Lock,
     Moon,
     Play,
     X,
@@ -23,6 +24,7 @@ import { AmbientBackground } from '@/components/ui';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GradientCTA } from '@/components/ui/GradientCTA';
 import { HeroCard } from '@/components/ui/HeroCard';
+import { PaywallGate } from '@/components/paywall/PaywallGate';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { QuickActionTile } from '@/components/ui/QuickActionTile';
 import { ScreenTransition } from '@/components/ui/ScreenTransition';
@@ -32,7 +34,8 @@ import { StreakCelebrationBanner } from '@/components/ui/StreakCelebrationBanner
 
 import { colors } from '@/constants/colors';
 import { ROUTES } from '@/constants/routes';
-import { DURATION, FONTS, PILLAR_COLORS, RADIUS, SHADOWS, SPACING, SURFACE_TINT, TYPOGRAPHY } from '@/constants/designSystem';
+import { DURATION, FONTS, PILLAR_COLORS, PRO_GOLD, RADIUS, SHADOWS, SPACING, SURFACE_TINT, TYPOGRAPHY } from '@/constants/designSystem';
+import { ENTITLEMENTS } from '@/constants/entitlements';
 import { WeeklyRelaxChart } from '@/components/relax/WeeklyRelaxChart';
 import {
     EMOTIONAL_STATES,
@@ -53,6 +56,8 @@ import {
 } from '@/constants/relaxSessions';
 import { spacing } from '@/constants/spacing';
 import { useRelaxContext } from '@/context/RelaxContext';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { usePaywall } from '@/hooks/usePaywall';
 import { recordLastFeature } from '@/components/home/ContinueJourney';
 import { Shimmer } from '@/components/sleep/Skeletons';
 
@@ -189,6 +194,8 @@ function RelaxSkeleton() {
 
 export default function RelaxHome() {
   const router = useRouter();
+  const { isPremium } = useSubscription();
+  const { showPaywall } = usePaywall();
   const [selectedEmotion, setSelectedEmotion] = useState<EmotionalState | null>(null);
 
   useEffect(() => { void recordLastFeature('relax'); }, []);
@@ -219,6 +226,12 @@ export default function RelaxHome() {
   };
 
   const handleStartSession = (sessionId: string) => {
+    const session = getSessionById(sessionId);
+    const locked = !isPremium && !!session?.featureId && ENTITLEMENTS[session.featureId] === 'pro';
+    if (session?.featureId && locked) {
+      showPaywall(session.featureId);
+      return;
+    }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // Narration sessions route to their dedicated guided screens.
     router.push(getSessionRoute(sessionId) as never);
@@ -466,9 +479,9 @@ export default function RelaxHome() {
               {categorySessions.map((session, idx) => {
                 const inProgress = session.id === currentSessionId;
                 const doneToday = !inProgress && isCompletedToday(session.id);
-                return (
+                const locked = !isPremium && !!session.featureId && ENTITLEMENTS[session.featureId] === 'pro';
+                const row = (
                   <TouchableOpacity
-                    key={session.id}
                     onPress={() => handleStartSession(session.id)}
                     activeOpacity={0.7}
                     style={[
@@ -505,7 +518,11 @@ export default function RelaxHome() {
                         </Text>
                       </View>
                     </View>
-                    {inProgress ? (
+                    {locked ? (
+                      <View style={[styles.statePill, { backgroundColor: PRO_GOLD + '1F', borderColor: PRO_GOLD + '55' }]}>
+                        <Lock size={13} color={PRO_GOLD} strokeWidth={2.3} />
+                      </View>
+                    ) : inProgress ? (
                       <View style={[styles.statePill, { backgroundColor: session.color + '22', borderColor: session.color + '55' }]}>
                         <Text style={[styles.statePillText, { color: CATEGORY_COLOR_LIGHT[session.category] }]}>Continue</Text>
                       </View>
@@ -519,6 +536,14 @@ export default function RelaxHome() {
                       </View>
                     )}
                   </TouchableOpacity>
+                );
+
+                return session.featureId ? (
+                  <PaywallGate key={session.id} featureId={session.featureId}>
+                    {row}
+                  </PaywallGate>
+                ) : (
+                  <View key={session.id}>{row}</View>
                 );
               })}
             </GlassCard>

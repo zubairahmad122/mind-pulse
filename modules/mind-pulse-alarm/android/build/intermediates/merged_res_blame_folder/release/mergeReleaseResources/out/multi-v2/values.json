@@ -1,0 +1,52 @@
+{
+    "logs": [
+        {
+            "outputFile": "expo.modules.mindpulsealarm.mind-pulse-alarm-mergeReleaseResources-1:/values/values.xml",
+            "map": [
+                {
+                    "source": "/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/res/values/styles.xml",
+                    "from": {
+                        "startLines": "1",
+                        "startColumns": "2",
+                        "startOffsets": "14",
+                        "endLines": "9",
+                        "endColumns": "10",
+                        "endOffsets": "511"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "10",
+                        "endColumns": "10",
+                        "endOffsets": "552"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "expo.modules.mindpulsealarm.mind-pulse-alarm-release-3:/values/values.xml",
+            "map": [
+                {
+                    "source": "/home/zubiidev/Desktop/mind-pulse/modules/mind-pulse-alarm/android/src/main/res/values/styles.xml",
+                    "from": {
+                        "startLines": "1",
+                        "startColumns": "2",
+                        "startOffsets": "14",
+                        "endLines": "9",
+                        "endColumns": "10",
+                        "endOffsets": "511"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "10",
+                        "endColumns": "10",
+                        "endOffsets": "552"
+                    }
+                }
+            ]
+        }
+    ]
+}
