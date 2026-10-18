@@ -1,3 +1,7 @@
+# React Native tooling (NativeWind babel preset, Sentry Gradle plugin, local
+# config plugins) expects a flat node_modules, like npm produces.
+nodeLinker: hoisted
+
 allowBuilds:
   '@firebase/util': true
   '@sentry/cli': true
