@@ -17,3 +17,9 @@ app/src/main/java/inline/
 
 # Bundle artifacts
 *.jsbundle
+
+# Kotlin compiler cache
+.kotlin/
+
+# generated at build time
+app/src/main/assets/modules.json
