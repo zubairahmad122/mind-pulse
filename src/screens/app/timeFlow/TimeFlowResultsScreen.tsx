@@ -89,22 +89,22 @@ export default function TimeFlowResultsScreen() {
       </GlassCard>
       <View style={styles.grid}>
         <Metric
-          icon={<Route size={16} color="#72E8F6" />}
+          icon={<Route size={16} color="#4DE1C1" />}
           value={`${Math.round(record.accuracy * 100)}%`}
           label="ACCURACY"
         />
         <Metric
-          icon={<Grid3X3 size={16} color="#72E8F6" />}
+          icon={<Grid3X3 size={16} color="#4DE1C1" />}
           value={`${record.highestGridColumns ?? 3}×${record.highestGridRows ?? 3}`}
           label="HIGHEST GRID"
         />
         <Metric
-          icon={<Flame size={16} color="#72E8F6" />}
+          icon={<Flame size={16} color="#4DE1C1" />}
           value={String(record.bestStreak)}
           label="BEST STREAK"
         />
         <Metric
-          icon={<Gauge size={16} color="#72E8F6" />}
+          icon={<Gauge size={16} color="#4DE1C1" />}
           value={String(record.highestSequenceLength)}
           label="LONGEST FLOW"
         />
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   xp: {
     fontFamily: FONTS.headingSemi,
     fontSize: 16,
-    color: "#72E8F6",
+    color: "#4DE1C1",
     marginTop: 12,
   },
   levelCard: { paddingVertical: 15, marginBottom: 12 },
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "900",
     letterSpacing: 1.4,
-    color: "#72E8F6",
+    color: "#4DE1C1",
   },
   unlock: {
     fontFamily: FONTS.headingSemi,

@@ -29,6 +29,7 @@ import type { FeatureId } from '@/constants/entitlements';
 import { useSubscription } from '@/context/SubscriptionContext';
 import {
   getOfferings,
+  hasActiveProEntitlement,
   purchasePackage,
   restorePurchases,
 } from '@/services/purchaseService';
@@ -196,7 +197,11 @@ export function PaywallModal({ visible, onClose, featureId }: Props) {
 
     if (result.success) {
       await refreshSubscription();
-      onClose();
+      if (hasActiveProEntitlement(result.customerInfo)) {
+        onClose();
+      } else {
+        setError('No previous purchase found for this account.');
+      }
       return;
     }
     if (result.error) {
@@ -223,7 +228,7 @@ export function PaywallModal({ visible, onClose, featureId }: Props) {
             style={StyleSheet.absoluteFill}
           />
           <LinearGradient
-            colors={['rgba(19,16,40,0.96)', 'rgba(9,9,15,0.99)']}
+            colors={['rgba(19,16,40,0.96)', 'rgba(15,12,41,0.99)']}
             style={StyleSheet.absoluteFill}
           />
           <LinearGradient

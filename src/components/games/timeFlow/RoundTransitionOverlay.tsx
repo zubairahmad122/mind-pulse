@@ -144,6 +144,6 @@ const styles = StyleSheet.create({
   fill: {
     height: "100%",
     borderRadius: 3,
-    backgroundColor: "rgba(125,235,250,.65)",
+    backgroundColor: "rgba(77,225,193,.65)",
   },
 });

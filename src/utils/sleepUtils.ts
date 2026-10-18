@@ -7,9 +7,21 @@ export type SleepSession = {
   quality: number;       // 1–5
 };
 
+/**
+ * The LOCAL calendar night a session belongs to, derived from its `startTime`
+ * (epoch ms, always correct). Sessions saved before the UTC-date fix stored
+ * `date` as the UTC day — e.g. a 00:30 PKT start became the previous date —
+ * so readers use this instead of trusting the stored `date` string.
+ */
+export function sleepSessionDate(session: Pick<SleepSession, 'date' | 'startTime'>): string {
+  return Number.isFinite(session.startTime) && session.startTime > 0
+    ? new Date(session.startTime).toLocaleDateString('sv')
+    : session.date;
+}
+
 export function calculateStreak(sessions: SleepSession[]): number {
   if (sessions.length === 0) return 0;
-  const dates = [...new Set(sessions.map(s => s.date))].sort().reverse();
+  const dates = [...new Set(sessions.map(sleepSessionDate))].sort().reverse();
   const today = new Date().toLocaleDateString('sv');
   const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('sv');
   if (dates[0] !== today && dates[0] !== yesterday) return 0;

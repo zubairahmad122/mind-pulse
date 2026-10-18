@@ -89,6 +89,11 @@ export type NativeScreenUsageModule = {
     lastResetCompletedAt?: number | null,
   ) => Promise<NativeSmartResetReminderStatus>;
   setSmartResetLastResetCompletedAt?: (lastResetCompletedAt?: number | null) => Promise<void>;
+  hasDndAccess?: () => Promise<boolean>;
+  /** Returns whether the Settings screen actually opened. */
+  openDndAccessSettings?: () => Promise<boolean>;
+  /** Returns `false` (no-op) if DND access isn't granted — never throws. */
+  setFocusDndEnabled?: (enabled: boolean) => Promise<boolean>;
 };
 
 export type NativeSmartResetReminderStatus = {

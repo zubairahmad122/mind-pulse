@@ -1,7 +1,7 @@
-import { HomeBannerAd } from '@/components/ads/HomeBannerAd';
 import { DailyChallenge } from '@/components/home/DailyChallenge';
 import { FeaturedSection } from '@/components/home/FeaturedSection';
 import { FeatureGrid } from '@/components/home/FeatureGrid';
+import { HomeFeatureGuideSheet } from '@/components/home/HomeFeatureGuideSheet';
 import { ResetPickerSheet } from '@/components/home/ResetPickerSheet';
 import { TodaysJourneyCard } from '@/components/home/TodaysJourneyCard';
 import { ScreenShell } from '@/components/layout/ScreenShell';
@@ -14,12 +14,22 @@ import { ROUTES } from '@/constants';
 import { FONTS, PILLAR_COLORS, SPACING, TYPOGRAPHY } from '@/constants/designSystem';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/context/SubscriptionContext';
-import { useProgressStore } from '@/stores/useProgressStore';
+import { useWeeklyActivity } from '@/hooks/useActivity';
+import { useTodayProgress } from '@/hooks/useTodayProgress';
 import { useEyeScore } from '@/hooks/useEyeScore';
 import { useGreeting } from '@/hooks/useGreeting';
 import { useMindScore } from '@/hooks/useMindScore';
 import { useSleepScore } from '@/hooks/useSleepScore';
 import { saveDailyScore } from '@/services/dailyScorePersistence';
+import {
+  ensureEveningReminderScheduled,
+  getEveningReminderEnabled,
+  hasOfferedEveningReminder,
+  markEveningReminderOffered,
+  requestEveningReminderPermission,
+  setEveningReminderEnabled,
+} from '@/services/eveningReminder';
+import { hasSeenHomeFeatureGuide, markHomeFeatureGuideSeen } from '@/services/homeFeatureGuidePersistence';
 import type { ResetType } from '@/services/screenBalancePersistence';
 import {
     calculateMindPulseScore,
@@ -58,14 +68,9 @@ export default function HomeDashboardScreen() {
   const { text: greeting, icon: GreetingIcon, period: greetingPeriod } = useGreeting(firstName);
 
   // ── First-time detection (computed inline for efficient re-renders) ───
-  const hasCompletedAnySession = useProgressStore((s) =>
-    s.eyeExercisesCompleted > 0 ||
-    s.eyeGamesPlayed > 0 ||
-    s.relaxSessionsCompleted > 0 ||
-    s.mindSessionsCompleted > 0 ||
-    s.sleepSessionsTracked > 0
-  );
-  const weeklySessions = useProgressStore((s) => s.weeklySessions);
+  // Unified activity log (+ pre-log legacy counters, read-only) — real completions only.
+  const { everCompletedAny: hasCompletedAnySession } = useTodayProgress();
+  const { countsByType: weekCounts } = useWeeklyActivity();
 
   const eyeResult   = useEyeScore(user?.uid ?? undefined);
   const mindResult  = useMindScore(user?.uid ?? undefined);
@@ -96,8 +101,41 @@ export default function HomeDashboardScreen() {
   const [recommendedReset, setRecommendedReset]           = useState<ResetType | undefined>(undefined);
   const consumedSmartResetNotificationRef = useRef<string | null>(null);
 
+  // ── First-run feature guide — one real benefit per slide (Focus, Screen
+  // Break, Progress). Shown once, before any paywall sheet gets a chance to
+  // compete for the same first impression. Global (not per-account): a
+  // guest who later signs in shouldn't see the orientation twice. ──────────
+  const [showFeatureGuide, setShowFeatureGuide]   = useState(false);
+  const [featureGuideChecked, setFeatureGuideChecked] = useState(false);
+  // Both set from within the reminder-offer effect further down — declared
+  // here (before the paywall effect below) so the paywall effect can wait
+  // on them too, keeping Feature Guide → Reminder Offer → Paywall strictly
+  // sequential instead of racing two sheets onto the screen at once.
+  const [showReminderOffer, setShowReminderOffer] = useState(false);
+  const [reminderOfferChecked, setReminderOfferChecked] = useState(false);
+
   useEffect(() => {
-    if (isPremium || !user?.uid) return;
+    let cancelled = false;
+    void (async () => {
+      const seen = await hasSeenHomeFeatureGuide();
+      if (cancelled) return;
+      if (!seen) setShowFeatureGuide(true);
+      setFeatureGuideChecked(true);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const dismissFeatureGuide = () => {
+    setShowFeatureGuide(false);
+    void markHomeFeatureGuideSeen();
+  };
+
+  useEffect(() => {
+    if (
+      isPremium || !user?.uid ||
+      !featureGuideChecked || showFeatureGuide ||
+      !reminderOfferChecked || showReminderOffer
+    ) return;
     let cancelled = false;
     void (async () => {
       const onboardingKey   = `${ONBOARDING_PAYWALL_KEY}:${user.uid}`;
@@ -111,7 +149,7 @@ export default function HomeDashboardScreen() {
       if (!streakShown) setShowStreakPaywall(true);
     })();
     return () => { cancelled = true; };
-  }, [isPremium, user?.uid, streak]);
+  }, [isPremium, user?.uid, streak, featureGuideChecked, showFeatureGuide, reminderOfferChecked, showReminderOffer]);
 
   const dismissOnboardingPaywall = () => {
     setShowOnboardingPaywall(false);
@@ -123,6 +161,44 @@ export default function HomeDashboardScreen() {
   };
   const goToPremium = () => router.push(ROUTES.appPremium as never);
 
+  // ── Daily reminder offer — asked once, in-context, right after a user's
+  // first-ever Home visit, right after the feature guide — matching the
+  // standard pattern most apps use (ask for notification permission early,
+  // default the daily reminder on once granted) rather than waiting for a
+  // completed session. Still only ever requested from this explicit user
+  // action (the "Enable Reminder" tap), never silently. Runs before the
+  // paywall effect above (which waits on `reminderOfferChecked`), so this
+  // one only needs to wait on the feature guide, not on paywall state. ────
+  useEffect(() => {
+    if (!featureGuideChecked || showFeatureGuide || !user?.uid) return;
+    let cancelled = false;
+    void (async () => {
+      const [offered, alreadyEnabled] = await Promise.all([
+        hasOfferedEveningReminder(user.uid),
+        getEveningReminderEnabled(user.uid),
+      ]);
+      if (cancelled) return;
+      if (!offered && !alreadyEnabled) setShowReminderOffer(true);
+      setReminderOfferChecked(true);
+    })();
+    return () => { cancelled = true; };
+  }, [featureGuideChecked, showFeatureGuide, user?.uid]);
+
+  const acceptReminderOffer = () => {
+    setShowReminderOffer(false);
+    void (async () => {
+      await markEveningReminderOffered(user?.uid);
+      const granted = await requestEveningReminderPermission();
+      if (!granted) return; // denied at the OS level — leave it off, already marked "offered"
+      await setEveningReminderEnabled(user?.uid, true);
+      await ensureEveningReminderScheduled(user?.uid);
+    })();
+  };
+  const declineReminderOffer = () => {
+    setShowReminderOffer(false);
+    void markEveningReminderOffered(user?.uid);
+  };
+
   useEffect(() => {
     if (params.smartReset !== '1') return;
     const notificationKey = smartResetNotificationKey(params.notificationId);
@@ -133,7 +209,7 @@ export default function HomeDashboardScreen() {
   }, [params.notificationId, params.recommendedReset, params.smartReset]);
 
   return (
-    <ScreenShell scroll={true} ambient={<AmbientBackground subtle />}>
+    <ScreenShell scroll={true} ambient={<AmbientBackground subtle />} bannerAd>
       {/* ── Header — greeting (screen-title scale) + inline streak, avatar ── */}
       <StaggerItem index={0}>
         <View style={{
@@ -232,11 +308,11 @@ export default function HomeDashboardScreen() {
             showStartHere={!hasCompletedAnySession}
             onResetPress={() => { setRecommendedReset(undefined); setShowResetPicker(true); }}
             weeklySessions={{
-              'eye-exercise': weeklySessions.eye,
-              'eye-games': weeklySessions.eyeGames,
-              relax: weeklySessions.relax,
-              mind: weeklySessions.mind,
-              sleep: weeklySessions.sleep,
+              'eye-exercise': weekCounts.EYE_RESET_COMPLETED + weekCounts.EYE_BREAK_COMPLETED,
+              'eye-games': weekCounts.EYE_GAME_COMPLETED,
+              relax: weekCounts.RELAX_SESSION_COMPLETED,
+              mind: weekCounts.MIND_GAME_COMPLETED,
+              sleep: weekCounts.SLEEP_SESSION_COMPLETED,
             }}
           />
         </View>
@@ -260,11 +336,23 @@ export default function HomeDashboardScreen() {
         </View>
       </StaggerItem>
 
-      <HomeBannerAd />
-
       {/* Bottom runway so the card clears the floating tab bar */}
       <View style={{ height: SPACING.screenBottom }} />
 
+      <HomeFeatureGuideSheet
+        visible={showFeatureGuide}
+        onClose={dismissFeatureGuide}
+        onStartFocus={() => router.push(ROUTES.appFocusBlock as never)}
+      />
+      <SoftPaywallModal
+        visible={showReminderOffer}
+        emoji="🔔"
+        title="Stay on track"
+        subtitle="A single, calm reminder each evening to keep your routine going — easy to turn off anytime in Settings."
+        ctaLabel="Enable Reminder"
+        onUpgrade={acceptReminderOffer}
+        onDismiss={declineReminderOffer}
+      />
       <SoftPaywallModal
         visible={!isPremium && showOnboardingPaywall}
         emoji="✨"

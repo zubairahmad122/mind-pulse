@@ -11,8 +11,8 @@ const GRID = 100;
 const SVG_SIZE = GRID * 6 + PAD * 2;
 
 const LINE_ON_WOOD = '#BFD9E5';
-const CYAN_LINE_GLOW = '#72E8F6';
-const NODE_RING_ON_WOOD = 'rgba(114,232,246,0.3)';
+const CYAN_LINE_GLOW = '#4DE1C1';
+const NODE_RING_ON_WOOD = 'rgba(77,225,193,0.3)';
 const NODE_DOT_ON_WOOD = '#183449';
 
 /** "Stone" piece theme — classic black-and-ivory stones, deliberately kept off the cyan/coral accent palette used by "Pulse". */
@@ -245,7 +245,7 @@ export const MillsBoard = memo(function MillsBoard({ state, size, reducedMotion=
 });
 
 const styles=StyleSheet.create({
-  board:{alignSelf:'center',borderRadius:28,borderWidth:1.5,borderColor:'rgba(114,232,246,.24)',overflow:'visible',shadowColor:'#4AA7FF',shadowOffset:{width:0,height:10},shadowOpacity:.12,shadowRadius:22,elevation:8},
+  board:{alignSelf:'center',borderRadius:28,borderWidth:1.5,borderColor:'rgba(77,225,193,.24)',overflow:'visible',shadowColor:'#4AA7FF',shadowOffset:{width:0,height:10},shadowOpacity:.12,shadowRadius:22,elevation:8},
   boardSurface:{position:'absolute',left:0,right:0,top:0,bottom:0,borderRadius:27,overflow:'hidden'},
   boardMaterial:{position:'absolute',left:0,right:0,top:0,bottom:0},
   /** Kept light on purpose — this used to sit at 58% opacity, which was the "black overlay" the
@@ -253,7 +253,7 @@ const styles=StyleSheet.create({
   /** Cooler and slightly deeper than a flat warm brown — desaturates the wood's orange toward a
    * richer walnut/espresso tone rather than reading as pine, without going back to a heavy overlay. */
   boardOverlay:{position:'absolute',left:0,right:0,top:0,bottom:0,backgroundColor:'rgba(7,8,24,.18)'},
-  boardLight:{position:'absolute',left:10,right:10,top:9,height:'44%',borderRadius:22,backgroundColor:'rgba(114,232,246,.035)'},innerFrame:{position:'absolute',left:7,right:7,top:7,bottom:7,borderRadius:21,borderWidth:1,borderColor:'rgba(169,139,255,.11)'}, target:{position:'absolute',width:48,height:48,alignItems:'center',justifyContent:'center'},
+  boardLight:{position:'absolute',left:10,right:10,top:9,height:'44%',borderRadius:22,backgroundColor:'rgba(77,225,193,.035)'},innerFrame:{position:'absolute',left:7,right:7,top:7,bottom:7,borderRadius:21,borderWidth:1,borderColor:'rgba(164,139,255,.11)'}, target:{position:'absolute',width:48,height:48,alignItems:'center',justifyContent:'center'},
   resultDim:{position:'absolute',left:0,right:0,top:0,bottom:0,borderRadius:27,backgroundColor:'#000'},
   nodeWrap:{width:10,height:10,alignItems:'center',justifyContent:'center'},
   nodeRing:{position:'absolute',width:10,height:10,borderRadius:5,borderWidth:1,borderColor:NODE_RING_ON_WOOD},

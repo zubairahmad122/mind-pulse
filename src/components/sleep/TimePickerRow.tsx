@@ -125,9 +125,9 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 15,
-    backgroundColor: "rgba(123, 127, 255, 0.08)",
+    backgroundColor: "rgba(108,99,255, 0.08)",
     borderWidth: 1,
-    borderColor: "rgba(123, 127, 255, 0.25)",
+    borderColor: "rgba(108,99,255, 0.25)",
     gap: 1,
   },
   stepLabel: {

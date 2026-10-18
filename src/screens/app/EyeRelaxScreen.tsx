@@ -1,4 +1,4 @@
-import { recordLastFeature } from "@/components/home/ContinueJourney";
+import { useDailyActivityProgress } from "@/hooks/useActivity";
 import { CompanionActivitySheet } from "@/components/eye/CompanionActivitySheet";
 import { CompanionSettingsSheet } from "@/components/eye/CompanionSettingsSheet";
 import { EyeCheckinSheet, type CheckinMode } from "@/components/eye/EyeCheckinSheet";
@@ -200,7 +200,7 @@ function WeeklyActivityChart({
                         ? "rgba(255,255,255,0.08)"
                         : isToday
                           ? EYE_COLOR
-                          : "rgba(157,92,255,0.55)",
+                          : "rgba(123,92,255,0.55)",
                     },
                   ]}
                 />
@@ -382,7 +382,7 @@ function DesktopCompanionCard({
                 value={breakEnabled}
                 onValueChange={onToggleBreak}
                 disabled={breakLoading}
-                trackColor={{ false: "#252542", true: REMINDER_COLOR }}
+                trackColor={{ false: "#2A2460", true: REMINDER_COLOR }}
                 thumbColor={breakEnabled ? "#FFFFFF" : colors.text.secondary}
               />
             </View>
@@ -483,7 +483,7 @@ function DesktopCompanionCard({
                 value={breakEnabled}
                 onValueChange={onToggleBreak}
                 disabled={breakLoading}
-                trackColor={{ false: "#252542", true: REMINDER_COLOR }}
+                trackColor={{ false: "#2A2460", true: REMINDER_COLOR }}
                 thumbColor={breakEnabled ? "#FFFFFF" : colors.text.secondary}
               />
             </View>
@@ -589,7 +589,7 @@ function DesktopCompanionCard({
                   <Switch
                     value={prefs.repeatOn}
                     onValueChange={onToggleRepeat}
-                    trackColor={{ false: "#252542", true: EYE_COLOR }}
+                    trackColor={{ false: "#2A2460", true: EYE_COLOR }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -701,11 +701,6 @@ export default function EyeRelaxScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Record this feature for ContinueYourJourney on Home
-  useEffect(() => {
-    void recordLastFeature("eye-exercise");
-  }, []);
-
   const {
     enabled: breakEnabled,
     loading: breakLoading,
@@ -713,7 +708,6 @@ export default function EyeRelaxScreen() {
   } = useEyeBreakEnforcer(user?.uid);
   const eyeScore = useEyeScore(user?.uid);
   const hasAnySessions = eyeScore.hasAnySessions ?? false;
-  const completedToday = eyeScore.completedToday ?? [];
   const { weekDots, streak: eyeStreak } = useEyeProgress(user?.uid);
 
   const [checkinMode, setCheckinMode] = useState<CheckinMode | null>(null);
@@ -737,8 +731,11 @@ export default function EyeRelaxScreen() {
   // Hero always shows Eye Reset (cvs-protocol) or Focus Switch.
   // Recommended Recovery shows 20-20-20 Eye Break if not done today,
   // otherwise Focus Switch, otherwise "all caught up".
-  const eyeBreakDone = completedToday.includes(EYE_BREAK_ACTIVITY.id);
-  const focusSwitchDone = completedToday.includes("focus-sprint");
+  // Eye Breaks and Focus Switch rounds live in the unified activity log —
+  // `completedToday` (eye sessions) only ever holds Eye Reset.
+  const { types: activityTypesToday } = useDailyActivityProgress();
+  const eyeBreakDone = activityTypesToday.includes("EYE_BREAK_COMPLETED");
+  const focusSwitchDone = activityTypesToday.includes("EYE_GAME_COMPLETED");
   const recommended = eyeBreakDone
     ? focusSwitchDone
       ? null
@@ -750,7 +747,7 @@ export default function EyeRelaxScreen() {
   const todayDotIndex = (new Date().getDay() + 6) % 7; // Monday-start index, matching weekDots
 
   return (
-    <ScreenShell pillar="eye" ambient={<AmbientBackground subtle />}>
+    <ScreenShell pillar="eye" ambient={<AmbientBackground subtle />} bannerAd>
       <ScreenTransition>
         <ScreenHeader
           title="Eye Comfort"

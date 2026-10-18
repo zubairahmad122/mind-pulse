@@ -35,7 +35,7 @@ import { typography } from '@/constants/typography';
 // This page belongs to the Sleep pillar — same frozen indigo accent as the
 // Sleep tab, Routine, Analysis, and the Set Bedtime/Wake Time sheet. (It used
 // to run its own light/dark theme with `colors.accent.purple`, which despite
-// the name is actually blue #1A8FFF — the one screen in the app out of step
+// the name is actually blue #7B5CFF — the one screen in the app out of step
 // with the rest of the design system.)
 const ACCENT = PILLAR_COLORS.sleep;
 
@@ -46,7 +46,7 @@ function ToggleSwitch({ value, onToggle, color = ACCENT }: { value: boolean; onT
     <TouchableOpacity
       onPress={onToggle}
       activeOpacity={0.8}
-      style={[toggleStyles.track, { backgroundColor: value ? color : '#252542' }]}
+      style={[toggleStyles.track, { backgroundColor: value ? color : '#2A2460' }]}
     >
       <View style={[toggleStyles.thumb, value && toggleStyles.thumbOn]} />
     </TouchableOpacity>
@@ -234,7 +234,7 @@ function RingtoneCard({
 
         {selected && !isPreviewing && (
           <View style={[ringtoneStyles.check, { backgroundColor: ringtone.color }]}>
-            <Text style={{ color: '#0A0E1A', fontSize: 10, fontWeight: '800' }}>✓</Text>
+            <Text style={{ color: '#0F0C29', fontSize: 10, fontWeight: '800' }}>✓</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -481,7 +481,7 @@ const pickerStyles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#11162a',
+    backgroundColor: '#1A1545',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderWidth: 1,
@@ -1290,7 +1290,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(123,127,255,0.12)',
+    backgroundColor: 'rgba(108,99,255,0.12)',
     borderRadius: 1,
   },
   smartDetail: {

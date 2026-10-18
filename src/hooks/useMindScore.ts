@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useDailyActivityProgress } from '@/hooks/useActivity';
 import { loadJournalDateKeys } from '@/services/journalPersistence';
 import { loadStressSettings } from '@/services/mindScorePersistence';
 import { loadRecoverySessionsToday } from '@/services/recoveryPersistence';
@@ -23,6 +24,11 @@ const LOADING_RESULT: ScoreResult = {
 export function useMindScore(uid?: string) {
   const [result, setResult] = useState<ScoreResult>(LOADING_RESULT);
   const [loading, setLoading] = useState(true);
+  // Relax sessions completed today (breathing player + voice-guided sessions),
+  // from the unified activity log — what this score's "Recovery Sessions"
+  // category describes, previously never fed by the Relax tab.
+  const { activities } = useDailyActivityProgress();
+  const relaxToday = activities.filter(a => a.type === 'RELAX_SESSION_COMPLETED').length;
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +49,7 @@ export function useMindScore(uid?: string) {
           loadRecoverySessionsToday(uid),
           loadJournalDateKeys(uid),
         ]);
-        recoveryToday = recoveryCount;
+        recoveryToday = recoveryCount + relaxToday;
         journalToday = dateKeys.filter(d => d === todayKey()).length;
         journalStreakDays = consecutiveDayStreak(dateKeys);
       } catch {
@@ -62,7 +68,7 @@ export function useMindScore(uid?: string) {
 
     void load();
     return () => { cancelled = true; };
-  }, [uid]);
+  }, [uid, relaxToday]);
 
   return { ...result, loading };
 }

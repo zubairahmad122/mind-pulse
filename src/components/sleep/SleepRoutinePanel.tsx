@@ -130,7 +130,7 @@ export function SleepRoutinePanel() {
             styles.switchTrack,
             {
               justifyContent: schedule.reminderEnabled ? 'flex-end' : 'flex-start',
-              backgroundColor: schedule.reminderEnabled ? INDIGO : '#252542',
+              backgroundColor: schedule.reminderEnabled ? INDIGO : '#2A2460',
             },
           ]}
         >
@@ -144,7 +144,7 @@ export function SleepRoutinePanel() {
           onPress={() => void handleSave()}
           loading={saving}
           height={52}
-          glowColor="rgba(84,168,255,0.34)"
+          glowColor="rgba(108,99,255,0.34)"
         />
       </View>
     </View>

@@ -14,6 +14,8 @@ import {
   type FocusBlockCompletion,
   type FocusBlockStats,
 } from '@/services/focusBlockPersistence';
+import { syncFocusDnd } from '@/services/focusDndSync';
+import { recordActivity } from '@/stores/useActivityStore';
 
 export type FocusBlockPhase = 'loading' | 'setup' | 'active' | 'paused' | 'completed';
 
@@ -31,11 +33,21 @@ export function useFocusBlockSession(uid?: string) {
     if (completingRef.current) return;
     completingRef.current = true;
     const result = await completeFocusBlock(uid, activeSession);
+    // Keyed by the block's start so a re-evaluated completion can't double-count.
+    // The user's goal text is deliberately not recorded.
+    void recordActivity(uid, {
+      id: `focus-${activeSession.startedAt}`,
+      type: 'FOCUS_SESSION_COMPLETED',
+      source: 'focus-block',
+      timestamp: result.completion.completedAt,
+      durationSeconds: activeSession.durationSeconds,
+    });
     setSession(null);
     setStats(result.stats);
     setCompletion(result.completion);
     setRemainingSeconds(0);
     setPhase('completed');
+    void syncFocusDnd(uid);
   }, [uid]);
 
   const evaluateSession = useCallback((activeSession: ActiveFocusSession) => {
@@ -68,6 +80,7 @@ export function useFocusBlockSession(uid?: string) {
       setSession(state.activeFocusSession);
       setPhase(state.activeFocusSession.status);
       evaluateSession(state.activeFocusSession);
+      void syncFocusDnd(uid);
     })();
     return () => {
       mounted = false;
@@ -98,6 +111,7 @@ export function useFocusBlockSession(uid?: string) {
     setCompletion(null);
     setRemainingSeconds(activeSession.durationSeconds);
     setPhase('active');
+    void syncFocusDnd(uid);
     return true;
   }, [uid]);
 
@@ -111,6 +125,7 @@ export function useFocusBlockSession(uid?: string) {
     setSession(next);
     setPhase('paused');
     evaluateSession(next);
+    void syncFocusDnd(uid);
   }, [completeSession, evaluateSession, phase, session, uid]);
 
   const resume = useCallback(async () => {
@@ -119,6 +134,7 @@ export function useFocusBlockSession(uid?: string) {
     setSession(next);
     setPhase('active');
     evaluateSession(next);
+    void syncFocusDnd(uid);
   }, [evaluateSession, phase, session, uid]);
 
   const endEarly = useCallback(async () => {
@@ -128,6 +144,7 @@ export function useFocusBlockSession(uid?: string) {
     setStats(nextStats);
     setRemainingSeconds(DEFAULT_REMAINING_SECONDS);
     setPhase('setup');
+    void syncFocusDnd(uid);
   }, [uid]);
 
   const acknowledgeCompletion = useCallback(async () => {

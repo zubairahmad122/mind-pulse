@@ -30,7 +30,7 @@ export type StreakEvent = 'incremented' | 'frozen' | 'reset' | 'perfectDay' | nu
 /** Max activity dates kept — ~1 year, enough for a future monthly calendar/insights view. */
 const ACTIVITY_LOG_LIMIT = 370;
 
-/** Feature key matching useProgressStore's `todaySessions` map. */
+/** Daily-challenge focus area (each maps to one activity type in DailyChallenge.tsx). */
 export type ChallengeFeature = 'eye' | 'sleep' | 'mind';
 
 /** The daily challenge is assigned once per day (from that day's weakest
@@ -71,7 +71,7 @@ interface WellnessState {
   /** Lifetime "surprise badge" flags — once true, always true. Fed by
    * useSurpriseBadgeSync (Perfect Day / Night Owl) and checkAndUpdateStreak
    * (Comeback), never recomputed live, since the triggering daily state
-   * (todaySessions, time-of-completion) doesn't persist past its own day. */
+   * (today's completed pillars, time-of-completion) isn't kept as a lifetime fact. */
   everPerfectDay: boolean;
   everNightOwlSession: boolean;
   everComeback: boolean;

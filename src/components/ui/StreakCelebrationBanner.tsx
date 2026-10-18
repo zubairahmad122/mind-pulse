@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     left: spacing.md,
     right: spacing.md,
     zIndex: 20,
-    backgroundColor: 'rgba(16,24,39,0.96)',
+    backgroundColor: 'rgba(22,18,58,0.96)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
     borderRadius: RADIUS.card,

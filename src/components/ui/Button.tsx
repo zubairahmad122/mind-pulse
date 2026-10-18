@@ -32,7 +32,7 @@ export default function Button({
         activeOpacity={0.85}
       >
         <LinearGradient
-          colors={['#7EB8FF', '#1A8FFF', '#0F6FD6']}
+          colors={['#A48BFF', '#7B5CFF', '#3B2ED0']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.primaryFill}
         >
@@ -64,7 +64,7 @@ export default function Button({
       ) : (
         <Text
           className={`font-bold ${
-            variant === 'outline' ? 'text-[15px] text-[#7EB8FF]' : 'text-sm text-app-muted'
+            variant === 'outline' ? 'text-[15px] text-[#A48BFF]' : 'text-sm text-app-muted'
           }`}
         >
           {label}

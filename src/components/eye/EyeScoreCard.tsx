@@ -73,8 +73,8 @@ export function EyeScoreCard({ result, loading, hasAnySessions = true, streak = 
           </View>
         )}
         {!loading && !hasAnySessions && (
-          <View style={[styles.statusPill, { backgroundColor: '#06B6D4' + '22', borderColor: '#06B6D4' + '55' }]}>
-            <Text style={[styles.statusPillText, { color: '#06B6D4' }]}>Start your eye care journey</Text>
+          <View style={[styles.statusPill, { backgroundColor: '#3BC9AB' + '22', borderColor: '#3BC9AB' + '55' }]}>
+            <Text style={[styles.statusPillText, { color: '#3BC9AB' }]}>Start your eye care journey</Text>
           </View>
         )}
       </View>

@@ -1,4 +1,4 @@
-import { SleepSession } from './sleepUtils';
+import { SleepSession, sleepSessionDate } from './sleepUtils';
 
 // ──────────────────────────────────────────────
 // Shared types
@@ -128,20 +128,20 @@ export function sleepScoreTheme(score: number): ScoreTheme {
   if (score < 25) return { label: 'Sleep Needs Support', emoji: '🌙', color: '#f97316' };
   if (score < 50) return { label: 'Restless Night', emoji: '🌥️', color: '#f59e0b' };
   if (score < 75) return { label: 'Decent Rest', emoji: '🌤️', color: '#8BC34A' };
-  return { label: 'Well-Rested', emoji: '✨', color: '#a78bfa' };
+  return { label: 'Well-Rested', emoji: '✨', color: '#A48BFF' };
 }
 
 export function mindScoreTheme(score: number): ScoreTheme {
   if (score < 25) return { label: 'Mind Needs Recharge', emoji: '🌱', color: '#f97316' };
   if (score < 50) return { label: 'Carrying Some Tension', emoji: '🌊', color: '#f59e0b' };
   if (score < 75) return { label: 'Steady & Balanced', emoji: '🙂', color: '#8BC34A' };
-  return { label: 'Centered & Calm', emoji: '🧘', color: '#4FC3F7' };
+  return { label: 'Centered & Calm', emoji: '🧘', color: '#4DE1C1' };
 }
 
 export function pulseScoreTheme(score: number): ScoreTheme {
   if (score < 25) return { label: 'Getting Started',   emoji: '🌱', color: '#f87171' };
-  if (score < 50) return { label: 'Building Momentum', emoji: '🌊', color: '#a78bfa' };
-  if (score < 75) return { label: 'On Track',          emoji: '🙂', color: '#60a5fa' };
+  if (score < 50) return { label: 'Building Momentum', emoji: '🌊', color: '#A48BFF' };
+  if (score < 75) return { label: 'On Track',          emoji: '🙂', color: '#A48BFF' };
   return                 { label: 'Thriving',           emoji: '✨', color: '#34d399' };
 }
 
@@ -171,9 +171,11 @@ export function calculateEyeScore({
   breakEnforcerEnabled,
 }: EyeScoreInput): ScoreResult {
   const breaksSub = clamp(Math.round((breaksTaken / targetBreaks) * 100), 0, 100);
-  const recoverySub = clamp(40 + recoverySessionsToday * 30, 0, 100);
-  const trainingSub = gamePlayedToday ? 100 : 40;
-  const enforcerSub = breakEnforcerEnabled ? 100 : 40;
+  // Real data only: a category with nothing done/enabled contributes 0 — no
+  // participation baseline that makes an inactive day look partly complete.
+  const recoverySub = recoverySessionsToday > 0 ? clamp(40 + recoverySessionsToday * 30, 0, 100) : 0;
+  const trainingSub = gamePlayedToday ? 100 : 0;
+  const enforcerSub = breakEnforcerEnabled ? 100 : 0;
 
   const breakdown = [
     item(
@@ -235,7 +237,7 @@ export function calculateSleepScore({
   targetDurationHours,
   targetBedtime,
 }: SleepScoreInput): ScoreResult {
-  const sorted = [...sessions].sort((a, b) => b.date.localeCompare(a.date));
+  const sorted = [...sessions].sort((a, b) => b.startTime - a.startTime);
   const last = sorted[0] ?? null;
   const todayKey = new Date().toLocaleDateString('sv');
 
@@ -250,10 +252,11 @@ export function calculateSleepScore({
   let routineDetail: string;
 
   if (!last) {
-    durationSub = 55;
-    bedtimeSub = 55;
-    qualitySub = 55;
-    routineSub = 40;
+    // No sleep logged → nothing to score (no invented "average night").
+    durationSub = 0;
+    bedtimeSub = 0;
+    qualitySub = 0;
+    routineSub = 0;
     durationDetail = 'No sleep sessions logged yet';
     bedtimeDetail = 'No bedtime logged yet';
     qualityDetail = 'No sleep quality rating yet';
@@ -275,11 +278,11 @@ export function calculateSleepScore({
       : `Bedtime was about ${bedtimeDiff} min off your target time`;
 
     const quality = last.quality && last.quality > 0 ? last.quality : null;
-    qualitySub = quality ? quality * 20 : 55;
+    qualitySub = quality ? quality * 20 : 0;
     qualityDetail = quality ? `You rated last night's sleep ${quality}/5` : 'No sleep quality rating yet';
 
-    const loggedToday = last.date === todayKey;
-    routineSub = loggedToday ? 100 : 40;
+    const loggedToday = sleepSessionDate(last) === todayKey;
+    routineSub = loggedToday ? 100 : 0;
     routineDetail = loggedToday ? 'You logged a sleep session today' : 'No sleep session logged yet today';
   }
 
@@ -317,9 +320,12 @@ export function calculateMindScore({
   journalStreakDays,
   stressLevel,
 }: MindScoreInput): ScoreResult {
-  const recoverySub = clamp(20 + recoverySessionsToday * 25, 0, 100);
-  const journalSub = clamp(30 + journalEntriesToday * 35 + Math.min(journalStreakDays, 8) * 5, 0, 100);
-  const stressSub = stressLevel != null ? (6 - stressLevel) * 20 : 60;
+  // Real data only — 0 for a category with no activity/check-in today.
+  const recoverySub = recoverySessionsToday > 0 ? clamp(20 + recoverySessionsToday * 25, 0, 100) : 0;
+  const journalSub = journalEntriesToday > 0 || journalStreakDays > 0
+    ? clamp(30 + journalEntriesToday * 35 + Math.min(journalStreakDays, 8) * 5, 0, 100)
+    : 0;
+  const stressSub = stressLevel != null ? (6 - stressLevel) * 20 : 0;
 
   const breakdown = [
     item(

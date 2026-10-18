@@ -1,19 +1,15 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import {
-    AlertCircle,
     CheckCircle2,
     Clock,
-    Cloud,
     Compass,
     Flame,
     Hand,
-    Leaf,
     Lock,
     Moon,
     Play,
     X,
-    ZapOff,
     type LucideIcon,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -39,6 +35,7 @@ import { ENTITLEMENTS } from '@/constants/entitlements';
 import { WeeklyRelaxChart } from '@/components/relax/WeeklyRelaxChart';
 import {
     EMOTIONAL_STATES,
+    EMOTION_ICONS,
     getEmotionOption,
     type EmotionalState,
 } from '@/constants/emotionalStates';
@@ -58,7 +55,7 @@ import { spacing } from '@/constants/spacing';
 import { useRelaxContext } from '@/context/RelaxContext';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { usePaywall } from '@/hooks/usePaywall';
-import { recordLastFeature } from '@/components/home/ContinueJourney';
+import { useDailyActivityProgress } from '@/hooks/useActivity';
 import { Shimmer } from '@/components/sleep/Skeletons';
 
 /** The Relax pillar's single frozen accent (spec section 16: Relax = Blue). */
@@ -87,13 +84,6 @@ const GOAL_ROW_HINT: Record<SessionCategory, string> = {
   sleep: 'Ease into sleep',
 };
 
-const EMOTION_ICONS: Record<EmotionalState, LucideIcon> = {
-  'at-ease': Leaf,
-  'tense': AlertCircle,
-  'overwhelmed': Cloud,
-  'drained': ZapOff,
-  'sleepy': Moon,
-};
 
 /** A single mood cell — bounces (0.95 → 1.05 → 1) on selection instead of
  * just snapping to its selected color. */
@@ -198,7 +188,6 @@ export default function RelaxHome() {
   const { showPaywall } = usePaywall();
   const [selectedEmotion, setSelectedEmotion] = useState<EmotionalState | null>(null);
 
-  useEffect(() => { void recordLastFeature('relax'); }, []);
   const [selectedCategory, setSelectedCategory] = useState<SessionCategory>('breathe');
   const [totalCompleted, setTotalCompleted] = useState(0);
   const [weeklyMinutes, setWeeklyMinutes] = useState(0);
@@ -245,19 +234,23 @@ export default function RelaxHome() {
   // "Completed today" (not "ever completed") — matches the app's daily-reset
   // convention elsewhere (Daily Challenge, streaks) rather than a permanent
   // one-time badge.
-  const todayKey = new Date().toDateString();
-  const isCompletedToday = (sessionId: string) =>
-    completedSessions.some((r: any) => r.sessionId === sessionId && new Date(r.completedAt).toDateString() === todayKey);
+  // Read from the unified activity log, which also records the voice-guided
+  // sessions (Body Scan, Muscle Release, Grounding) that never reach
+  // RelaxContext's breathing-player history.
+  const { activities: todayActivities } = useDailyActivityProgress();
+  const relaxSessionIdsToday = new Set(
+    todayActivities
+      .filter(a => a.type === 'RELAX_SESSION_COMPLETED')
+      .map(a => String(a.metadata?.sessionId ?? '')),
+  );
+  const isCompletedToday = (sessionId: string) => relaxSessionIdsToday.has(sessionId);
 
   // "Today's Goal" — a real per-category completion checklist. No point
   // values: unlike Eye's score, there's no real per-category scoring formula
   // for Relax to attach a "+N" reward to, so this stays an honest checklist
   // rather than inventing numbers.
   const categoriesDoneToday = new Set(
-    completedSessions
-      .filter((r: any) => new Date(r.completedAt).toDateString() === todayKey)
-      .map((r: any) => getSessionById(r.sessionId)?.category)
-      .filter(Boolean),
+    [...relaxSessionIdsToday].map(id => getSessionById(id)?.category).filter(Boolean),
   );
 
   // A session is always shown up front — no waiting on the user to pick a
@@ -299,7 +292,7 @@ export default function RelaxHome() {
   }
 
   return (
-    <ScreenShell pillar="relax" ambient={<AmbientBackground subtle />}>
+    <ScreenShell pillar="relax" ambient={<AmbientBackground subtle />} bannerAd>
       <ScreenTransition>
         <View style={styles.page}>
           <StreakCelebrationBanner />
@@ -313,7 +306,7 @@ export default function RelaxHome() {
             <View style={styles.headerRight}>
               {totalCompleted > 0 && (
                 <View style={styles.streakPill}>
-                  <Flame size={13} color="#FF9800" />
+                  <Flame size={13} color={PILLAR_COLORS.challenge} />
                   <Text style={styles.streakText}>{weeklyMinutes} min this wk</Text>
                 </View>
               )}

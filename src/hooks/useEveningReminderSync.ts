@@ -2,8 +2,7 @@ import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
 import { cancelEveningReminder, ensureEveningReminderScheduled } from '@/services/eveningReminder';
-import { useProgressStore } from '@/stores/useProgressStore';
-import { todayISO } from '@/utils/dateUtils';
+import { useDailyActivityProgress } from '@/hooks/useActivity';
 
 /**
  * Keeps the evening reminder in sync with today's completion state: cancels
@@ -16,12 +15,11 @@ export function useEveningReminderSync(): void {
   const { user } = useAuth();
   const uid = user?.uid;
 
-  const completedToday = useProgressStore((s) => {
-    if (s.todayDate !== todayISO()) return false;
-    return Object.values(s.todaySessions).some(Boolean);
-  });
+  // Any completed activity today (unified log) — not just Eye.
+  const { isActive: completedToday, ready } = useDailyActivityProgress();
 
   const sync = () => {
+    if (!ready) return; // never (re-)arm off a still-loading log
     if (completedToday) {
       void cancelEveningReminder(uid);
     } else {
@@ -29,7 +27,7 @@ export function useEveningReminderSync(): void {
     }
   };
 
-  useEffect(sync, [completedToday, uid]);
+  useEffect(sync, [completedToday, ready, uid]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
@@ -37,5 +35,5 @@ export function useEveningReminderSync(): void {
     });
     return () => sub.remove();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [completedToday, uid]);
+  }, [completedToday, ready, uid]);
 }

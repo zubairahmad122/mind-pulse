@@ -7,7 +7,7 @@ export function StaticAuthBackground() {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <LinearGradient
-        colors={[colors.background.primary, colors.background.secondary, '#1a1f35']}
+        colors={[colors.background.primary, colors.background.secondary, '#1E1A35']}
         locations={[0, 0.55, 1]}
         style={StyleSheet.absoluteFill}
       />

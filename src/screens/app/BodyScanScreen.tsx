@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useRelaxSessionCompletion } from '@/hooks/useRelaxSessionCompletion';
 import { AmbientBackground } from '@/components/ui';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { useEffect, useRef, useState } from 'react';
@@ -59,6 +60,7 @@ export default function BodyScanScreen() {
   const { play, stop } = useAudioGuide();
 
   const [phase, setPhase]       = useState<'idle' | 'intro' | 'running' | 'done'>('idle');
+  useRelaxSessionCompletion('body-scan', 'body-scan', phase !== 'idle', phase === 'done');
   const [zoneIdx, setZoneIdx]   = useState(0);
   const [secondsLeft, setSecs]  = useState(ZONE_DURATIONS[0]);
   useSessionKeepAwake(

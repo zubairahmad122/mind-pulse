@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   // Same bottom-sheet tokens as the other sheets in the Sleep flow (Ringtone
   // picker, alarm-window picker) — bg, radius, and border kept identical.
   sheet: {
-    backgroundColor: '#11162a',
+    backgroundColor: '#1A1545',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderWidth: 1,

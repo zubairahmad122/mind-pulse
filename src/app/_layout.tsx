@@ -48,7 +48,9 @@ initAds();
 
 function RootLayoutNav() {
   const { user, isGuestMode, loading } = useAuth();
-  const segments = useSegments();
+  // Widened to string[]: without generated typed routes, useSegments() is
+  // typed as the 1-tuple [string], which rejects the segments[1] check below.
+  const segments = useSegments() as string[];
   const router = useRouter();
   const [launchFinished, setLaunchFinished] = useState(false);
   const nativeSplashHidden = useRef(false);
@@ -106,6 +108,7 @@ function RootLayoutNav() {
       {!launchFinished && (
         <AnimatedLaunchScreen
           ready={appReady}
+          fontsReady={fontsLoaded || Boolean(fontsError)}
           onReady={hideNativeSplash}
           onFinish={finishLaunch}
         />

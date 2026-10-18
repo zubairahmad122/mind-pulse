@@ -5,9 +5,9 @@ import Svg, { Circle, Defs, G, LinearGradient, Line, Path, RadialGradient, Rect,
 import { PatternGlyphView } from '@/components/games/patternShift/PatternGlyphView';
 import { generateGlyph } from '@/engine/core/games/patternShift';
 
-const CYAN = '#72E8F6';
+const CYAN = '#4DE1C1';
 const BLUE = '#4AA7FF';
-const VIOLET = '#A98BFF';
+const VIOLET = '#A48BFF';
 const TILE = '#141936';
 const PATTERN_CARD_GLYPH = generateGlyph(1847, 6, 'orbital');
 type ArtworkProps = { size?: number };
@@ -40,7 +40,7 @@ export const SchulteCardArtwork = memo(function SchulteCardArtwork({ size = 76 }
       const active = value === 3;
       return <G key={value}>
         {active && <Circle cx={x + 9} cy={y + 9} r="15" fill={CYAN} opacity=".08" />}
-        <Rect x={x} y={y+1.5} width="18" height="18" rx="5" fill="#080C1D" opacity=".7"/><Rect x={x} y={y} width="18" height="18" rx="5" fill={active ? '#17445A' : TILE} stroke={active ? CYAN : '#8490C1'} strokeOpacity={active ? 1 : .35} strokeWidth={active ? 1.6 : .9} />
+        <Rect x={x} y={y+1.5} width="18" height="18" rx="5" fill="#0F0C29" opacity=".7"/><Rect x={x} y={y} width="18" height="18" rx="5" fill={active ? '#17445A' : TILE} stroke={active ? CYAN : '#8490C1'} strokeOpacity={active ? 1 : .35} strokeWidth={active ? 1.6 : .9} />
         <SvgText x={x + 9} y={y + 12} fill={active ? '#ECFEFF' : '#C3CAE5'} fillOpacity={active ? 1 : .7} fontSize="7.5" fontWeight="700" textAnchor="middle">{value}</SvgText>
       </G>;
     })}
@@ -55,7 +55,7 @@ export const MillsCardArtwork = memo(function MillsCardArtwork({ size = 76 }: Ar
       <Line x1="40" y1="9" x2="40" y2="22" /><Line x1="40" y1="58" x2="40" y2="71" /><Line x1="9" y1="40" x2="22" y2="40" /><Line x1="58" y1="40" x2="71" y2="40" />
     </G>
     <Line x1="22" y1="22" x2="58" y2="22" stroke={VIOLET} strokeOpacity=".5" strokeWidth="2.2" strokeLinecap="round" />
-    <Circle cx="22" cy="23.5" r="5.5" fill="#080C1D" opacity=".75"/><Circle cx="40" cy="23.5" r="5.5" fill="#080C1D" opacity=".75"/><Circle cx="58" cy="23.5" r="5.5" fill="#080C1D" opacity=".75"/><Circle cx="22" cy="22" r="5" fill={CYAN} stroke="#DFFFFF" strokeWidth="1" /><Circle cx="40" cy="22" r="5" fill={CYAN} stroke="#DFFFFF" strokeWidth="1" /><Circle cx="58" cy="22" r="5" fill={VIOLET} stroke="#E8DEFF" strokeWidth="1" />
+    <Circle cx="22" cy="23.5" r="5.5" fill="#0F0C29" opacity=".75"/><Circle cx="40" cy="23.5" r="5.5" fill="#0F0C29" opacity=".75"/><Circle cx="58" cy="23.5" r="5.5" fill="#0F0C29" opacity=".75"/><Circle cx="22" cy="22" r="5" fill={CYAN} stroke="#DFFFFF" strokeWidth="1" /><Circle cx="40" cy="22" r="5" fill={CYAN} stroke="#DFFFFF" strokeWidth="1" /><Circle cx="58" cy="22" r="5" fill={VIOLET} stroke="#E8DEFF" strokeWidth="1" />
     <Circle cx="58" cy="58" r="4" fill="#11162E" stroke={VIOLET} strokeWidth="1.2" />
   </Svg>;
 });

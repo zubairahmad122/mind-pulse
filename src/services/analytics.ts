@@ -89,3 +89,20 @@ export function trackStreakBroken(): void {
 export function trackChallengeCompleted(feature: string): void {
   trackEvent('challenge_completed', { feature });
 }
+
+// ─── Unified activity log ────────────────────────────────────────────────────
+
+/** One event per newly-recorded completed activity (see stores/useActivityStore). */
+export function trackActivityCompleted(event: {
+  type: string;
+  source: string;
+  durationSeconds: number;
+  score?: number;
+}): void {
+  trackEvent('activity_completed', {
+    activity_type: event.type,
+    source: event.source,
+    duration_seconds: event.durationSeconds,
+    ...(typeof event.score === 'number' ? { score: event.score } : {}),
+  });
+}

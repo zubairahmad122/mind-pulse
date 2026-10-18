@@ -7,6 +7,12 @@ import { BACKGROUND, FONTS, PILLAR_COLORS } from '@/constants/designSystem';
 
 type AnimatedLaunchScreenProps = {
   ready: boolean;
+  /** True once the custom fonts (SpaceGrotesk/Inter) this screen's title and
+   * tagline render in have actually finished loading — or failed to, so a
+   * font error doesn't strand the screen forever. Gates the entrance
+   * animation's start so "Well Mode" is never shown with Android's fallback
+   * system font for a frame before snapping to the real one. */
+  fontsReady: boolean;
   onReady: () => void;
   onFinish: () => void;
 };
@@ -25,6 +31,7 @@ const ACTIVE_DOT = PILLAR_COLORS.relax;
 
 export function AnimatedLaunchScreen({
   ready,
+  fontsReady,
   onReady,
   onFinish,
 }: AnimatedLaunchScreenProps) {
@@ -42,6 +49,14 @@ export function AnimatedLaunchScreen({
   }, [onFinish]);
 
   useEffect(() => {
+    // Waiting for fonts here (not just at exit) is the actual fix: starting
+    // this unconditionally on mount let the title/tagline become visible —
+    // and get measured/laid out — before SpaceGrotesk/Inter had necessarily
+    // finished loading, showing Android's fallback system font for a frame
+    // (different metrics, reads as "half loaded") before snapping to the
+    // real one once a later re-render picked it up.
+    if (!fontsReady) return;
+
     Animated.timing(enter, {
       toValue: reducedMotion ? 1 : ENTER_MS,
       duration: reducedMotion ? 200 : ENTER_MS,
@@ -69,8 +84,8 @@ export function AnimatedLaunchScreen({
     );
     breathingLoop.start();
     return () => breathingLoop.stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot on mount; `reducedMotion` intentionally not re-run mid-animation.
-  }, [breathe, enter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot once fonts are ready; `reducedMotion` intentionally not re-run mid-animation.
+  }, [breathe, enter, fontsReady]);
 
   useEffect(() => {
     const timer = setTimeout(
@@ -265,22 +280,32 @@ export function AnimatedLaunchScreen({
           >
             <Defs>
               <RadialGradient id="launchGlow" cx="50%" cy="50%" r="50%">
-                <Stop offset="0%" stopColor="#00D4FF" stopOpacity={0.14} />
-                <Stop offset="48%" stopColor="#1A8FFF" stopOpacity={0.05} />
-                <Stop offset="100%" stopColor="#1A8FFF" stopOpacity={0} />
+                <Stop offset="0%" stopColor="#4DE1C1" stopOpacity={0.14} />
+                <Stop offset="48%" stopColor="#7B5CFF" stopOpacity={0.05} />
+                <Stop offset="100%" stopColor="#7B5CFF" stopOpacity={0} />
               </RadialGradient>
             </Defs>
             <Rect width="208" height="196" fill="url(#launchGlow)" />
           </Svg>
           <Image
-            source={require('@/assets/expo.icon/Assets/playstore.png')}
+            source={require('@/assets/images/splash-icon.png')}
             style={styles.logo}
             resizeMode="contain"
           />
         </Animated.View>
 
-        <Animated.Text style={[styles.title, titleStyle]}>Well Mode</Animated.Text>
-        <Animated.Text style={[styles.tagline, taglineStyle]}>Breathe · Rest · Refocus</Animated.Text>
+        {/* Not just gated to opacity 0 — left unmounted until fontsReady so
+            Android never lays out this Text with fallback-font metrics
+            first. A style/font swap on an already-mounted node can leave
+            Android's text layout only partially repainted on a cold start
+            (shows as the tail of the string going missing); a fresh mount
+            always paints with the correct font from the start. */}
+        {fontsReady && (
+          <>
+            <Animated.Text style={[styles.title, titleStyle]}>Well Mode</Animated.Text>
+            <Animated.Text style={[styles.tagline, taglineStyle]}>Breathe · Rest · Refocus</Animated.Text>
+          </>
+        )}
 
         <Animated.View style={[styles.loading, loaderStyle]}>
           {[0, 1, 2].map(dot => (
@@ -350,7 +375,7 @@ const styles = StyleSheet.create({
   tagline: {
     marginTop: 10,
     paddingHorizontal: 4,
-    color: 'rgba(126,184,255,0.68)',
+    color: 'rgba(164,139,255,0.8)',
     fontFamily: FONTS.bodySemi,
     fontSize: 11.5,
     fontWeight: '500',

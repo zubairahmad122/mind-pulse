@@ -119,7 +119,7 @@ export default function TimeFlowOverviewScreen() {
           {({ pressed }) => (
             <View style={[styles.how, pressed && styles.howPressed]}>
               <View style={styles.info}>
-                <Info size={18} color="#72E8F6" />
+                <Info size={18} color="#4DE1C1" />
               </View>
               <View style={styles.howCopy}>
                 <Text style={styles.howTitle}>How to Play</Text>
@@ -206,14 +206,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     backgroundColor: "rgba(24,21,45,.76)",
     borderWidth: 1,
-    borderColor: "rgba(169,139,255,.18)",
+    borderColor: "rgba(164,139,255,.18)",
   },
   heroCopy: { flex: 1, zIndex: 1 },
   eyebrow: {
     fontSize: 9,
     fontWeight: "900",
     letterSpacing: 1.25,
-    color: "#A98BFF",
+    color: "#A48BFF",
   },
   heroTitle: {
     fontFamily: FONTS.heading,
@@ -265,13 +265,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    backgroundColor: "rgba(24,25,47,.78)",
+    backgroundColor: "rgba(27,22,66,.78)",
     borderWidth: 1,
-    borderColor: "rgba(169,139,255,.14)",
+    borderColor: "rgba(164,139,255,.14)",
   },
   howPressed: {
-    backgroundColor: "rgba(32,35,61,.9)",
-    borderColor: "rgba(114,232,246,.24)",
+    backgroundColor: "rgba(36,30,84,.9)",
+    borderColor: "rgba(77,225,193,.24)",
     transform: [{ scale: 0.99 }],
   },
   info: {
@@ -280,9 +280,9 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(114,232,246,.09)",
+    backgroundColor: "rgba(77,225,193,.09)",
     borderWidth: 1,
-    borderColor: "rgba(114,232,246,.16)",
+    borderColor: "rgba(77,225,193,.16)",
   },
   howCopy: { flex: 1, justifyContent: "center" },
   howTitle: {
@@ -302,9 +302,9 @@ const styles = StyleSheet.create({
   sheet: {
     borderRadius: 24,
     padding: 21,
-    backgroundColor: "#17182C",
+    backgroundColor: "#1A1545",
     borderWidth: 1,
-    borderColor: "rgba(169,139,255,.2)",
+    borderColor: "rgba(164,139,255,.2)",
   },
   sheetHead: { flexDirection: "row", justifyContent: "space-between" },
   sheetTitle: { fontFamily: FONTS.heading, fontSize: 20, color: "#fff" },
@@ -315,11 +315,11 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(114,232,246,.09)",
+    backgroundColor: "rgba(77,225,193,.09)",
     borderWidth: 1,
-    borderColor: "rgba(114,232,246,.18)",
+    borderColor: "rgba(77,225,193,.18)",
   },
-  numberText: { fontSize: 11, fontWeight: "900", color: "#72E8F6" },
+  numberText: { fontSize: 11, fontWeight: "900", color: "#4DE1C1" },
   stepTitle: { fontFamily: FONTS.headingSemi, fontSize: 13.5, color: "#fff" },
   stepCopy: {
     fontSize: 11.5,

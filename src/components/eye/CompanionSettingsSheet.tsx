@@ -155,7 +155,7 @@ function ToggleRow({
         <Switch
           value={value}
           onValueChange={onChange}
-          trackColor={{ false: '#252542', true: EYE_COLOR }}
+          trackColor={{ false: '#2A2460', true: EYE_COLOR }}
           thumbColor="#FFFFFF"
         />
       </View>
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#11162a',
+    backgroundColor: '#1A1545',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     overflow: 'hidden',

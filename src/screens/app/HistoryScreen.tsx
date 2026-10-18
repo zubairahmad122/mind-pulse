@@ -9,7 +9,7 @@ import { COLORS, HISTORY_CHART, qualityEmojiForRating } from '@/constants';
 import { GLASS_CARD, PILLAR_COLORS } from '@/constants/designSystem';
 import { useSleep } from '@/context/SleepContext';
 import { formatHistoryClock, formatHistorySessionDate } from '@/utils/historyDisplay';
-import { avgDuration, formatDuration } from '@/utils/sleepUtils';
+import { avgDuration, formatDuration, sleepSessionDate } from '@/utils/sleepUtils';
 import { estimateStages } from '@/utils/stageEstimator';
 
 export default function HistoryScreen() {
@@ -108,7 +108,7 @@ export default function HistoryScreen() {
                         ]}
                       />
                     </View>
-                    <Text style={styles.barDate}>{s.date.slice(5)}</Text>
+                    <Text style={styles.barDate}>{sleepSessionDate(s).slice(5)}</Text>
                   </View>
                 );
               })}
@@ -120,7 +120,7 @@ export default function HistoryScreen() {
           {sessions.map(session => (
             <GlassCard key={session.id} simple style={{ marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ gap: 4 }}>
-                <Text style={styles.sessionDate}>{formatHistorySessionDate(session.date)}</Text>
+                <Text style={styles.sessionDate}>{formatHistorySessionDate(sleepSessionDate(session))}</Text>
                 <Text style={styles.sessionTime}>
                   {formatHistoryClock(session.startTime)} {'→'} {formatHistoryClock(session.endTime)}
                 </Text>

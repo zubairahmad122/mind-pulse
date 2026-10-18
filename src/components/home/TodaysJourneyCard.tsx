@@ -4,7 +4,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { useLastFeature } from '@/components/home/ContinueJourney';
 import { ROUTES } from '@/constants';
 import { colors } from '@/constants/colors';
-import { FONTS, SPACING, TYPOGRAPHY } from '@/constants/designSystem';
+import { FONTS, PALETTE, SPACING, TYPOGRAPHY } from '@/constants/designSystem';
 import { useTodayProgress } from '@/hooks/useTodayProgress';
 import { useRouter } from 'expo-router';
 import { ArrowRight } from 'lucide-react-native';
@@ -28,8 +28,12 @@ export function TodaysJourneyCard() {
   const { percent, doneCount, everCompletedAny } = useTodayProgress();
   const { last, isCompleted } = useLastFeature();
 
-  const ctaLabel = !everCompletedAny ? 'Start First Exercise' : isCompleted ? 'Start Next Session' : 'Continue';
-  const ctaRoute = !everCompletedAny ? ROUTES.appEyeRelax : (last?.route ?? ROUTES.appEyeRelax);
+  // A brand-new user's first CTA here was "Start First Exercise" → Eye Relax,
+  // disconnected from the Focus-led story everywhere else a new user has
+  // just come from (Play listing, website, the first onboarding slide).
+  // Routes to Focus instead, so the promise holds through to the first tap.
+  const ctaLabel = !everCompletedAny ? 'Start Focusing' : isCompleted ? 'Start Next Session' : 'Continue';
+  const ctaRoute = !everCompletedAny ? ROUTES.appFocusBlock : (last?.route ?? ROUTES.appFocusBlock);
 
   return (
     <HeroCard style={styles.card}>
@@ -44,7 +48,7 @@ export function TodaysJourneyCard() {
         {/* A lighter tint than the raw pillar purple — the hero card itself is
             already a deep violet, so the saturated accent would blend into it
             instead of reading as a distinct progress fill. */}
-        <ProgressBar progress={Math.max(percent / 100, 0.04)} fill="#B79CFF" style={styles.track} />
+        <ProgressBar progress={Math.max(percent / 100, 0.04)} fill={PALETTE.mint} style={styles.track} />
 
         <View style={styles.ctaWrap}>
           <GradientCTA

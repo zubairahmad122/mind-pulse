@@ -1,3 +1,5 @@
+import { AlertCircle, Cloud, Leaf, Moon, ZapOff, type LucideIcon } from 'lucide-react-native';
+
 export type EmotionalState = 'at-ease' | 'tense' | 'overwhelmed' | 'drained' | 'sleepy';
 
 export interface EmotionOption {
@@ -42,10 +44,19 @@ export const EMOTIONAL_STATES: EmotionOption[] = [
     emoji: '😴',
     label: 'Sleepy',
     description: 'Ready to rest',
-    color: '#a78bfa',
+    color: '#A48BFF',
   },
 ];
 
 export function getEmotionOption(state: EmotionalState): EmotionOption {
   return EMOTIONAL_STATES.find(e => e.state === state) || EMOTIONAL_STATES[0];
 }
+
+/** One line icon per mood — shared by the Relax tab picker and the session completion screen. */
+export const EMOTION_ICONS: Record<EmotionalState, LucideIcon> = {
+  'at-ease': Leaf,
+  'tense': AlertCircle,
+  'overwhelmed': Cloud,
+  'drained': ZapOff,
+  'sleepy': Moon,
+};

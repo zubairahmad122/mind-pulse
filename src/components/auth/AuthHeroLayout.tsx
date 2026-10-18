@@ -62,7 +62,7 @@ function OuterRings({ frame }: { frame: number }) {
           cy={115}
           r={114}
           fill="none"
-          stroke="rgba(26,143,255,0.16)"
+          stroke="rgba(123,92,255,0.16)"
           strokeWidth={1}
         />
         <Circle
@@ -70,7 +70,7 @@ function OuterRings({ frame }: { frame: number }) {
           cy={115}
           r={98}
           fill="none"
-          stroke="rgba(26,143,255,0.1)"
+          stroke="rgba(123,92,255,0.1)"
           strokeWidth={1}
           strokeDasharray="2 8"
         />
@@ -103,8 +103,8 @@ function LightBeams({ frame }: { frame: number }) {
             x2="0%"
             y2="0%"
           >
-            <Stop offset="0%" stopColor="#1A8FFF" stopOpacity={0.22} />
-            <Stop offset="100%" stopColor="#1A8FFF" stopOpacity={0} />
+            <Stop offset="0%" stopColor="#7B5CFF" stopOpacity={0.22} />
+            <Stop offset="100%" stopColor="#7B5CFF" stopOpacity={0} />
           </SvgLinearGradient>
         </Defs>
         {BEAM_ANGLES.map((deg, i) => {
@@ -151,8 +151,8 @@ function SoftParticles({ frame }: { frame: number }) {
               width: p.s,
               height: p.s,
               borderRadius: p.s / 2,
-              backgroundColor: '#7EB8FF',
-              shadowColor: '#1A8FFF',
+              backgroundColor: '#A48BFF',
+              shadowColor: '#7B5CFF',
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.7,
               shadowRadius: p.s * 2.5,
@@ -202,9 +202,9 @@ function AuthHero({
         >
           <Defs>
             <RadialGradient id="simpleAuthGlow" cx="50%" cy="50%" r="50%">
-              <Stop offset="0%" stopColor="#00D4FF" stopOpacity={0.16} />
-              <Stop offset="52%" stopColor="#1A8FFF" stopOpacity={0.05} />
-              <Stop offset="100%" stopColor="#1A8FFF" stopOpacity={0} />
+              <Stop offset="0%" stopColor="#4DE1C1" stopOpacity={0.16} />
+              <Stop offset="52%" stopColor="#7B5CFF" stopOpacity={0.05} />
+              <Stop offset="100%" stopColor="#7B5CFF" stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Rect width={128} height={112} fill="url(#simpleAuthGlow)" />
@@ -238,7 +238,7 @@ function AuthHero({
             width: 190,
             height: 190,
             borderRadius: 95,
-            backgroundColor: 'rgba(26,143,255,0.1)',
+            backgroundColor: 'rgba(123,92,255,0.1)',
             transform: [{ scale: glowScale }],
             opacity: glowOpacity,
             shadowColor: accent,

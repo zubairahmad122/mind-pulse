@@ -38,6 +38,7 @@ import { useGameFeedbackPrefs } from "@/hooks/useGameFeedbackPrefs";
 import { useGameSounds } from "@/hooks/useGameSounds";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useSessionLifecycle } from "@/hooks/useSessionLifecycle";
+import { recordMindGameActivity } from "@/services/mindGameActivity";
 import {
   loadTimeFlowProgress,
   saveTimeFlowSession,
@@ -267,7 +268,13 @@ export default function TimeFlowGameScreen() {
         levelBefore: progress.level,
         xpBefore: progress.xp,
       });
-      await saveTimeFlowSession(user?.uid, record);
+      const { saved } = await saveTimeFlowSession(user?.uid, record);
+      if (saved) {
+        void recordMindGameActivity(user?.uid, 'time-flow', record.id, record.startedAt, record.completedAt, record.score, {
+          accuracy: record.accuracy,
+          levelAfter: record.levelAfter,
+        });
+      }
       if (prefs.soundEnabled) playChallengeComplete();
       router.replace({
         pathname: ROUTES.appTimeFlowResults,
@@ -900,7 +907,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "900",
     letterSpacing: 2,
-    color: "#A98BFF",
+    color: "#A48BFF",
   },
   practiceTitle: {
     fontFamily: FONTS.heading,
@@ -921,8 +928,8 @@ const styles = StyleSheet.create({
     top: "43%",
     fontFamily: FONTS.heading,
     fontSize: 56,
-    color: "#72E8F6",
-    textShadowColor: "rgba(114,232,246,.4)",
+    color: "#4DE1C1",
+    textShadowColor: "rgba(77,225,193,.4)",
     textShadowRadius: 16,
   },
   startOverlay: {
@@ -943,8 +950,8 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     fontFamily: FONTS.heading,
     fontSize: 64,
-    color: "#72E8F6",
-    textShadowColor: "rgba(114,232,246,.35)",
+    color: "#4DE1C1",
+    textShadowColor: "rgba(77,225,193,.35)",
     textShadowRadius: 18,
   },
   startHint: { fontSize: 12, color: colors.text.secondary },

@@ -6,16 +6,16 @@ module.exports = {
     extend: {
       colors: {
         // ── Backgrounds ──────────────────────────────────────────────────
-        "bg-primary": "#0F0F1A",
-        "bg-card": "#1A1A2E",
-        "bg-elevated": "#252542",
-        "bg-input": "#13132A",
+        "bg-primary": "#0F0C29",
+        "bg-card": "#1A1545",
+        "bg-elevated": "#251E5C",
+        "bg-input": "#151138",
 
         // ── Accent ───────────────────────────────────────────────────────
-        "accent-purple": "#8B5CF6",
-        "accent-purple-light": "#A78BFA",
-        "accent-blue": "#3B82F6",
-        "accent-cyan": "#06B6D4",
+        "accent-purple": "#7B5CFF",
+        "accent-purple-light": "#A48BFF",
+        "accent-blue": "#3B2ED0",
+        "accent-cyan": "#4DE1C1",
         "accent-green": "#10B981",
         "accent-gold": "#F59E0B",
         "accent-red": "#EF4444",
@@ -31,8 +31,8 @@ module.exports = {
         "border-active": "rgba(255,255,255,0.1)",
 
         // ── App aliases (used via app-* className tokens) ────────────────
-        "app-purple": "#8B5CF6",
-        "app-purple-light": "#A78BFA",
+        "app-purple": "#7B5CFF",
+        "app-purple-light": "#A48BFF",
         "app-gold": "#F59E0B",
         "app-muted": "#6B7280",
       },

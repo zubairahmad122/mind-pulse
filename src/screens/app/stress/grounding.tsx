@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useRelaxSessionCompletion } from '@/hooks/useRelaxSessionCompletion';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Cherry, Ear, Eye, Flower2, Hand, Leaf, Play, X } from 'lucide-react-native';
@@ -43,6 +44,7 @@ export default function GroundingScreen() {
 
   const en      = GROUNDING_SCRIPTS.en;
   const done    = step >= en.steps.length;
+  useRelaxSessionCompletion('5-4-3-2-1', 'grounding', running, running && done);
   const current = en.steps[step];
   const StepIcon = done ? Leaf : STEP_ICONS[step];
 

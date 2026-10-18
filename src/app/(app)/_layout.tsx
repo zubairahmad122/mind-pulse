@@ -14,10 +14,13 @@ import {
   scheduleCompanionSnooze,
 } from '@/services/desktopCompanion';
 import { ROUTES } from '@/constants';
+import { useActivitySync } from '@/hooks/useActivity';
 import { useStreakSync } from '@/hooks/useStreakSync';
 import { useDailyCheckIn } from '@/hooks/useDailyCheckIn';
 import { useEveningReminderSync } from '@/hooks/useEveningReminderSync';
 import { useSmartResetReminderSync } from '@/hooks/useSmartResetReminderSync';
+import { useScreenTimeAlertSync } from '@/hooks/useScreenTimeAlertSync';
+import { useFocusDndSync } from '@/hooks/useFocusDndSync';
 import { useDigitalSunsetSync } from '@/hooks/useDigitalSunsetSync';
 import { useSurpriseBadgeSync } from '@/hooks/useSurpriseBadgeSync';
 import { useWellnessCloudSync } from '@/hooks/useWellnessCloudSync';
@@ -29,10 +32,13 @@ export default function AppStackLayout() {
   const router = useRouter();
   const { user } = useAuth();
 
+  useActivitySync();
   useStreakSync();
   useDailyCheckIn();
   useEveningReminderSync();
   useSmartResetReminderSync();
+  useScreenTimeAlertSync();
+  useFocusDndSync();
   useDigitalSunsetSync();
   useSurpriseBadgeSync();
   useWellnessCloudSync();

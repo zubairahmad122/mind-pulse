@@ -51,8 +51,8 @@ const CYAN = PILLAR_COLORS.eye;
 const AMBER = '#F3B74D';
 const CTA_TEXT = '#03212C';
 /** Focus's "today" bar — violet→blue, matching the Home Featured card's Focus tab. */
-const FOCUS_TODAY_GRADIENT = ['#9D5CFF', '#5A9EFF'] as const;
-const CTA_GLOW = 'rgba(84,168,255,0.22)';
+const FOCUS_TODAY_GRADIENT = ['#7B5CFF', '#6C63FF'] as const;
+const CTA_GLOW = 'rgba(108,99,255,0.22)';
 /** Local, not `SPACING.section` (32, frozen app-wide) — this screen's own
  * density pass tightens its section rhythm without touching the shared
  * token other screens (including Home) still rely on. */
@@ -73,9 +73,9 @@ const CTA_HEIGHT = 48;
  * matching the "hero strongest, focus/week medium, tools/apps/switching
  * dark supporting" hierarchy from the level-3 spec.
  */
-const HERO_TINT = ['#1E2C54', '#111830'] as const;
-const MEDIUM_TINT = ['#182242', '#0F1428'] as const;
-const SUPPORT_TINT = ['#141B36', '#0D1224'] as const;
+const HERO_TINT = ['#251E54', '#151130'] as const;
+const MEDIUM_TINT = ['#1E1842', '#120F28'] as const;
+const SUPPORT_TINT = ['#191436', '#100D24'] as const;
 
 /**
  * Ambient ombre wash per card level, layered over the tint above. Full-bleed
@@ -85,11 +85,11 @@ const SUPPORT_TINT = ['#141B36', '#0D1224'] as const;
  * the reset sheet.
  */
 const SURFACE_GRADIENTS = {
-  focus: ['rgba(157,92,255,0.14)', 'rgba(90,158,255,0.05)', 'rgba(255,255,255,0.02)'] as const,
-  tools: ['rgba(157,92,255,0.05)', 'rgba(255,255,255,0.015)'] as const,
-  week: ['rgba(0,224,255,0.09)', 'rgba(157,92,255,0.05)', 'rgba(255,255,255,0.015)'] as const,
-  apps: ['rgba(61,232,208,0.06)', 'rgba(157,92,255,0.03)', 'rgba(255,255,255,0.015)'] as const,
-  switching: ['rgba(90,158,255,0.05)', 'rgba(157,92,255,0.04)', 'rgba(255,255,255,0.015)'] as const,
+  focus: ['rgba(123,92,255,0.14)', 'rgba(108,99,255,0.05)', 'rgba(255,255,255,0.02)'] as const,
+  tools: ['rgba(123,92,255,0.05)', 'rgba(255,255,255,0.015)'] as const,
+  week: ['rgba(77,225,193,0.09)', 'rgba(123,92,255,0.05)', 'rgba(255,255,255,0.015)'] as const,
+  apps: ['rgba(61,232,208,0.06)', 'rgba(123,92,255,0.03)', 'rgba(255,255,255,0.015)'] as const,
+  switching: ['rgba(108,99,255,0.05)', 'rgba(123,92,255,0.04)', 'rgba(255,255,255,0.015)'] as const,
 } as const;
 
 /** Feature/supporting card surface: glass card (real navy tint, not the flat
@@ -201,7 +201,7 @@ function SecondaryLink({ label, onPress }: { label: string; onPress: () => void 
       style={styles.secondaryLink}
     >
       <Text style={styles.secondaryLinkText}>{label}</Text>
-      <ArrowRight size={14} color="rgba(211,250,255,0.78)" strokeWidth={2.4} />
+      <ArrowRight size={14} color="rgba(214,250,241,0.78)" strokeWidth={2.4} />
     </TouchableOpacity>
   );
 }
@@ -403,7 +403,7 @@ export default function ScreenBalanceDetailsScreen() {
               so there's no hard-edged seam, the same fix already applied to
               the Home Featured card and the reset sheet. */}
           <LinearGradient
-            colors={['rgba(0,224,255,0.14)', 'rgba(0,224,255,0.04)', 'rgba(0,224,255,0)']}
+            colors={['rgba(77,225,193,0.14)', 'rgba(77,225,193,0.04)', 'rgba(77,225,193,0)']}
             locations={[0, 0.5, 0.8]}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
@@ -411,7 +411,7 @@ export default function ScreenBalanceDetailsScreen() {
             pointerEvents="none"
           />
           <LinearGradient
-            colors={['rgba(157,92,255,0)', 'rgba(157,92,255,0.03)', 'rgba(157,92,255,0.09)']}
+            colors={['rgba(123,92,255,0)', 'rgba(123,92,255,0.03)', 'rgba(123,92,255,0.09)']}
             locations={[0.5, 0.8, 1]}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
@@ -583,9 +583,10 @@ export default function ScreenBalanceDetailsScreen() {
               {weeklyTrends.hasScreenTimePermission ? formatScreenTimeMs(weeklyTrends.totals.screenTimeMs) : '—'}{' '}
               <Text style={styles.weekHeroCaption}>screen time</Text>
             </Text>
-            {screenTrendPoints ? (
-              <MiniTrendStrip variant="live" points={screenTrendPoints} accent={ACCENT} formatValue={formatScreenTimeMs} label="7-DAY TREND" compact />
-            ) : null}
+            {/* No second copy of the 7-day screen-time chart here — the Hero
+                card above already shows it. This card's own job is the
+                weekly total + the Focus/Offline/Resets breakdown, neither
+                of which the Hero has. */}
             <InsightStrip
               items={[
                 { value: `${weeklyTrends.totals.focusMinutes}m`, label: 'Focus' },
@@ -676,7 +677,7 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 1.5,
-    color: 'rgba(211,250,255,0.68)',
+    color: 'rgba(214,250,241,0.68)',
     textTransform: 'uppercase',
     marginBottom: 4,
     textAlign: 'center',
@@ -754,7 +755,7 @@ const styles = StyleSheet.create({
   secondaryLinkText: {
     fontSize: 13,
     fontWeight: '800',
-    color: 'rgba(211,250,255,0.78)',
+    color: 'rgba(214,250,241,0.78)',
   },
   title: {
     fontSize: 17,

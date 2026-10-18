@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { useRelaxSessionCompletion } from '@/hooks/useRelaxSessionCompletion';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
@@ -70,6 +71,7 @@ export default function TensionReleaseScreen() {
   const phaseSeconds = PHASE_SECONDS[resolveGuideLang(langCode)];
 
   const [phase, setPhase]      = useState<'idle' | 'intro' | 'running' | 'done'>('idle');
+  useRelaxSessionCompletion('muscle-release', 'muscle-release', phase !== 'idle', phase === 'done');
   const [zoneIdx, setZoneIdx]  = useState(0);
   const [sub, setSub]          = useState<'squeeze' | 'release'>('squeeze');
   const [secondsLeft, setSecs] = useState<number>(phaseSeconds.squeeze);

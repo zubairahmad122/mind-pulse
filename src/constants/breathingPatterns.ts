@@ -45,11 +45,11 @@ export const BREATHING_PATTERNS: Record<BreathingPattern, BreathingPatternDef> =
     // guided rhythm. The orb expands and contracts with these phases
     // just like Box Breathing / Reset Wave.
     phases: [
-      { name: 'inhale', duration: 5, label: 'Breathe In', color: '#4FC3F7' },
-      { name: 'exhale', duration: 5, label: 'Breathe Out', color: '#4FC3F7' },
+      { name: 'inhale', duration: 5, label: 'Breathe In', color: '#4DE1C1' },
+      { name: 'exhale', duration: 5, label: 'Breathe Out', color: '#4DE1C1' },
     ],
-    color: '#4FC3F7',
-    glowColor: 'rgba(79,195,247,0.25)',
+    color: '#4DE1C1',
+    glowColor: 'rgba(77,225,193,0.25)',
     emoji: '🫁',
   },
 
@@ -59,13 +59,13 @@ export const BREATHING_PATTERNS: Record<BreathingPattern, BreathingPatternDef> =
     description: 'Instant calm. Structure you can follow.',
     cycles: 20, // 20 × 16s = 320s = 5:20
     phases: [
-      { name: 'inhale', duration: 4, label: 'Inhale', color: '#4FC3F7' },
+      { name: 'inhale', duration: 4, label: 'Inhale', color: '#4DE1C1' },
       { name: 'hold-in', duration: 4, label: 'Hold', color: '#B39DDB' },
-      { name: 'exhale', duration: 4, label: 'Exhale', color: '#4FC3F7' },
+      { name: 'exhale', duration: 4, label: 'Exhale', color: '#4DE1C1' },
       { name: 'hold-out', duration: 4, label: 'Hold', color: '#4DB6AC' },
     ],
-    color: '#4FC3F7',
-    glowColor: 'rgba(79,195,247,0.28)',
+    color: '#4DE1C1',
+    glowColor: 'rgba(77,225,193,0.28)',
     emoji: '📦',
   },
 
@@ -91,12 +91,12 @@ export const BREATHING_PATTERNS: Record<BreathingPattern, BreathingPatternDef> =
     description: 'Slow everything down. Drift into rest.',
     cycles: 30, // 30 × 21s = 630s = 10:30 (50 was a 17.5-min lie)
     phases: [
-      { name: 'inhale', duration: 4, label: 'Inhale', color: '#a78bfa' },
+      { name: 'inhale', duration: 4, label: 'Inhale', color: '#A48BFF' },
       { name: 'hold-in', duration: 4, label: 'Hold', color: '#8b6fd6' },
       { name: 'exhale', duration: 8, label: 'Exhale', color: '#7c5cbf' },
       { name: 'hold-out', duration: 5, label: 'Hold', color: '#6d4aa8' },
     ],
-    color: '#a78bfa',
+    color: '#A48BFF',
     glowColor: 'rgba(167,139,250,0.25)',
     emoji: '😴',
   },

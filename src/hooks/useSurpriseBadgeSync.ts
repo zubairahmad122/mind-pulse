@@ -1,50 +1,40 @@
-import { useEffect, useRef } from 'react';
-import { useProgressStore } from '@/stores/useProgressStore';
+import { useEffect } from 'react';
+import { useDailyActivityProgress } from '@/hooks/useActivity';
 import { useWellnessStore } from '@/stores/useWellnessStore';
-import { todayISO } from '@/utils/dateUtils';
+
+/** A completion only counts as "just happened" for Night Owl within this window. */
+const JUST_COMPLETED_MS = 60_000;
 
 /**
  * Detects two "surprise" achievements that can't be computed from live state
- * alone, since their trigger (today's session flags, time-of-completion)
- * doesn't persist past its own day — so this records them into
- * useWellnessStore the moment they happen:
+ * alone, and records them into useWellnessStore the moment they happen:
  *
- *  - Perfect Day: all 4 pillars (eye, sleep, mind, relax) completed today.
- *  - Night Owl: a session was just completed between local midnight and 4am.
+ *  - Perfect Day: Eye, Relax, Mind and Sleep activities all completed today.
+ *  - Night Owl: an activity was just completed between local midnight and 4am.
  *
- * Mounted once, globally, alongside useStreakSync.
+ * Both read the unified activity log. Mounted once, globally, alongside useStreakSync.
  */
 export function useSurpriseBadgeSync(): void {
-  const todayDate = useProgressStore((s) => s.todayDate);
-  const todaySessions = useProgressStore((s) => s.todaySessions);
-  const totalCompleted = useProgressStore(
-    (s) =>
-      s.eyeExercisesCompleted +
-      s.eyeGamesPlayed +
-      s.relaxSessionsCompleted +
-      s.mindSessionsCompleted +
-      s.sleepSessionsTracked,
-  );
+  const { pillars, latest, ready } = useDailyActivityProgress();
   const recordPerfectDayIfApplicable = useWellnessStore((s) => s.recordPerfectDayIfApplicable);
   const recordNightOwlIfApplicable = useWellnessStore((s) => s.recordNightOwlIfApplicable);
 
-  const prevTotalRef = useRef(totalCompleted);
+  const perfectDay =
+    pillars.includes('eye') &&
+    pillars.includes('relax') &&
+    pillars.includes('mind') &&
+    pillars.includes('sleep');
 
   useEffect(() => {
-    if (todayDate === todayISO()) {
-      const eyeDone = todaySessions.eye || todaySessions.eyeGames;
-      if (eyeDone && todaySessions.relax && todaySessions.mind && todaySessions.sleep) {
-        recordPerfectDayIfApplicable();
-      }
-    }
+    if (ready && perfectDay) recordPerfectDayIfApplicable();
+  }, [ready, perfectDay, recordPerfectDayIfApplicable]);
 
-    // Only treat this as a genuine "just completed a session" event — not
-    // merely opening the app while totalCompleted happens to already be
-    // whatever it was from a prior day's session.
-    if (totalCompleted > prevTotalRef.current) {
-      const hour = new Date().getHours();
-      if (hour >= 0 && hour < 4) recordNightOwlIfApplicable();
-    }
-    prevTotalRef.current = totalCompleted;
-  }, [todayDate, todaySessions, totalCompleted, recordPerfectDayIfApplicable, recordNightOwlIfApplicable]);
+  // Only a genuinely fresh completion — not merely opening the app at 2am
+  // while an earlier-today activity happens to be the latest one.
+  const latestTimestamp = latest?.timestamp ?? null;
+  useEffect(() => {
+    if (latestTimestamp == null || Date.now() - latestTimestamp > JUST_COMPLETED_MS) return;
+    const hour = new Date(latestTimestamp).getHours();
+    if (hour >= 0 && hour < 4) recordNightOwlIfApplicable();
+  }, [latestTimestamp, recordNightOwlIfApplicable]);
 }

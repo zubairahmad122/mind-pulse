@@ -203,8 +203,8 @@ export default function VisualFlowSessionScreen() {
                   <Defs>
                     <RadialGradient id="fieldGlow" cx="50%" cy="50%" r="65%">
                       <Stop offset="0%" stopColor="#3D2E7A" stopOpacity="0.16" />
-                      <Stop offset="55%" stopColor="#1A2450" stopOpacity="0.08" />
-                      <Stop offset="100%" stopColor="#0A0E1A" stopOpacity="0" />
+                      <Stop offset="55%" stopColor="#211A50" stopOpacity="0.08" />
+                      <Stop offset="100%" stopColor="#0F0C29" stopOpacity="0" />
                     </RadialGradient>
                   </Defs>
                   <Rect x="0" y="0" width="100%" height="100%" fill="url(#fieldGlow)" />
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
 
   pausedOverlay: {
     ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center',
-    gap: 10, paddingHorizontal: 24, backgroundColor: 'rgba(9,9,15,0.96)', zIndex: 20,
+    gap: 10, paddingHorizontal: 24, backgroundColor: 'rgba(15,12,41,0.96)', zIndex: 20,
   },
   pausedTitle: { fontSize: 20, fontWeight: '800', color: colors.text.primary, textAlign: 'center' },
   pausedSub: { fontSize: 13, lineHeight: 19, color: colors.text.secondary, textAlign: 'center', maxWidth: 280 },
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   confirmBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
   confirmSheet: {
     width: '100%', maxWidth: 340, borderRadius: RADIUS.card, padding: 20, gap: 6,
-    backgroundColor: '#11162a', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#1A1545', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
   },
   confirmTitle: { fontSize: 17, fontWeight: '800', color: colors.text.primary },
   confirmSub: { fontSize: 13, lineHeight: 18, color: colors.text.secondary, marginBottom: 10 },

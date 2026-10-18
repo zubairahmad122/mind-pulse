@@ -9,6 +9,7 @@ import {
 import { AppState, Modal, Platform } from 'react-native';
 import { AlarmPermissionModal } from '@/components/alarm/AlarmPermissionModal';
 import { GlobalAlarmOverlay } from '@/components/alarm/GlobalAlarmOverlay';
+import { hasSeenHomeFeatureGuide } from '@/services/homeFeatureGuidePersistence';
 import {
   getAlarmPermissionStatus,
   markPermissionSetupDone,
@@ -82,11 +83,32 @@ export function AlarmOverlayProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const waitForFeatureGuide = async () => {
+      // Don't contend with the first-run Home feature-guide sheet for the
+      // user's attention — it was showing up stacked underneath this
+      // modal on a brand-new install. Wait until the guide has been seen
+      // (instantly true for returning users, since it's a one-time flag)
+      // before even checking alarm permissions.
+      while (!cancelled) {
+        if (await hasSeenHomeFeatureGuide()) break;
+        await new Promise<void>(resolve => {
+          pollTimer = setTimeout(resolve, 500);
+        });
+      }
+      if (cancelled) return;
       void recheckPermissions();
       void syncOverlay();
-    }, 800);
-    return () => clearTimeout(t);
+    };
+
+    const t = setTimeout(() => { void waitForFeatureGuide(); }, 800);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+      clearTimeout(pollTimer);
+    };
   }, [recheckPermissions, syncOverlay]);
 
   useEffect(() => {

@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#081720',
     borderRadius: 26,
     borderWidth: 1.5,
-    borderColor: 'rgba(0,224,255,0.35)',
+    borderColor: 'rgba(77,225,193,0.35)',
     paddingTop: spacing.lg,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,

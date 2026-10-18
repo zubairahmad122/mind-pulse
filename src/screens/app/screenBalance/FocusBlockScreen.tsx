@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { Alert, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Check, Pause, Play, TimerReset } from 'lucide-react-native';
+import { BellOff, Check, Pause, Play, TimerReset } from 'lucide-react-native';
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { AmbientBackground } from '@/components/ui/AmbientBackground';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -14,6 +14,7 @@ import { FONTS, PILLAR_COLORS, SHADOWS, STATUS_COLORS } from '@/constants/design
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/context/AuthContext';
 import { useFocusBlockSession } from '@/hooks/useFocusBlockSession';
+import { useFocusDndSetting } from '@/hooks/useFocusDndSetting';
 import { isMeaningfulFocusGoal } from '@/services/focusBlockPersistence';
 
 const ACCENT = PILLAR_COLORS.reset;
@@ -25,12 +26,12 @@ const PLACEHOLDERS = [
   'Reply to important emails',
 ] as const;
 const CTA_TEXT = '#03212C';
-const CTA_GLOW = 'rgba(84,168,255,0.22)';
+const CTA_GLOW = 'rgba(108,99,255,0.22)';
 /** Same navy-glass family as the Home Featured card / Screen Balance Details
  * hero — a 2-stop gradient, not the flat neutral `GlassCard` default, so the
  * setup card actually reads as its own surface instead of blending into the
  * screen background. */
-const SETUP_TINT = ['#1C2A50', '#111A36'] as const;
+const SETUP_TINT = ['#231C50', '#161136'] as const;
 
 function formatClock(totalSeconds: number): string {
   const safe = Math.max(0, totalSeconds);
@@ -61,6 +62,22 @@ export default function FocusBlockScreen() {
     endEarly,
     acknowledgeCompletion,
   } = useFocusBlockSession(user?.uid);
+  const {
+    enabled: dndEnabled,
+    granted: dndGranted,
+    loading: dndLoading,
+    toggle: toggleDnd,
+    refresh: refreshDnd,
+  } = useFocusDndSetting(user?.uid);
+
+  // Re-check DND access every time this screen regains focus — covers
+  // returning from the Settings screen the "Continue to Settings" alert
+  // sends the user to.
+  useFocusEffect(
+    useCallback(() => {
+      void refreshDnd();
+    }, [refreshDnd]),
+  );
 
   const activeGoal = session?.goal ?? completion?.goal ?? goal.trim();
   const canStart = useMemo(() => isMeaningfulFocusGoal(goal), [goal]);
@@ -181,7 +198,7 @@ export default function FocusBlockScreen() {
             there's no hard-edged seam, the same treatment as the Home
             Featured card and Screen Balance Details. */}
         <LinearGradient
-          colors={['rgba(0,224,255,0.11)', 'rgba(0,224,255,0.03)', 'rgba(0,224,255,0)']}
+          colors={['rgba(77,225,193,0.11)', 'rgba(77,225,193,0.03)', 'rgba(77,225,193,0)']}
           locations={[0, 0.45, 0.75]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
@@ -189,7 +206,7 @@ export default function FocusBlockScreen() {
           pointerEvents="none"
         />
         <LinearGradient
-          colors={['rgba(157,92,255,0)', 'rgba(157,92,255,0.03)', 'rgba(157,92,255,0.08)']}
+          colors={['rgba(123,92,255,0)', 'rgba(123,92,255,0.03)', 'rgba(123,92,255,0.08)']}
           locations={[0.5, 0.8, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
@@ -248,6 +265,30 @@ export default function FocusBlockScreen() {
           <Text style={styles.intentionLine}>{durationMinutes} min · One goal · No rush</Text>
         </View>
       </GlassCard>
+
+      <View style={styles.dndRow}>
+        <View style={styles.dndIconWrap}>
+          <BellOff size={17} color={dndEnabled ? ACCENT : colors.text.tertiary} strokeWidth={2} />
+        </View>
+        <View style={styles.dndTextWrap}>
+          <Text style={styles.dndLabel}>Silence Notifications</Text>
+          <Text style={styles.dndSub}>
+            {!dndGranted
+              ? 'Tap to allow Do Not Disturb access'
+              : dndEnabled
+                ? 'Phone stays quiet while you focus'
+                : 'Off — notifications arrive as usual'}
+          </Text>
+        </View>
+        <Switch
+          value={dndEnabled}
+          onValueChange={next => void toggleDnd(next)}
+          disabled={dndLoading}
+          trackColor={{ false: 'rgba(255,255,255,0.16)', true: ACCENT }}
+          thumbColor={dndEnabled ? '#FFFFFF' : colors.text.secondary}
+          accessibilityLabel="Silence notifications during focus"
+        />
+      </View>
 
       <View style={styles.setupCta}>
         {canStart ? (
@@ -390,6 +431,43 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: 'rgba(245,247,251,0.42)',
     textAlign: 'center',
+  },
+  dndRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.035)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  dndIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.055)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.09)',
+    flexShrink: 0,
+  },
+  dndTextWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
+  dndLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  dndSub: {
+    fontSize: 11.5,
+    lineHeight: 15,
+    color: colors.text.secondary,
+    marginTop: 1,
   },
   setupCta: {
     marginTop: 18,

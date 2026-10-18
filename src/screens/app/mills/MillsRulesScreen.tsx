@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FONTS } from '@/constants/designSystem';
 import { MILLS_THEME as T } from '@/constants/millsTheme';
 
-const RULES: Array<[string, string, string]> = [
+const RULES: [string, string, string][] = [
   ['1', 'Place nine pieces', 'Take turns placing one piece on any empty point.'],
   ['2', 'Form a mill', 'Align three of your pieces on an official board line.'],
   ['3', 'Capture', 'A new mill lets you remove one opponent piece. Pieces outside mills must be removed first.'],

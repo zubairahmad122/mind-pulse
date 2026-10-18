@@ -1,11 +1,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowRight, HeartPulse, Sparkles, TrendingUp } from 'lucide-react-native';
+import { ArrowRight, HeartPulse, Moon, Sparkles, TrendingUp } from 'lucide-react-native';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@/constants/colors';
-import { FONTS, GLASS_CARD, RADIUS } from '@/constants/designSystem';
+import { FONTS, GLASS_CARD, PILLAR_COLORS, RADIUS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { GradientCTA } from './GradientCTA';
 
@@ -65,10 +65,10 @@ export function SoftPaywallModal({
               <Svg pointerEvents="none" style={StyleSheet.absoluteFill} width="100%" height="100%">
                 <Defs>
                   <RadialGradient id="welcomeGlow" cx="50%" cy="12%" rx="70%" ry="72%">
-                    <Stop offset="0" stopColor="#1CD7FF" stopOpacity="0.16" />
+                    <Stop offset="0" stopColor="#4DE1C1" stopOpacity="0.16" />
                     <Stop offset="0.48" stopColor="#486BFF" stopOpacity="0.07" />
                     <Stop offset="0.78" stopColor="#8A5CFF" stopOpacity="0.05" />
-                    <Stop offset="1" stopColor="#0B102A" stopOpacity="0" />
+                    <Stop offset="1" stopColor="#0F0B2A" stopOpacity="0" />
                   </RadialGradient>
                 </Defs>
                 <Rect width="100%" height="100%" fill="url(#welcomeGlow)" />
@@ -86,21 +86,21 @@ export function SoftPaywallModal({
                 >
                   <Defs>
                     <RadialGradient id="proMarkGlow" cx="50%" cy="50%" r="50%">
-                      <Stop offset="0%" stopColor="#42E8FF" stopOpacity="0.3" />
-                      <Stop offset="55%" stopColor="#3887FF" stopOpacity="0.12" />
-                      <Stop offset="100%" stopColor="#3887FF" stopOpacity="0" />
+                      <Stop offset="0%" stopColor="#4DE1C1" stopOpacity="0.3" />
+                      <Stop offset="55%" stopColor="#6C63FF" stopOpacity="0.12" />
+                      <Stop offset="100%" stopColor="#6C63FF" stopOpacity="0" />
                     </RadialGradient>
                   </Defs>
                   <Rect width={140} height={140} fill="url(#proMarkGlow)" />
                 </Svg>
                 <LinearGradient
-                  colors={['#42E8FF', '#3887FF', '#805CFF']}
+                  colors={['#4DE1C1', '#6C63FF', '#7B5CFF']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.proMarkBorder}
                 >
                   <View style={styles.proMarkInner}>
-                    <HeartPulse size={25} color="#69EAFF" strokeWidth={2.15} />
+                    <HeartPulse size={25} color="#8EF0DA" strokeWidth={2.15} />
                     <Sparkles size={12} color="#A99BFF" strokeWidth={2.2} style={styles.proSparkle} />
                   </View>
                 </LinearGradient>
@@ -111,9 +111,21 @@ export function SoftPaywallModal({
                 </Text>
 
                 <View style={styles.benefits}>
-                  <BenefitRow icon={<HeartPulse size={16} color="#56E3FF" strokeWidth={2} />} label="Guided wellness sessions" />
-                  <BenefitRow icon={<Sparkles size={16} color="#56E3FF" strokeWidth={2} />} label="Deep relax & sleep sessions" />
-                  <BenefitRow icon={<TrendingUp size={16} color="#56E3FF" strokeWidth={2} />} label="Deeper progress insights" />
+                  <BenefitRow
+                    accent={PILLAR_COLORS.mind}
+                    icon={<HeartPulse size={16} color={PILLAR_COLORS.mind} strokeWidth={2} />}
+                    label="Unlimited Focus sessions"
+                  />
+                  <BenefitRow
+                    accent={PILLAR_COLORS.sleep}
+                    icon={<Moon size={16} color={PILLAR_COLORS.sleep} strokeWidth={2} />}
+                    label="Full Sleep & Relax library"
+                  />
+                  <BenefitRow
+                    accent={PILLAR_COLORS.challenge}
+                    icon={<TrendingUp size={16} color={PILLAR_COLORS.challenge} strokeWidth={2} />}
+                    label="Advanced weekly insights"
+                  />
                 </View>
 
                 <TouchableOpacity
@@ -124,7 +136,7 @@ export function SoftPaywallModal({
                   style={styles.welcomeCtaShadow}
                 >
                   <LinearGradient
-                    colors={['#43E4FF', '#3E91FF', '#536CFF']}
+                    colors={['#3B2ED0', '#5B45E8', '#7B5CFF']}
                     start={{ x: 0, y: 0.25 }}
                     end={{ x: 1, y: 0.75 }}
                     style={styles.welcomeCta}
@@ -162,10 +174,10 @@ export function SoftPaywallModal({
   );
 }
 
-function BenefitRow({ icon, label }: { icon: React.ReactNode; label: string }) {
+function BenefitRow({ icon, label, accent }: { icon: React.ReactNode; label: string; accent: string }) {
   return (
-    <View style={styles.benefitRow}>
-      <View style={styles.benefitIcon}>{icon}</View>
+    <View style={[styles.benefitRow, { borderColor: accent + '24' }]}>
+      <View style={[styles.benefitIcon, { backgroundColor: accent + '1c' }]}>{icon}</View>
       <Text style={styles.benefitLabel}>{label}</Text>
     </View>
   );
@@ -194,11 +206,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: RADIUS.card,
   },
   welcomeSheetClip: {
-    backgroundColor: '#0B102A',
+    backgroundColor: '#0F0B2A',
     borderColor: 'rgba(92,126,255,0.28)',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    shadowColor: '#1E5EFF',
+    shadowColor: '#3B2ED0',
     shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.2,
     shadowRadius: 30,
@@ -329,7 +341,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 19,
     marginBottom: 9,
-    shadowColor: '#38BFFF',
+    shadowColor: '#7B5CFF',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.28,
     shadowRadius: 17,

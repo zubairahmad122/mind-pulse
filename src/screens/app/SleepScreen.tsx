@@ -83,7 +83,10 @@ import {
   formatDuration,
   formatElapsed,
   nextOccurrenceOfTime,
+  sleepSessionDate,
 } from "@/utils/sleepUtils";
+import { getLocalDateISO } from "@/utils/dateUtils";
+import { recordActivity } from "@/stores/useActivityStore";
 
 // Enable smooth height animations (e.g. AI insight expand) on Android.
 if (
@@ -275,7 +278,7 @@ const autoDimStyles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     padding: 2,
-    backgroundColor: "#252542",
+    backgroundColor: "#2A2460",
     flexDirection: "row",
     alignItems: "center",
   },
@@ -370,7 +373,7 @@ const SLEEP_ACCENT = PILLAR_COLORS.sleep;
 // violet gradient (same precedent as Home's Featured card): the dial itself
 // now supplies the card's color, so the surface underneath it should read as
 // a darker premium navy, not a second flat-purple slab. ─────────────────────
-const SLEEP_HERO_TINT = ["#181530", "#0B0A18"] as const;
+const SLEEP_HERO_TINT = ["#211A55", "#130F33"] as const;
 // ── Local, not `SPACING.section` (32, frozen app-wide) — this screen's own
 // density pass tightens Tonight's section rhythm without touching the
 // shared token other screens still rely on. ─────────────────────────────────
@@ -552,7 +555,7 @@ function ReadinessRing({
 const SLEEP_STAGE_STYLE: Record<SleepStage, { bg: string; border: string; text: string }> = {
   light: { bg: "rgba(50,213,131,0.15)", border: "rgba(50,213,131,0.35)", text: "#32D583" },
   rem: { bg: "rgba(56,189,248,0.15)", border: "rgba(56,189,248,0.35)", text: "#38BDF8" },
-  deep: { bg: "rgba(123,127,255,0.15)", border: "rgba(123,127,255,0.35)", text: PILLAR_COLORS.sleep },
+  deep: { bg: "rgba(108,99,255,0.15)", border: "rgba(108,99,255,0.35)", text: PILLAR_COLORS.sleep },
 };
 
 // ─── Toggle Switch ────────────────────────────────────────────────────────────
@@ -973,6 +976,7 @@ export default function SleepScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { user, isGuestMode } = useAuth();
+  const uid = user?.uid;
   const { sessions, addSession } = useSleep();
   const { schedule, saveSchedule } = useSleepSchedule(user?.uid, isGuestMode);
   const readiness = useSleepReadiness();
@@ -1319,11 +1323,20 @@ export default function SleepScreen() {
     if (durationMinutes >= 1) {
       try {
         await addSession({
-          date: startTime.toISOString().slice(0, 10),
+          // Local calendar night (not the UTC day — a 00:30 PKT start is still "tonight").
+          date: getLocalDateISO(startTime),
           startTime: startTime.getTime(),
           endTime: pendingEnd.getTime(),
           durationMinutes,
           quality: selectedQuality,
+        });
+        // Only once the session is genuinely saved — skipped ratings / failed saves don't count.
+        void recordActivity(uid, {
+          id: `sleep-${startTime.getTime()}`,
+          type: 'SLEEP_SESSION_COMPLETED',
+          source: 'sleep-tracker',
+          durationSeconds: durationMinutes * 60,
+          metadata: { quality: selectedQuality },
         });
       } catch {
         /* shown by context */
@@ -1333,7 +1346,7 @@ export default function SleepScreen() {
     await clearSession();
     setPendingEnd(null);
     actionBusyRef.current = false;
-  }, [addSession, clearSession, pendingEnd, selectedQuality, startTime]);
+  }, [addSession, clearSession, pendingEnd, selectedQuality, startTime, uid]);
 
   // ── Stats ─────────────────────────────────────────────────────────────────
   const streak = calculateStreak(sessions);
@@ -1342,16 +1355,16 @@ export default function SleepScreen() {
   const [statsNow] = useState(() => Date.now());
   const oneWeekAgo = statsNow - 7 * 24 * 60 * 60 * 1000;
   const nightsThisWeek = sessions.filter((s) => s.startTime > oneWeekAgo).length;
-  // Real per-day completion for the last 7 calendar days (oldest → today),
-  // matched against `session.date` (same UTC-slice key it's already stored
-  // with) — never a fabricated pattern, just a different view of `sessions`.
+  // Real per-day completion for the last 7 LOCAL calendar days (oldest →
+  // today), keyed by each session's local start day — never a fabricated
+  // pattern, just a different view of `sessions`.
   const weekDots = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(statsNow - (6 - i) * 24 * 60 * 60 * 1000);
-    const key = d.toISOString().slice(0, 10);
+    const key = getLocalDateISO(d);
     return {
       key,
       label: ["S", "M", "T", "W", "T", "F", "S"][d.getDay()],
-      hasSession: sessions.some((s) => s.date === key),
+      hasSession: sessions.some((s) => sleepSessionDate(s) === key),
       isToday: i === 6,
     };
   });
@@ -1363,7 +1376,7 @@ export default function SleepScreen() {
   }
 
   return (
-    <ScreenShell pillar="sleep" ambient={<AmbientBackground />} safeBottom>
+    <ScreenShell pillar="sleep" ambient={<AmbientBackground />} bannerAd>
       <ScreenTransition>
         <View className="px-1 pt-1 pb-4">
           {/* Header */}
@@ -1871,7 +1884,7 @@ export default function SleepScreen() {
                 sublabel={`Wake at ${formatTimeAmPm(sliderWakeTime)}`}
                 icon={<MoonStar size={19} color="#03212C" />}
                 textColor="#03212C"
-                glowColor="rgba(84,168,255,0.34)"
+                glowColor="rgba(108,99,255,0.34)"
                 height={52}
                 onPress={handleStartSleep}
                 disabled={busy}

@@ -12,7 +12,7 @@ const CHART_H = 44;
 /** Muted violet/indigo — matches the hero's gradient family. */
 const HISTORICAL_COLOR = '#6E5AC4';
 /** Cyan/violet highlight reserved for today's bar — same accent family as the hero CTA. */
-const TODAY_COLOR = '#63E8FF';
+const TODAY_COLOR = '#4DE1C1';
 
 interface DayBucket {
   date: string;

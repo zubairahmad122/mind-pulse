@@ -1,0 +1,6 @@
+allowBuilds:
+  '@firebase/util': true
+  '@sentry/cli': true
+  '@shopify/react-native-skia': true
+  protobufjs: true
+  unrs-resolver: true

@@ -86,13 +86,32 @@ object ScreenUsageCalculator {
     return totals
   }
 
-  /** "Screen Time Today" = the sum of every package's total in [computePerAppForegroundMs]. */
+  /**
+   * "Screen Time Today" = the sum of every package's total in
+   * [computePerAppForegroundMs], clamped to the window's own elapsed
+   * wall-clock duration.
+   *
+   * The clamp is load-bearing, not defensive padding: only one app can
+   * truly be in the foreground at any instant, but `UsageStatsManager` can
+   * occasionally report overlapping or stale per-package foreground
+   * windows (multi-window/picture-in-picture, or a `MOVE_TO_FOREGROUND`
+   * that never got a matching `MOVE_TO_BACKGROUND`, e.g. across an OS
+   * update or a killed process). Summing per-app totals with no ceiling
+   * let that surface as a day showing more than 24 hours of screen time —
+   * physically impossible, but exactly what a blind sum can produce.
+   * Capping to the window's own duration here fixes it once for every
+   * caller (live "today" and every historical day in Weekly Trends alike).
+   */
   fun computeScreenTimeTodayMs(
     events: List<UsageEventRecord>,
     startOfDayMs: Long,
     nowMs: Long,
     selfPackage: String?,
-  ): Long = computePerAppForegroundMs(events, startOfDayMs, nowMs, selfPackage).values.sum()
+  ): Long {
+    val summed = computePerAppForegroundMs(events, startOfDayMs, nowMs, selfPackage).values.sum()
+    val windowMs = (nowMs - startOfDayMs).coerceAtLeast(0L)
+    return summed.coerceAtMost(windowMs)
+  }
 
   data class DayBounds(val dateKey: String, val startMs: Long, val endMs: Long)
 

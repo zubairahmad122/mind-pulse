@@ -25,7 +25,7 @@ import { AmbientBackground } from '@/components/ui/AmbientBackground';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { BUTTON, FONTS, PILLAR_COLORS, PRO_GOLD, RADIUS, STATUS_COLORS, TYPOGRAPHY } from '@/constants/designSystem';
 import { useSubscription } from '@/context/SubscriptionContext';
-import { getOfferings, purchasePackage, restorePurchases } from '@/services/purchaseService';
+import { getOfferings, hasActiveProEntitlement, purchasePackage, restorePurchases } from '@/services/purchaseService';
 
 // ── Design Tokens ──────────────────────────────────────────────────────────────
 // Radius/gradient now read from the frozen design system (RADIUS.card,
@@ -199,7 +199,11 @@ export default function PremiumScreen() {
     setRestoring(false);
     if (result.success) {
       await refreshSubscription();
-      setJustUnlocked(true);
+      if (hasActiveProEntitlement(result.customerInfo)) {
+        setJustUnlocked(true);
+      } else {
+        setError('No previous purchase found for this account.');
+      }
       return;
     }
     if (result.error) setError(result.error);
@@ -543,7 +547,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   featuresModalSheet: {
-    backgroundColor: '#11162a',
+    backgroundColor: '#1A1545',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderWidth: 1,

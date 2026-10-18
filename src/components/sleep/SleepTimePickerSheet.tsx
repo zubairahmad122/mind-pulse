@@ -1010,7 +1010,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     padding: 2,
-    backgroundColor: "#252542",
+    backgroundColor: "#2A2460",
     flexDirection: "row",
     alignItems: "center",
   },
@@ -1026,7 +1026,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#11162a",
+    backgroundColor: "#1A1545",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     overflow: "hidden",

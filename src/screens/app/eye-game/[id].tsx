@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pause, Trophy } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SessionCompleteOverlay } from '@/components/eye/SessionCompleteOverlay';
 import { EyeGuideButton, EyeGuideSheet, type EyeGuideContent } from '@/components/eye/EyeGuideSheet';
@@ -30,7 +30,7 @@ import { colors } from '@/constants/colors';
 import { ROUTES } from '@/constants/routes';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
-import { useProgressStore } from '@/stores/useProgressStore';
+import { recordActivity } from '@/stores/useActivityStore';
 
 function GameView({
   id, running, onGameEnd, onFocusSession,
@@ -96,7 +96,8 @@ export default function EyeGameScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const logEyeGame = useProgressStore(state => state.logEyeGame);
+  // Final score of the round in progress — FocusSprint reports it just before onGameEnd.
+  const lastScoreRef = useRef<number | null>(null);
   const activity = id ? getEyeActivity(id) : undefined;
   const [running, setRunning]         = useState(true);
   const [gameEndStats, setGameEndStats] = useState<GameEndStats | null>(null);
@@ -251,11 +252,20 @@ export default function EyeGameScreen() {
             void awardEyeGameXp(user?.uid, gameId, stats.rating).then(
               setProgressReward,
             );
-            logEyeGame();
+            const completedAt = Date.now();
+            void recordActivity(user?.uid, {
+              id: `eye-game-${gameId}-${completedAt}`,
+              type: 'EYE_GAME_COMPLETED',
+              source: 'focus-sprint',
+              timestamp: completedAt,
+              durationSeconds: activity.durationSeconds,
+              ...(lastScoreRef.current != null ? { score: lastScoreRef.current } : {}),
+              metadata: { gameId, rating: stats.rating },
+            });
             // Self-managed: has its own completion UI — go directly to results.
             setGameEndStats(stats);
           }}
-          onFocusSession={score => submit(score)}
+          onFocusSession={score => { lastScoreRef.current = score; submit(score); }}
           focusDifficulty={focusDifficulty}
           onFocusDifficultyChange={setFocusDifficulty}
           onFocusActiveChange={setSessionInProgress}
@@ -325,8 +335,8 @@ const styles = StyleSheet.create({
   pbVal:   { fontSize: 12, fontWeight: '800', color: '#FFD700' },
   headerPauseBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(0,224,255,0.1)',
-    borderWidth: 1, borderColor: 'rgba(0,224,255,0.22)',
+    backgroundColor: 'rgba(77,225,193,0.1)',
+    borderWidth: 1, borderColor: 'rgba(77,225,193,0.22)',
     alignItems: 'center', justifyContent: 'center',
   },
   badge: {

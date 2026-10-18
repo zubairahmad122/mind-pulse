@@ -1,3 +1,4 @@
+import { useDailyActivityProgress, useActivityHistory } from '@/hooks/useActivity';
 import { useProgressStore } from '@/stores/useProgressStore';
 import { todayISO } from '@/utils/dateUtils';
 
@@ -16,28 +17,29 @@ export interface TodayProgress {
 
 /**
  * Today's completion across 4 steps — Checked in (real: opening the app),
- * Eye, Mind (relax or mind session), Sleep — for the Home "Today's Journey"
- * hero. Checking in alone does not count toward the streak, which still
- * requires a real pillar session.
+ * Eye (Eye Reset / Eye Break / Focus Switch), Mind (Mind game, Relax session
+ * or Focus block), Sleep (a saved sleep session) — for the Home "Today's
+ * Journey" hero. Every step except check-in comes from the unified activity
+ * log; checking in alone does not count toward the streak.
  */
 export function useTodayProgress(): TodayProgress {
-  const todaySessions = useProgressStore((s) => s.todaySessions);
-  const todayDate = useProgressStore((s) => s.todayDate);
   const checkedInDate = useProgressStore((s) => s.checkedInDate);
-  const everCompletedAny = useProgressStore((s) =>
+  // Counters written before the unified log existed — read only so returning
+  // users aren't treated as brand new; nothing increments them any more.
+  const legacyCompletedAny = useProgressStore((s) =>
     s.eyeExercisesCompleted > 0 ||
     s.eyeGamesPlayed > 0 ||
     s.relaxSessionsCompleted > 0 ||
     s.mindSessionsCompleted > 0 ||
     s.sleepSessionsTracked > 0,
   );
+  const { events } = useActivityHistory();
+  const { pillars } = useDailyActivityProgress();
 
-  const today = todayISO();
-  const isToday = todayDate === today;
-  const checkedIn = checkedInDate === today;
-  const eyeDone = isToday && (todaySessions.eye || todaySessions.eyeGames);
-  const mindDone = isToday && (todaySessions.relax || todaySessions.mind);
-  const sleepDone = isToday && todaySessions.sleep;
+  const checkedIn = checkedInDate === todayISO();
+  const eyeDone = pillars.includes('eye');
+  const mindDone = pillars.includes('mind') || pillars.includes('relax') || pillars.includes('focus');
+  const sleepDone = pillars.includes('sleep');
   const doneCount = [checkedIn, eyeDone, mindDone, sleepDone].filter(Boolean).length;
 
   return {
@@ -48,6 +50,6 @@ export function useTodayProgress(): TodayProgress {
     eyeDone,
     mindDone,
     sleepDone,
-    everCompletedAny,
+    everCompletedAny: events.length > 0 || legacyCompletedAny,
   };
 }

@@ -16,7 +16,7 @@
       "googleServicesFile": "./google-services.json",
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
-        "backgroundColor": "#182749",
+        "backgroundColor": "#1B1AE7",
         "foregroundImage": "./assets/expo.icon/Assets/adaptive-fg.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -50,9 +50,9 @@
           "image": "./assets/images/splash-transparent.png",
           "imageWidth": 1,
           "resizeMode": "contain",
-          "backgroundColor": "#080D1A",
+          "backgroundColor": "#0F0C29",
           "dark": {
-            "backgroundColor": "#080D1A"
+            "backgroundColor": "#0F0C29"
           }
         }
       ],
@@ -66,8 +66,8 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
-          "color": "#7B61FF",
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#7B5CFF",
           "sounds": [
             "./assets/sounds/alarm.wav"
           ]

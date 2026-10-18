@@ -3,7 +3,7 @@ import { MinimalHeroFrame } from './MinimalHeroFrame';
 
 export function SleepHero() {
   return (
-    <MinimalHeroFrame accent="#a78bfa">
+    <MinimalHeroFrame accent="#A48BFF">
       <Moon
         color="#C4B5FD"
         fill="rgba(167,139,250,0.08)"

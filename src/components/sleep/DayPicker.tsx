@@ -3,7 +3,7 @@ import { radius } from '@/constants/radius';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 
-// rgba(123,127,255,...) below is PILLAR_COLORS.sleep (#7B7FFF) — the Sleep
+// rgba(108,99,255,...) below is PILLAR_COLORS.sleep (#6C63FF) — the Sleep
 // tab's frozen indigo accent, spelled out in rgba so it can carry per-state
 // opacity without string concatenation.
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
@@ -54,8 +54,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dayActive: {
-    backgroundColor: 'rgba(123,127,255,0.22)',
-    borderColor: 'rgba(123,127,255,0.55)',
+    backgroundColor: 'rgba(108,99,255,0.22)',
+    borderColor: 'rgba(108,99,255,0.55)',
   },
   dayText: { ...typography.label, color: 'rgba(255,255,255,0.75)' },
   dayTextActive: { color: '#FFFFFF', fontWeight: '700' },

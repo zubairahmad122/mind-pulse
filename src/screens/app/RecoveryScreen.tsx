@@ -58,7 +58,7 @@ const OPTIONS: RecoveryOption[] = [
   {
     id: 'sleep-prep',
     icon: Moon,
-    iconColor: '#a78bfa',
+    iconColor: '#A48BFF',
     title: 'Sleep prep mode',
     subtitle: 'Wind down for tonight',
     durationLabel: '30 min',
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   optionDurationText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#a78bfa',
+    color: '#A48BFF',
   },
   // Timer full-screen
   timerScreen: {

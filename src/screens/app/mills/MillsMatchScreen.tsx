@@ -32,6 +32,8 @@ import { clearMillsMatch, loadMillsMatch, saveMillsMatch } from '@/services/mill
 import { useMillsFeedback } from '@/hooks/useMillsFeedback';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { shouldPromptLeaveOnBack } from './millsMatchBackLogic';
+import { useAuth } from '@/context/AuthContext';
+import { recordMindGameActivity } from '@/services/mindGameActivity';
 
 /** First-paint estimate only — real layout (measured via onLayout below) takes over as soon as
  * it's available, so this never needs to be pixel-accurate, just close enough to avoid a flash. */
@@ -53,7 +55,7 @@ function resultHeadline(state: GameState): string {
 
 export default function MillsMatchScreen(){
   const params=useLocalSearchParams<{p1?:string;p2?:string;startingPlayer?:'P1'|'P2';sound?:string;haptics?:string;theme?:'classic'|'slate';continue?:string}>();
-  const router=useRouter(); const {width,height}=useWindowDimensions(); const insets=useSafeAreaInsets(); const [paused,setPaused]=useState(false); const [confirm,setConfirm]=useState<'restart'|'exit'|null>(null);
+  const router=useRouter(); const {user}=useAuth(); const {width,height}=useWindowDimensions(); const insets=useSafeAreaInsets(); const [paused,setPaused]=useState(false); const [confirm,setConfirm]=useState<'restart'|'exit'|null>(null);
   const [millLocked,setMillLocked]=useState(false);const [capturingPosition,setCapturingPosition]=useState<PositionId|null>(null);const [invalidPosition,setInvalidPosition]=useState<PositionId|null>(null);
   const millTimer=useRef<ReturnType<typeof setTimeout>|null>(null);const captureTimer=useRef<ReturnType<typeof setTimeout>|null>(null);const invalidTimer=useRef<ReturnType<typeof setTimeout>|null>(null);const resultTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const resumePauseAfterRules=useRef(false);
@@ -79,7 +81,7 @@ export default function MillsMatchScreen(){
 
   useEffect(()=>{if(params.continue!=='true')return;let active=true;void loadMillsMatch().then(saved=>{if(active&&saved)dispatch({type:'RESTORE',state:saved});restored.current=true;});return()=>{active=false;};},[params.continue]);
   useEffect(()=>()=>{if(millTimer.current)clearTimeout(millTimer.current);if(captureTimer.current)clearTimeout(captureTimer.current);if(invalidTimer.current)clearTimeout(invalidTimer.current);if(resultTimer.current)clearTimeout(resultTimer.current);},[]);
-  useEffect(()=>{if(!restored.current)return;if(state.result){void clearMillsMatch();if(!resultSent.current){resultSent.current=true;const duration=Math.max(0,Date.now()-state.startedAt);resultTimer.current=setTimeout(()=>router.replace({pathname:ROUTES.appMillsResults,params:{result:state.result!.type,winner:state.result!.type==='win'?state.result!.winner:'',reason:state.result!.reason,p1:state.settings.playerNames.P1,p2:state.settings.playerNames.P2,startingPlayer:state.settings.startingPlayer,turns:String(state.turnNumber),duration:String(duration),p1Mills:String(state.players.P1.millsFormed),p2Mills:String(state.players.P2.millsFormed),p1Captured:String(state.players.P1.piecesCaptured),p2Captured:String(state.players.P2.piecesCaptured),p1Remaining:String(countPieces(state.board,'P1')),p2Remaining:String(countPieces(state.board,'P2')),sound:String(state.settings.soundEnabled),haptics:String(state.settings.hapticsEnabled),theme:state.settings.pieceTheme}} as never),reducedMotion?200:560);}}else if(state.turnNumber>0){void saveMillsMatch(state);}},[reducedMotion,router,state]);
+  useEffect(()=>{if(!restored.current)return;if(state.result){void clearMillsMatch();if(!resultSent.current){resultSent.current=true;const duration=Math.max(0,Date.now()-state.startedAt);void recordMindGameActivity(user?.uid,'mills',String(state.startedAt),state.startedAt,Date.now(),undefined,{result:state.result.type,reason:state.result.reason,turns:state.turnNumber});resultTimer.current=setTimeout(()=>router.replace({pathname:ROUTES.appMillsResults,params:{result:state.result!.type,winner:state.result!.type==='win'?state.result!.winner:'',reason:state.result!.reason,p1:state.settings.playerNames.P1,p2:state.settings.playerNames.P2,startingPlayer:state.settings.startingPlayer,turns:String(state.turnNumber),duration:String(duration),p1Mills:String(state.players.P1.millsFormed),p2Mills:String(state.players.P2.millsFormed),p1Captured:String(state.players.P1.piecesCaptured),p2Captured:String(state.players.P2.piecesCaptured),p1Remaining:String(countPieces(state.board,'P1')),p2Remaining:String(countPieces(state.board,'P2')),sound:String(state.settings.soundEnabled),haptics:String(state.settings.hapticsEnabled),theme:state.settings.pieceTheme}} as never),reducedMotion?200:560);}}else if(state.turnNumber>0){void saveMillsMatch(state);}},[reducedMotion,router,state,user?.uid]);
 
   // Reopens the pause sheet when the user comes back from the pushed Rules screen — it was
   // never "closed", just backgrounded, so this restores the state the user actually left.
@@ -348,7 +350,7 @@ const styles=StyleSheet.create({
   container:{flex:1,paddingHorizontal:14},
 
   top:{flexDirection:'row',alignItems:'center'},
-  icon:{width:36,height:36,borderRadius:18,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(255,255,255,.07)',borderWidth:1,borderColor:'rgba(169,139,255,.12)'},
+  icon:{width:36,height:36,borderRadius:18,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(255,255,255,.07)',borderWidth:1,borderColor:'rgba(164,139,255,.12)'},
   heading:{flex:1,alignItems:'center'},
   gameTitle:{color:T.text,fontFamily:FONTS.heading,fontSize:16,letterSpacing:2.2},
   headingSub:{flexDirection:'row',alignItems:'center',gap:5,marginTop:0},
@@ -356,7 +358,7 @@ const styles=StyleSheet.create({
   headingDot:{width:2.5,height:2.5,borderRadius:1.5,backgroundColor:T.textMuted,opacity:.6},
   phase:{color:T.p1,fontFamily:FONTS.bodyBold,fontSize:8.5,letterSpacing:.8},
 
-  actionStrip:{borderRadius:19,backgroundColor:'rgba(24,25,47,.92)',flexDirection:'row',alignItems:'center',paddingHorizontal:15,borderWidth:1,borderBottomWidth:1.5,borderColor:'rgba(169,139,255,.17)',borderBottomColor:'rgba(114,232,246,.14)',overflow:'hidden',shadowColor:'#000',shadowOffset:{width:0,height:6},shadowOpacity:.14,shadowRadius:12,elevation:2},
+  actionStrip:{borderRadius:19,backgroundColor:'rgba(27,22,66,.92)',flexDirection:'row',alignItems:'center',paddingHorizontal:15,borderWidth:1,borderBottomWidth:1.5,borderColor:'rgba(164,139,255,.17)',borderBottomColor:'rgba(77,225,193,.14)',overflow:'hidden',shadowColor:'#000',shadowOffset:{width:0,height:6},shadowOpacity:.14,shadowRadius:12,elevation:2},
   actionAccent:{position:'absolute',left:0,top:10,bottom:10,width:3,borderTopRightRadius:3,borderBottomRightRadius:3},
   actionStripCapture:{borderColor:T.danger,backgroundColor:'rgba(255,92,101,.1)'},
   actionLeft:{flex:1,minWidth:0},
@@ -370,17 +372,17 @@ const styles=StyleSheet.create({
 
   boardWrap:{flex:1,alignItems:'center',justifyContent:'flex-start'},
 
-  dock:{borderRadius:26,borderWidth:1,borderBottomWidth:1.5,borderColor:'rgba(169,139,255,.17)',borderBottomColor:'rgba(114,232,246,.14)',backgroundColor:'rgba(24,25,47,.94)',flexDirection:'row',alignItems:'center',justifyContent:'space-evenly',paddingHorizontal:6,shadowColor:'#000',shadowOffset:{width:0,height:7},shadowOpacity:.2,shadowRadius:14,elevation:3},
+  dock:{borderRadius:26,borderWidth:1,borderBottomWidth:1.5,borderColor:'rgba(164,139,255,.17)',borderBottomColor:'rgba(77,225,193,.14)',backgroundColor:'rgba(27,22,66,.94)',flexDirection:'row',alignItems:'center',justifyContent:'space-evenly',paddingHorizontal:6,shadowColor:'#000',shadowOffset:{width:0,height:7},shadowOpacity:.2,shadowRadius:14,elevation:3},
   dockDivider:{width:1,height:22,backgroundColor:T.border},
   action:{flex:1,minHeight:48,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,borderRadius:16},
-  actionIcon:{width:30,height:30,borderRadius:15,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(114,232,246,.08)',borderWidth:1,borderColor:'rgba(114,232,246,.14)'},
+  actionIcon:{width:30,height:30,borderRadius:15,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(77,225,193,.08)',borderWidth:1,borderColor:'rgba(77,225,193,.14)'},
   actionDisabled:{opacity:.28},
   actionText:{color:T.text,fontFamily:FONTS.bodySemi,fontSize:11},
 
   /* Pause bottom sheet */
   sheetRoot:{flex:1},
   sheetBackdrop:{position:'absolute',left:0,right:0,top:0,bottom:0,backgroundColor:'rgba(4,5,15,.7)'},
-  sheet:{position:'absolute',left:12,right:12,bottom:10,maxHeight:'60%',borderRadius:28,backgroundColor:'rgba(22,23,45,.99)',borderWidth:1,borderColor:'rgba(169,139,255,.2)',shadowColor:'#000',shadowOffset:{width:0,height:-8},shadowOpacity:.4,shadowRadius:24},
+  sheet:{position:'absolute',left:12,right:12,bottom:10,maxHeight:'60%',borderRadius:28,backgroundColor:'rgba(22,23,45,.99)',borderWidth:1,borderColor:'rgba(164,139,255,.2)',shadowColor:'#000',shadowOffset:{width:0,height:-8},shadowOpacity:.4,shadowRadius:24},
   sheetHandleArea:{alignItems:'center',paddingTop:10,paddingBottom:12},
   sheetHandle:{width:36,height:4,borderRadius:2,backgroundColor:'rgba(255,255,255,.22)'},
   sheetTitle:{color:T.text,fontFamily:FONTS.heading,fontSize:19,marginTop:10},
@@ -393,7 +395,7 @@ const styles=StyleSheet.create({
 
   /* Compact confirm dialog (Leave Match / Restart) */
   scrim:{flex:1,backgroundColor:'rgba(4,5,15,.72)',justifyContent:'flex-end',paddingHorizontal:14,paddingBottom:10},
-  confirmCard:{backgroundColor:'rgba(22,23,45,.99)',borderRadius:24,padding:22,borderWidth:1,borderColor:'rgba(169,139,255,.2)',gap:6,shadowColor:'#000',shadowOffset:{width:0,height:-6},shadowOpacity:.35,shadowRadius:20},
+  confirmCard:{backgroundColor:'rgba(22,23,45,.99)',borderRadius:24,padding:22,borderWidth:1,borderColor:'rgba(164,139,255,.2)',gap:6,shadowColor:'#000',shadowOffset:{width:0,height:-6},shadowOpacity:.35,shadowRadius:20},
   confirmTitle:{color:T.text,fontFamily:FONTS.heading,fontSize:20},
   confirmMessage:{color:T.textMuted,fontFamily:FONTS.body,fontSize:13.5,lineHeight:19,marginBottom:14},
   confirmRow:{flexDirection:'row',gap:10},

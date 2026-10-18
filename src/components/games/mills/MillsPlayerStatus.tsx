@@ -79,7 +79,7 @@ export function MillsPlayerStatus({ state }: { state: GameState }) {
 }
 
 const styles = StyleSheet.create({
-  bar: { minHeight: 74, borderRadius: 20, borderWidth: 1, borderBottomWidth: 1.5, borderColor: 'rgba(169,139,255,.17)', borderBottomColor: 'rgba(114,232,246,.16)', backgroundColor: 'rgba(24,25,47,.92)', flexDirection: 'row', overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 7 }, shadowOpacity: .16, shadowRadius: 14, elevation: 2 },
+  bar: { minHeight: 74, borderRadius: 20, borderWidth: 1, borderBottomWidth: 1.5, borderColor: 'rgba(164,139,255,.17)', borderBottomColor: 'rgba(77,225,193,.16)', backgroundColor: 'rgba(27,22,66,.92)', flexDirection: 'row', overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 7 }, shadowOpacity: .16, shadowRadius: 14, elevation: 2 },
   divider: { width: 1, backgroundColor: 'rgba(255,255,255,.075)', marginVertical: 11 },
   half: { flex: 1, paddingHorizontal: 13, paddingVertical: 9, overflow: 'hidden' },
   halfLeft: { alignItems: 'flex-start' },

@@ -16,7 +16,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { EyeHero, MindHero, SleepHero } from '@/components/onboarding';
+import { EyeHero, FocusHero, MindHero, SleepHero } from '@/components/onboarding';
 import {
   FONTS,
   GLASS_CARD,
@@ -30,6 +30,7 @@ import { markOnboardingComplete } from '@/services/onboardingPersistence';
 import { rs } from '@/utils/responsive';
 
 function SlideVisual({ slide }: { slide: OnboardingSlide }) {
+  if (slide.icon === 'focus') return <FocusHero />;
   if (slide.icon === 'mind') return <MindHero />;
   if (slide.icon === 'sleep') return <SleepHero />;
   return <EyeHero />;
@@ -86,6 +87,7 @@ export default function OnboardingScreen() {
   };
 
   const primaryLabel: Record<string, string> = {
+    focus: 'Start Focusing',
     eyes: 'Protect My Eyes',
     sleep: 'Explore Sleep',
     mind: 'Get Started Free',

@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore, collection, doc, writeBatch, serverTimestamp } from '@react-native-firebase/firestore';
+import { migrateGuestActivityLog } from '@/services/activityPersistence';
+import { hydrateActivityLog, useActivityStore } from '@/stores/useActivityStore';
 
 const db = getFirestore();
 
@@ -156,6 +158,17 @@ export async function migrateGuestData(uid: string): Promise<void> {
     }
   } catch {
     // skip
+  }
+
+  // 10. Unified activity log (local per-account key; the helper writes the
+  // account copy before removing the guest one, and mirrors to Firestore).
+  try {
+    await migrateGuestActivityLog(uid);
+    // The new account's log may already have been loaded (empty) before the
+    // migration landed — reload it so migrated activity shows immediately.
+    if (useActivityStore.getState().ownerKey === uid) await hydrateActivityLog(uid);
+  } catch {
+    // skip — guest log stays on the device-only key, nothing lost
   }
 
   // Commit all writes in a single batch (max 500 operations), then clear local cache

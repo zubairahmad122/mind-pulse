@@ -90,7 +90,7 @@ interface DiffConfig {
 
 // ─── Difficulty table ─────────────────────────────────────────────────────────
 const DIFF: Record<Difficulty, DiffConfig> = {
-  gentle: { label: 'Gentle', dotColor: '#5eead4', size: 92, pts: 1, sharpWindowMs: 2200, blurInMs: 700, blurHoldMs: 620, blurOutMs: 700, baseMoveMs: 1800, minMoveMs: 700, streakSpeedFloor: 0.85 },
+  gentle: { label: 'Gentle', dotColor: '#4DE1C1', size: 92, pts: 1, sharpWindowMs: 2200, blurInMs: 700, blurHoldMs: 620, blurOutMs: 700, baseMoveMs: 1800, minMoveMs: 700, streakSpeedFloor: 0.85 },
   easy:   { label: 'Casual', dotColor: '#6ee7b7', size: 80, pts: 1, sharpWindowMs: 1600, blurInMs: 520, blurHoldMs: 460, blurOutMs: 520, baseMoveMs: 1400, minMoveMs: 500, streakSpeedFloor: 0.60 },
   sharp:  { label: 'Sharp',  dotColor: '#f59e0b', size: 60, pts: 2, sharpWindowMs: 1050, blurInMs: 380, blurHoldMs: 340, blurOutMs: 380, baseMoveMs: 950,  minMoveMs: 360, streakSpeedFloor: 0.60 },
   elite:  { label: 'Elite',  dotColor: '#e24b4a', size: 44, pts: 3, sharpWindowMs: 780,  blurInMs: 290, blurHoldMs: 260, blurOutMs: 290, baseMoveMs: 700,  minMoveMs: 280, streakSpeedFloor: 0.60 },
@@ -100,8 +100,8 @@ const DIFF: Record<Difficulty, DiffConfig> = {
  * across all four modes, matching the Eye tab's navy/cyan palette. Visual
  * only, gameplay untouched. */
 const SELECTED_CYAN = {
-  borderColor: 'rgba(0,224,255,0.55)',
-  bg: 'rgba(0,224,255,0.1)',
+  borderColor: 'rgba(77,225,193,0.55)',
+  bg: 'rgba(77,225,193,0.1)',
   text: '#67e8f9',
 };
 
@@ -132,10 +132,10 @@ const MOVE_ORDER = [0, 3, 1, 2, 4, 5, 7, 8, 6, 4, 1, 2, 3, 0, 6, 8];
 
 const C = {
   card:        'rgba(255,255,255,0.045)',
-  // Eye-pillar accent (was the old teal-cyan '#22d3ee' — a different color
+  // Eye-pillar accent (was the old teal-cyan '#4DE1C1' — a different color
   // from PILLAR_COLORS.eye used everywhere else in the Eye tab).
   purple:      PILLAR_COLORS.eye,
-  purpleLight: '#5eead4',
+  purpleLight: '#4DE1C1',
   green:       '#6ee7b7',
   red:         '#e24b4a',
   gold:        '#ffd700',
@@ -521,9 +521,9 @@ function RocketOrb({
   const WINDOW     = '#06121a';
   const FLAME_OUT  = '#F97316';
   const FLAME_IN   = '#FFD87A';
-  const HALO_NEAR  = 'rgba(0,224,255,0.6)';
+  const HALO_NEAR  = 'rgba(77,225,193,0.6)';
   const HALO_FAR   = 'rgba(129,140,248,0.35)';
-  const TAP_RING   = 'rgba(0,224,255,0.85)';
+  const TAP_RING   = 'rgba(77,225,193,0.85)';
   const SVG_W      = 64;
   const SVG_H      = 85;
   // Just inside the halo so the pulse reads as "tap now", not a second ring.
@@ -591,7 +591,7 @@ function RocketOrb({
         style={[{
           position: 'absolute', left: svgLeft, top: svgTop,
           width: SVG_W, height: SVG_H,
-          shadowColor: '#00E0FF', shadowOffset: { width: 0, height: 0 },
+          shadowColor: '#4DE1C1', shadowOffset: { width: 0, height: 0 },
           shadowRadius: 16, elevation: 8,
         }, glowStyle]}
       >
@@ -761,7 +761,7 @@ function ArenaAtmosphere() {
           reveals a hard edge. */}
       <Animated.View style={[s.atmosphereHaze, hazeStyle]}>
         <LinearGradient
-          colors={['rgba(0,224,255,0.09)', 'rgba(3,8,11,0)', 'rgba(139,127,255,0.08)']}
+          colors={['rgba(77,225,193,0.09)', 'rgba(3,8,11,0)', 'rgba(139,127,255,0.08)']}
           start={{ x: 0.1, y: 0 }}
           end={{ x: 0.9, y: 1 }}
           style={StyleSheet.absoluteFill}
@@ -1665,7 +1665,7 @@ export function FocusSprint({
                     <Switch
                       value={soundEnabled}
                       onValueChange={setSoundEnabled}
-                      trackColor={{ false: 'rgba(255,255,255,0.14)', true: 'rgba(0,224,255,0.55)' }}
+                      trackColor={{ false: 'rgba(255,255,255,0.14)', true: 'rgba(77,225,193,0.55)' }}
                       thumbColor="#FFFFFF"
                       ios_backgroundColor="rgba(255,255,255,0.14)"
                       accessibilityLabel="Sound effects"
@@ -1679,7 +1679,7 @@ export function FocusSprint({
                     <Switch
                       value={hapticsEnabled}
                       onValueChange={setHapticsEnabled}
-                      trackColor={{ false: 'rgba(255,255,255,0.14)', true: 'rgba(0,224,255,0.55)' }}
+                      trackColor={{ false: 'rgba(255,255,255,0.14)', true: 'rgba(77,225,193,0.55)' }}
                       thumbColor="#FFFFFF"
                       ios_backgroundColor="rgba(255,255,255,0.14)"
                       accessibilityLabel="Haptic feedback"
@@ -1865,7 +1865,7 @@ const s = StyleSheet.create({
   // never reads as a full-width banner. Tapping the label dismisses it.
   comfortRow: {
     alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center',
-    borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,224,255,0.14)',
+    borderRadius: 12, borderWidth: 1, borderColor: 'rgba(77,225,193,0.14)',
     backgroundColor: C.card, overflow: 'hidden',
   },
   comfortMain: {
@@ -1940,14 +1940,14 @@ const s = StyleSheet.create({
     // A thin "hairline" border — the luminous read comes from the shadow
     // glow below, not border weight, for the "sci-fi focus chamber" feel
     // instead of a bordered card.
-    borderWidth: 1, borderColor: 'rgba(0,224,255,0.32)',
+    borderWidth: 1, borderColor: 'rgba(77,225,193,0.32)',
     overflow: 'hidden', position: 'relative',
-    shadowColor: 'rgba(0,224,255,0.35)', shadowOffset: { width: 0, height: 0 },
+    shadowColor: 'rgba(77,225,193,0.35)', shadowOffset: { width: 0, height: 0 },
     shadowRadius: 26, shadowOpacity: 1, elevation: 8,
   },
   // Rush stays cyan, just brighter — an intensified version of the default
   // glow rather than a different color, so the arena never reads as orange.
-  arenaRushGlow: { borderColor: 'rgba(0,224,255,0.55)', borderWidth: 1.5, shadowColor: C.purple, shadowOpacity: 0.55, shadowRadius: 30, elevation: 10 },
+  arenaRushGlow: { borderColor: 'rgba(77,225,193,0.55)', borderWidth: 1.5, shadowColor: C.purple, shadowOpacity: 0.55, shadowRadius: 30, elevation: 10 },
   arenaGold:  { borderColor: C.gold,   borderWidth: 1.5, shadowColor: C.gold,   shadowOpacity: 0.35, shadowRadius: 14, elevation: 7 },
   arenaLow:   { borderColor: C.red,    borderWidth: 1,   shadowColor: C.red,    shadowOpacity: 0.22, shadowRadius: 10 },
 
@@ -1962,8 +1962,8 @@ const s = StyleSheet.create({
   // halo around the target's usual range, not the arena's whole identity.
   atmosphereBloom: {
     position: 'absolute', top: '24%', left: '14%', right: '14%', bottom: '24%',
-    borderRadius: 9999, backgroundColor: 'rgba(0,224,255,0.055)',
-    shadowColor: '#00E0FF', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 55,
+    borderRadius: 9999, backgroundColor: 'rgba(77,225,193,0.055)',
+    shadowColor: '#4DE1C1', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 55,
   },
 
   depthRings: {
@@ -1980,7 +1980,7 @@ const s = StyleSheet.create({
   // gap between the rings and the target's now-tightened travel area
   // (see WAYPOINTS). Bigger + a touch brighter closes that gap while still
   // reading as a depth cue, never a competitor to the target's own halo.
-  depthRingOuter: { width: '82%', borderColor: 'rgba(0,224,255,0.09)' },
+  depthRingOuter: { width: '82%', borderColor: 'rgba(77,225,193,0.09)' },
   depthRingMid:   { width: '58%', borderColor: 'rgba(255,255,255,0.055)' },
   depthRingInner: { width: '32%', borderColor: 'rgba(165,180,252,0.075)' },
 
@@ -1993,8 +1993,8 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   nearFarBadgeNear: {
-    borderColor: 'rgba(0,224,255,0.45)',
-    backgroundColor: 'rgba(0,224,255,0.14)',
+    borderColor: 'rgba(77,225,193,0.45)',
+    backgroundColor: 'rgba(77,225,193,0.14)',
   },
   nearFarBadgeFar: {
     borderColor: 'rgba(255,255,255,0.08)',
@@ -2073,12 +2073,12 @@ const s = StyleSheet.create({
     alignSelf: 'stretch', alignItems: 'center', gap: 8,
     borderRadius: 20, paddingHorizontal: 18, paddingVertical: 18,
     backgroundColor: 'rgba(6,18,26,0.92)',
-    borderWidth: 1, borderColor: 'rgba(0,224,255,0.22)',
+    borderWidth: 1, borderColor: 'rgba(77,225,193,0.22)',
   },
   pauseIconWrap: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(0,224,255,0.12)',
-    borderWidth: 1, borderColor: 'rgba(0,224,255,0.3)',
+    backgroundColor: 'rgba(77,225,193,0.12)',
+    borderWidth: 1, borderColor: 'rgba(77,225,193,0.3)',
     alignItems: 'center', justifyContent: 'center',
   },
   pauseIconWrapWarn: { backgroundColor: 'rgba(226,75,74,0.12)', borderColor: 'rgba(226,75,74,0.35)' },
@@ -2128,12 +2128,12 @@ const s = StyleSheet.create({
     alignSelf: 'stretch', alignItems: 'center', gap: 10,
     borderRadius: 20, paddingHorizontal: 20, paddingVertical: 20,
     backgroundColor: 'rgba(6,18,26,0.96)',
-    borderWidth: 1, borderColor: 'rgba(0,224,255,0.22)',
+    borderWidth: 1, borderColor: 'rgba(77,225,193,0.22)',
   },
   modalIcon: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(0,224,255,0.12)',
-    borderWidth: 1, borderColor: 'rgba(0,224,255,0.3)',
+    backgroundColor: 'rgba(77,225,193,0.12)',
+    borderWidth: 1, borderColor: 'rgba(77,225,193,0.3)',
     alignItems: 'center', justifyContent: 'center',
   },
   modalTitle: { fontFamily: FONTS.heading, fontSize: 19, fontWeight: '900', color: '#fff' },
@@ -2149,7 +2149,7 @@ const s = StyleSheet.create({
     backgroundColor: '#0b1420',
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 10, paddingBottom: 26,
-    borderWidth: 1, borderBottomWidth: 0, borderColor: 'rgba(0,224,255,0.16)',
+    borderWidth: 1, borderBottomWidth: 0, borderColor: 'rgba(77,225,193,0.16)',
   },
   sheetHandle: {
     width: 36, height: 4, borderRadius: 2,

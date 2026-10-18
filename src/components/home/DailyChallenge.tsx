@@ -5,8 +5,10 @@ import { colors } from '@/constants/colors';
 import { PILLAR_COLORS, RADIUS, SHADOWS, STATUS_COLORS, SURFACE_TINT, TYPOGRAPHY } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { trackChallengeCompleted } from '@/services/analytics';
+import { useActivityHistory } from '@/hooks/useActivity';
 import { ChallengeFeature, useWellnessStore } from '@/stores/useWellnessStore';
-import { useProgressStore } from '@/stores/useProgressStore';
+import type { ActivityEvent, ActivityType } from '@/types/activity.types';
+import { hasCompletedOnDate } from '@/utils/activityQueries';
 import { todayISO } from '@/utils/dateUtils';
 import { useRouter } from 'expo-router';
 import { CheckCircle, Eye, Moon, Play, Wind } from 'lucide-react-native';
@@ -33,6 +35,13 @@ export const CHALLENGES: Record<string, { title: string; subtitle: string; icon:
   Mind:  { title: 'Box Breathing', subtitle: 'Calm your nervous system', icon: Wind,  route: ROUTES.appBoxBreathing,     color: PILLAR_COLORS.mind,  duration: '5 min', difficulty: 'Beginner', reward: 'Calm Mind' },
 };
 
+/** The activity that genuinely completes each challenge — exactly what its card asks for. */
+const CHALLENGE_COMPLETION: Record<ChallengeFeature, { type: ActivityType; matches?: (e: ActivityEvent) => boolean }> = {
+  eye: { type: 'EYE_RESET_COMPLETED' },
+  sleep: { type: 'SLEEP_SESSION_COMPLETED' },
+  mind: { type: 'RELAX_SESSION_COMPLETED', matches: e => e.metadata?.sessionId === 'box-breathing' },
+};
+
 /** Real "is today's challenge for this focus area already done" — shared by
  * the DailyChallenge card and the Challenges-screen hero so they never
  * disagree about completion state.
@@ -57,11 +66,9 @@ export function useDailyChallengeStatus(worstArea: string, ready = true) {
     assignedChallenge?.date === today ? assignedChallenge.feature : liveFeatureKey;
   const challenge = CHALLENGES[FEATURE_TO_AREA[activeFeature]] ?? CHALLENGES.Mind;
 
-  const done = useProgressStore((s) => {
-    const hasAnySession = s.eyeExercisesCompleted > 0 || s.eyeGamesPlayed > 0 ||
-      s.relaxSessionsCompleted > 0 || s.mindSessionsCompleted > 0 || s.sleepSessionsTracked > 0;
-    return hasAnySession && s.todayDate === today && s.todaySessions[activeFeature];
-  });
+  const { events } = useActivityHistory();
+  const completion = CHALLENGE_COMPLETION[activeFeature];
+  const done = hasCompletedOnDate(events, completion.type, today, completion.matches);
 
   // Fires once, only on a genuine false→true transition — never on mount
   // with an already-completed challenge (e.g. reopening the app later today).

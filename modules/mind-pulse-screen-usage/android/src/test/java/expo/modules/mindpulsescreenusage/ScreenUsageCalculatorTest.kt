@@ -57,6 +57,38 @@ class ScreenUsageCalculatorTest {
   }
 
   @Test
+  fun `overlapping per-app totals never sum past the window's own elapsed duration`() {
+    // Two different packages, each individually accruing the full hour —
+    // a known UsageStatsManager quirk (multi-window, picture-in-picture, or
+    // a MOVE_TO_FOREGROUND that never got a matching background event).
+    // Blindly summed this would report 2 hours of screen time in a
+    // 1-hour window; physically that's impossible.
+    val events = listOf(
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart, "com.app.one"),
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_BACKGROUND, dayStart + hour, "com.app.one"),
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart, "com.app.two"),
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_BACKGROUND, dayStart + hour, "com.app.two"),
+    )
+    val total = ScreenUsageCalculator.computeScreenTimeTodayMs(events, dayStart, dayStart + hour, selfPackage)
+    assertEquals(hour, total)
+  }
+
+  @Test
+  fun `a full day's overlapping totals clamp at 24 hours, never more`() {
+    val day = 24 * hour
+    val events = listOf(
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart, "com.app.one"),
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_BACKGROUND, dayStart + day, "com.app.one"),
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart, "com.app.two"),
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_BACKGROUND, dayStart + 16 * hour, "com.app.two"),
+    )
+    // Blind sum would be 24h (app one) + 16h (app two) = 40h — exactly the
+    // "40 hours in a day" bug this test guards against.
+    val total = ScreenUsageCalculator.computeScreenTimeTodayMs(events, dayStart, dayStart + day, selfPackage)
+    assertEquals(day, total)
+  }
+
+  @Test
   fun `an app still foregrounded at now keeps accruing up to now`() {
     val now = dayStart + 3 * 60_000
     val events = listOf(

@@ -14,7 +14,7 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
   /**
-   * `primary` (default): the frozen spec gradient (#48D9FF → #54A8FF).
+   * `primary` (default): the mint accent gradient with dark text.
    * `secondary`: transparent fill with the spec outline border — use for
    * secondary actions instead of a second gradient CTA.
    */
@@ -23,7 +23,7 @@ type Props = {
   colors?: readonly [string, string, ...string[]];
   /** Glow/shadow colour. Defaults to the frozen button shadow. */
   glowColor?: string;
-  /** Text colour. Defaults to white. */
+  /** Text colour. Defaults to dark-on-mint for the default gradient, white otherwise. */
   textColor?: string;
   /** Letter spacing on the main label. Defaults to 1. */
   letterSpacing?: number;
@@ -43,7 +43,7 @@ type Props = {
   style?: ViewStyle;
 };
 
-const DEFAULT_GLOW = 'rgba(84,168,255,0.45)';
+const DEFAULT_GLOW = BUTTON.glow;
 
 /**
  * The single canonical CTA button — frozen spec gradient, height 56, radius
@@ -61,7 +61,7 @@ export function GradientCTA({
   variant = 'primary',
   colors,
   glowColor = DEFAULT_GLOW,
-  textColor = '#FFFFFF',
+  textColor,
   letterSpacing = 1,
   compact = false,
   keepBright = false,
@@ -71,6 +71,7 @@ export function GradientCTA({
 }: Props) {
   const isSecondary = variant === 'secondary';
   const fillColors = colors ?? BUTTON.primaryGradient;
+  const labelColor = textColor ?? (isSecondary || colors ? BUTTON.textOnColor : BUTTON.primaryText);
   const scale = useRef(new Animated.Value(1)).current;
   const isDisabled = disabled || loading;
 
@@ -107,14 +108,14 @@ export function GradientCTA({
         {isSecondary ? (
           <View style={[styles.fill, compact && styles.fillCompact, height ? { minHeight: height } : null]}>
             {loading ? (
-              <ActivityIndicator color={textColor} size="small" />
+              <ActivityIndicator color={labelColor} size="small" />
             ) : (
               <View style={styles.content}>
                 {icon}
                 <View style={styles.labels}>
-                  <Text style={[styles.label, { color: textColor, letterSpacing }]}>{label}</Text>
+                  <Text style={[styles.label, { color: labelColor, letterSpacing }]}>{label}</Text>
                   {sublabel ? (
-                    <Text style={[styles.sublabel, { color: textColor }]}>{sublabel}</Text>
+                    <Text style={[styles.sublabel, { color: labelColor }]}>{sublabel}</Text>
                   ) : null}
                 </View>
               </View>
@@ -131,14 +132,14 @@ export function GradientCTA({
               style={styles.sheen}
             />
             {loading ? (
-              <ActivityIndicator color={textColor} size="small" />
+              <ActivityIndicator color={labelColor} size="small" />
             ) : (
               <View style={styles.content}>
                 {icon}
                 <View style={styles.labels}>
-                  <Text style={[styles.label, { color: textColor, letterSpacing }]}>{label}</Text>
+                  <Text style={[styles.label, { color: labelColor, letterSpacing }]}>{label}</Text>
                   {sublabel ? (
-                    <Text style={[styles.sublabel, { color: textColor }]}>{sublabel}</Text>
+                    <Text style={[styles.sublabel, { color: labelColor }]}>{sublabel}</Text>
                   ) : null}
                 </View>
               </View>

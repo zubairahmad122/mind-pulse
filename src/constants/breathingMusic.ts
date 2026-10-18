@@ -21,7 +21,7 @@ export const BREATHING_MUSIC: {
     id:    'ocean',
     label: 'Ocean',
     icon:  Droplets,
-    color: '#4FC3F7',
+    color: '#4DE1C1',
     url:   require('@/assets/sounds/releax/helkimer-ocean-ambient-chillout-music-258921.mp3'),
   },
   {

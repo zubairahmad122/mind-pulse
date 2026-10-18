@@ -26,7 +26,7 @@ function GlassPanel({ children, style }: { children: React.ReactNode; style?: Vi
       borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
     }, style]}>
       <BlurView intensity={32} tint="dark" style={StyleSheet.absoluteFill} />
-      <LinearGradient colors={['rgba(123,127,255,0.08)', 'rgba(10,14,28,0.5)']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['rgba(108,99,255,0.08)', 'rgba(10,14,28,0.5)']} style={StyleSheet.absoluteFill} />
       <LinearGradient
         colors={['rgba(255,255,255,0.07)', 'transparent']}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 40 }}
@@ -241,9 +241,9 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(123,127,255,0.14)',
+    backgroundColor: 'rgba(108,99,255,0.14)',
     borderWidth: 1,
-    borderColor: 'rgba(123,127,255,0.3)',
+    borderColor: 'rgba(108,99,255,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(123,127,255,0.14)',
+    backgroundColor: 'rgba(108,99,255,0.14)',
   },
   previewTitle: {
     fontSize: 13.5,

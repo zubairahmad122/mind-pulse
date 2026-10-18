@@ -113,14 +113,14 @@ export function ResetPickerSheet({
           <BlurView intensity={GLASS_CARD.blurIntensity} tint="dark" style={StyleSheet.absoluteFill} />
           {/* Premium navy-indigo base — a two-stop gradient instead of a flat
               fill, matching the Featured card's surface treatment. */}
-          <LinearGradient colors={['#1B2748', '#10162E']} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={['#211B48', '#14102E']} style={StyleSheet.absoluteFill} />
           {/* Ambient depth — cyan glow toward the upper-left, a barely-there
               violet echo toward the lower-right. Both span the sheet's full
               bounds (not an inner box) so there's no hard-edged seam where a
               smaller glow rectangle would otherwise cut off against the flat
               fill around it. */}
           <LinearGradient
-            colors={['rgba(0,224,255,0.10)', 'rgba(0,224,255,0.02)', 'rgba(0,224,255,0)']}
+            colors={['rgba(77,225,193,0.10)', 'rgba(77,225,193,0.02)', 'rgba(77,225,193,0)']}
             locations={[0, 0.35, 0.7]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -128,7 +128,7 @@ export function ResetPickerSheet({
             pointerEvents="none"
           />
           <LinearGradient
-            colors={['rgba(157,92,255,0)', 'rgba(157,92,255,0.02)', 'rgba(157,92,255,0.06)']}
+            colors={['rgba(123,92,255,0)', 'rgba(123,92,255,0.02)', 'rgba(123,92,255,0.06)']}
             locations={[0.5, 0.8, 1]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -190,7 +190,7 @@ export function ResetPickerSheet({
                   </View>
                   <View style={styles.optionRight}>
                     <Text style={styles.optionDuration}>{option.duration}</Text>
-                    <ChevronRight size={16} color="rgba(211,250,255,0.45)" strokeWidth={2.4} />
+                    <ChevronRight size={16} color="rgba(214,250,241,0.45)" strokeWidth={2.4} />
                   </View>
                 </TouchableOpacity>
               );

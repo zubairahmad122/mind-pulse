@@ -29,6 +29,13 @@ export function initAds(): void {
         maxAdContentRating: MaxAdContentRating.PG,
         tagForChildDirectedTreatment: false,
         tagForUnderAgeOfConsent: false,
+        // Dev test device only — this exact device ID always gets Google's
+        // guaranteed-fill test ads instead of real inventory, regardless of
+        // build type. Harmless for real users (their device ID never
+        // matches); lets us verify ad rendering without tripping AdMob's
+        // invalid-traffic throttling from repeated real-ad requests during
+        // testing on this one physical phone.
+        testDeviceIdentifiers: ['9DE3D1D683E4DF5C5E53EF66C9B68326'],
       });
     } catch (err) {
       console.warn('[Ads] setRequestConfiguration failed', err);

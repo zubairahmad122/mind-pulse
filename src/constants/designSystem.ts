@@ -13,12 +13,33 @@
  */
 import { colors } from './colors';
 
-// ── Global background (identical on every screen) — mostly black, purple only
-// as a faint accent (not a wash) ─────────────────────────────────────────────
+// ── Brand palette — every color below (pillars, buttons, background) is drawn
+// from these. Indigo → violet is the primary gradient; mint is the one
+// accent for CTAs, progress and streaks. ─────────────────────────────────────
+export const PALETTE = {
+  indigo: '#3B2ED0',
+  indigoLight: '#6C63FF',
+  violet: '#7B5CFF',
+  violetLight: '#A48BFF',
+  mint: '#4DE1C1',
+  mintLight: '#8EF0DA',
+  mintDeep: '#3BC9AB',
+  /** Dark text on mint fills. */
+  onMint: '#03212C',
+  baseDark: '#0F0C29',
+} as const;
+
+/** Primary brand gradient (indigo → violet). */
+export const PRIMARY_GRADIENT = [PALETTE.indigo, PALETTE.violet] as const;
+/** Mint accent gradient — CTAs with dark text, progress, streaks. */
+export const ACCENT_GRADIENT = [PALETTE.mintLight, PALETTE.mint] as const;
+
+// ── Global background (identical on every screen) — dark indigo base with a
+// soft violet glow from the top (see AnimatedBackground) ────────────────────
 export const BACKGROUND = {
-  base: '#09090F',
+  base: PALETTE.baseDark,
   /** Top → bottom overlay gradient painted over `base` on every screen. */
-  overlay: ['#131028', '#0C0B17'] as const,
+  overlay: ['#191343', PALETTE.baseDark] as const,
 } as const;
 
 // ── Radius — frozen forever. One radius for every card, no exceptions. ──────
@@ -113,13 +134,14 @@ export const SHADOWS = {
 
 /** One accent color per wellness pillar — reference these, never hardcode hex. */
 export const PILLAR_COLORS = {
-  eye: '#00E0FF',
-  relax: '#48D9FF',
-  mind: '#9D5CFF',
-  sleep: '#7B7FFF',
-  challenge: '#FFAE1A',
-  /** Screen Balance / Reset — soft cyan-teal, distinct from eye's pure cyan and mind's purple. */
-  reset: '#3DE8D0',
+  eye: PALETTE.mint,
+  relax: PALETTE.violetLight,
+  mind: PALETTE.violet,
+  sleep: PALETTE.indigoLight,
+  /** Streaks / rewards — the mint accent. */
+  challenge: PALETTE.mint,
+  /** Screen Balance / Reset — light mint, distinct from eye's mint and mind's violet. */
+  reset: PALETTE.mintLight,
 } as const;
 
 export const STATUS_COLORS = {
@@ -140,21 +162,30 @@ export const PRO_GOLD = '#F7B733';
 
 /** Flat glass-card surface — every "normal" card looks identical (spec: "No different card styles"). */
 export const GLASS_CARD = {
-  bg: 'rgba(255,255,255,0.05)',
-  border: 'rgba(255,255,255,0.08)',
-  topHighlight: 'rgba(255,255,255,0.04)',
+  bg: 'rgba(164,139,255,0.07)',
+  border: 'rgba(164,139,255,0.14)',
+  topHighlight: 'rgba(255,255,255,0.05)',
   blurIntensity: 40,
 } as const;
 
-/** Hero card — the one card allowed a distinct gradient fill (muted, not saturated). */
+/**
+ * Hero card — the one card allowed a distinct gradient fill. A large surface,
+ * so it uses a muted indigo (not the saturated brand gradient) to keep the
+ * CTA and progress inside it as the loudest elements.
+ */
 export const HERO_CARD = {
-  gradient: ['#4B2C77', '#241938'] as const,
+  gradient: ['#2E2577', '#1C1748'] as const,
   radius: RADIUS.hero,
   padding: SPACING.cardPadding,
 } as const;
 
 export const BUTTON = {
-  primaryGradient: ['#45D6FF', '#5A9EFF'] as const,
+  /** Primary CTA — mint accent with dark text (≈11:1 contrast). */
+  primaryGradient: ACCENT_GRADIENT,
+  primaryText: PALETTE.onMint,
+  /** Default label colour when a caller passes its own `colors`. */
+  textOnColor: '#FFFFFF',
+  glow: 'rgba(77,225,193,0.35)',
   height: 56,
   radius: RADIUS.button,
   secondaryBorder: 'rgba(255,255,255,0.12)',
@@ -188,7 +219,7 @@ export const PROGRESS_BAR = {
 export const BOTTOM_NAV = {
   height: 82,
   radius: RADIUS.bottomNav,
-  bg: 'rgba(13,10,25,0.96)',
+  bg: 'rgba(17,13,48,0.96)',
 } as const;
 
 /**

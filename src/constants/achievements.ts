@@ -85,7 +85,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     title: 'Deep Sleeper',
     desc: 'Log 10 sleep sessions',
     check: s => s.length >= 10,
-    color: '#60a5fa',
+    color: '#A48BFF',
   },
   {
     id: 'perfect_night',
@@ -109,7 +109,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     title: 'Consistent',
     desc: 'Log 30 total sleep sessions',
     check: s => s.length >= 30,
-    color: '#a78bfa',
+    color: '#A48BFF',
   },
   {
     id: 'eye_warrior',
@@ -133,7 +133,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     title: 'Calm Mind',
     desc: 'Write 5 journal entries',
     check: (_s, e) => (e?.totalJournalEntries ?? 0) >= 5,
-    color: '#60a5fa',
+    color: '#A48BFF',
   },
   {
     id: 'rush_mode',

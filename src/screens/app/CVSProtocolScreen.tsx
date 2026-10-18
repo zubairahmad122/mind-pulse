@@ -57,7 +57,7 @@ import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
 import { useSessionLifecycle } from '@/hooks/useSessionLifecycle';
 import { useSessionClock } from '@/hooks/useSessionClock';
 import { useEyeProgress } from '@/hooks/useEyeProgress';
-import { useProgressStore } from '@/stores/useProgressStore';
+import { recordActivity } from '@/stores/useActivityStore';
 import {
   cvsCancelResumeBeat,
   cvsCanComplete,
@@ -72,7 +72,7 @@ import {
   type EyeComfortRating,
 } from '@/services/eyeComfortPersistence';
 import { getComfortChange } from '@/utils/eyeComfort';
-import { EYE_RESET_STEPS_SECONDS } from '@/constants/eyeRelax';
+import { EYE_RESET_DURATION_SECONDS, EYE_RESET_STEPS_SECONDS } from '@/constants/eyeRelax';
 import { useEyeAudioGuide } from '@/hooks/useEyeAudioGuide';
 
 // One accent for the whole Eyes feature — matches the Eye tab (was
@@ -105,7 +105,7 @@ const STEPS: EyeStep[] = [
   { id: 'cardinal', icon: Grid3x3, accent: '#fcd34d', title: 'Nine Point Focus', durationSeconds: STEP_SECONDS[3], what: 'Pause on every point.', coach: 'Pause briefly on each glowing point.', intro: 'Nine Point Focus. Visit each glowing position without straining or forcing your gaze.', cues: [{ atSec: 14, text: 'Stay relaxed as the position changes.' }, { atSec: 24, text: 'Almost through all nine — keep it comfortable.' }] },
   { id: 'saccade', icon: Zap, accent: '#fde68a', title: 'Quick Focus', durationSeconds: STEP_SECONDS[4], what: 'Shift focus smoothly.', coach: 'Move your eyes between the two glowing dots. Keep your head still.', intro: 'Quick Focus. Shift between horizontal, vertical, and diagonal targets at a comfortable pace.', cues: [{ atSec: 8, text: 'Horizontal — side to side.' }, { atSec: 16, text: 'Vertical — up and down.' }, { atSec: 24, text: 'Diagonal — corner to corner.' }] },
   { id: 'convergence', icon: Minimize2, accent: '#fda4af', title: 'Near–Far Focus', durationSeconds: STEP_SECONDS[5], what: 'Follow the dot closer.', coach: 'Focus on the dot as it moves closer, then farther away.', intro: 'Near Far Focus. Follow the dot as it comes closer. If you see double, look away and start again.', cues: [{ atSec: 12, text: 'Stop if it doubles or blurs.' }, { atSec: 24, text: 'Bring it back, slowly.' }, { atSec: 35, text: 'Two more cycles.' }], important: true },
-  { id: 'nearfar', icon: ArrowLeftRight, accent: '#5eead4', title: 'Focus Change', durationSeconds: STEP_SECONDS[6], what: 'Change focus naturally.', coach: 'Shift your attention between the glowing points.', intro: 'Focus Change. Look at the near target, then shift to the far target. Keep the change comfortable.', cues: [{ atSec: 14, text: 'Now near… now far.' }, { atSec: 28, text: 'Keep switching — stay relaxed.' }], important: true },
+  { id: 'nearfar', icon: ArrowLeftRight, accent: '#4DE1C1', title: 'Focus Change', durationSeconds: STEP_SECONDS[6], what: 'Change focus naturally.', coach: 'Shift your attention between the glowing points.', intro: 'Focus Change. Look at the near target, then shift to the far target. Keep the change comfortable.', cues: [{ atSec: 14, text: 'Now near… now far.' }, { atSec: 28, text: 'Keep switching — stay relaxed.' }], important: true },
 ];
 
 // Guide-sheet copy per exercise — instructional only, read alongside each
@@ -345,7 +345,6 @@ export default function CVSProtocolScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { recordCompletion, streak } = useEyeProgress(user?.uid);
-  const logEyeExercise = useProgressStore(state => state.logEyeExercise);
   const { play, stop: stopVoice, pause: pauseVoice, resume: resumeVoice } = useAudioGuide();
   const audioGuide = useEyeAudioGuide();
 
@@ -757,7 +756,14 @@ export default function CVSProtocolScreen() {
     if (!completedRef.current) {
       completedRef.current = true;
       void recordCompletion('cvs-protocol');
-      logEyeExercise();
+      const completedAt = Date.now();
+      void recordActivity(user?.uid, {
+        id: `eye-reset-${completedAt}`,
+        type: 'EYE_RESET_COMPLETED',
+        source: 'cvs-protocol',
+        timestamp: completedAt,
+        durationSeconds: EYE_RESET_DURATION_SECONDS + 20, // 7 guided steps + 20-20-20 recovery
+      });
       void saveEyeComfortRecord(user?.uid, {
         completedAt: Date.now(),
         sessionType: 'cvs-protocol',
@@ -1304,20 +1310,20 @@ const styles = StyleSheet.create({
   heroGlow: {
     position: 'absolute',
     width: 68, height: 68, borderRadius: 34,
-    backgroundColor: 'rgba(0,224,255,0.18)',
+    backgroundColor: 'rgba(77,225,193,0.18)',
   },
   // Dedicated smaller ring for the idle hero only — the shared `heroRing`
   // below stays untouched since calibrate/recovery/done all reuse it.
   idleEyeRing: {
     width: 52, height: 52, borderRadius: 26,
     borderWidth: 1.5, borderColor: ACCENT + '44',
-    backgroundColor: 'rgba(0,224,255,0.07)',
+    backgroundColor: 'rgba(77,225,193,0.07)',
     alignItems: 'center', justifyContent: 'center',
   },
   heroRing: {
     width: 80, height: 80, borderRadius: 40,
     borderWidth: 1.5, borderColor: ACCENT + '44',
-    backgroundColor: 'rgba(0,224,255,0.07)',
+    backgroundColor: 'rgba(77,225,193,0.07)',
     alignItems: 'center', justifyContent: 'center',
   },
   heroTitle: { fontFamily: FONTS.heading, fontSize: 24, fontWeight: '900', color: colors.text.primary, textAlign: 'center', letterSpacing: 0.3, marginTop: 4 },
@@ -1425,11 +1431,11 @@ const styles = StyleSheet.create({
   },
   pausedScrim: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(9,9,15,0.92)',
+    backgroundColor: 'rgba(15,12,41,0.92)',
   },
   pauseCard: {
     width: '86%', maxWidth: 340,
-    backgroundColor: '#11162a',
+    backgroundColor: '#1A1545',
     borderRadius: RADIUS.card,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
     paddingVertical: 24, paddingHorizontal: 22,
@@ -1475,7 +1481,7 @@ const styles = StyleSheet.create({
   prepNum: {
     fontFamily: FONTS.heading,
     fontSize: 56, fontWeight: '200', letterSpacing: 1,
-    textShadowColor: 'rgba(0,224,255,0.30)',
+    textShadowColor: 'rgba(77,225,193,0.30)',
     textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 14,
   },
 
@@ -1484,7 +1490,7 @@ const styles = StyleSheet.create({
   nextUpChip: {
     flexDirection: 'row', alignItems: 'center', gap: 7,
     backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1, borderColor: 'rgba(0,224,255,0.20)',
+    borderWidth: 1, borderColor: 'rgba(77,225,193,0.20)',
     borderRadius: 100, paddingHorizontal: 13, paddingVertical: 5,
   },
   nextUpLabel: { fontSize: 9, fontWeight: '800', color: ACCENT, letterSpacing: 1.5 },
@@ -1498,7 +1504,7 @@ const styles = StyleSheet.create({
   recoveryEm: { fontSize: 15, fontWeight: '800', color: colors.text.primary },
   recoveryRing: {
     width: 110, height: 110, borderRadius: 55, marginVertical: 18,
-    borderWidth: 1.5, borderColor: 'rgba(0,224,255,0.30)',
+    borderWidth: 1.5, borderColor: 'rgba(77,225,193,0.30)',
     backgroundColor: 'rgba(3,8,11,0.50)',
     alignItems: 'center', justifyContent: 'center',
   },
@@ -1510,11 +1516,11 @@ const styles = StyleSheet.create({
   interstitial: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center', justifyContent: 'center', gap: 5,
-    backgroundColor: 'rgba(9,9,15,0.85)',
+    backgroundColor: 'rgba(15,12,41,0.85)',
   },
   interstitialCheck: {
     width: 50, height: 50, borderRadius: 25,
-    backgroundColor: 'rgba(0,224,255,0.10)',
+    backgroundColor: 'rgba(77,225,193,0.10)',
     borderWidth: 1.5, borderColor: ACCENT + '55',
     alignItems: 'center', justifyContent: 'center', marginBottom: 4,
   },
@@ -1540,7 +1546,7 @@ const styles = StyleSheet.create({
 
   // Exit confirm — matching Visual Flow glass card
   confirmOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 100 },
-  confirmCard: { width: '100%', maxWidth: 340, borderRadius: RADIUS.card, padding: 20, gap: 6, backgroundColor: '#11162a', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  confirmCard: { width: '100%', maxWidth: 340, borderRadius: RADIUS.card, padding: 20, gap: 6, backgroundColor: '#1A1545', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   confirmTitle: { fontFamily: FONTS.heading, fontSize: 17, fontWeight: '800', color: colors.text.primary },
   confirmSub: { fontSize: 13, lineHeight: 18, color: colors.text.secondary, marginBottom: 10 },
   confirmActions: { gap: 8 },

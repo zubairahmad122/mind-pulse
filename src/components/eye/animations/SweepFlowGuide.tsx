@@ -167,18 +167,18 @@ const styles = StyleSheet.create({
   arena: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   halo: {
     position: 'absolute', left: 0, top: 0, width: HALO, height: HALO, borderRadius: HALO / 2,
-    backgroundColor: '#7B61FF', opacity: 0.28,
+    backgroundColor: '#7B5CFF', opacity: 0.28,
   },
   core: {
     position: 'absolute', left: 0, top: 0, width: CORE, height: CORE, borderRadius: CORE / 2,
-    backgroundColor: '#63E8FF', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#63E8FF', shadowOpacity: 0.7, shadowRadius: 6, shadowOffset: { width: 0, height: 0 },
+    backgroundColor: '#4DE1C1', alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#4DE1C1', shadowOpacity: 0.7, shadowRadius: 6, shadowOffset: { width: 0, height: 0 },
   },
   highlight: {
     position: 'absolute', top: 3, left: 3.5, width: 5, height: 5, borderRadius: 2.5,
     backgroundColor: '#FFFFFF', opacity: 0.9,
   },
-  trailDot: { position: 'absolute', left: 0, top: 0, borderRadius: 50, backgroundColor: '#63E8FF' },
+  trailDot: { position: 'absolute', left: 0, top: 0, borderRadius: 50, backgroundColor: '#4DE1C1' },
   trailDotNear: { width: 10, height: 10, opacity: 0.3 },
   trailDotMid: { width: 7, height: 7, opacity: 0.2 },
   trailDotFar: { width: 5, height: 5, opacity: 0.1 },

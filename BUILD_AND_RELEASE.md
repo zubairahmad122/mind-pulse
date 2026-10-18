@@ -137,7 +137,36 @@ npx eas-cli build --platform android --profile production
   - Crash logs (Sentry)
   - Analytics/app interactions (Firebase Analytics)
   - Account info (Firebase Auth email)
+  - **Advertising ID / AdMob** (ab app mein live ads hain — see below)
 - Content rating questionnaire (Health & Fitness category)
+
+### 3.5) AdMob ke liye Data Safety + Ads declaration (ab zaroori hai)
+
+Since real AdMob ad units went live (§ "Update AdMob to new account"), two Play
+Console settings need updating to match:
+
+**Easiest path — let Play Console auto-fill it:** Play Console → your app →
+**App content → Data safety → SDKs tab**. Once the app is linked to the
+AdMob account, Google flags the AdMob SDK there with a **"Apply suggested
+answers"** button — use it; it's less error-prone than typing values by hand
+and stays current if Google updates AdMob's own disclosure.
+
+**Manual fallback** (if the SDKs tab doesn't show AdMob yet, or you want to
+verify the auto-filled values) — **App content → Ads declaration**: answer
+**"Yes, my app contains ads"**. Then in **Data safety → Device or other IDs**:
+
+| Field | Answer |
+|---|---|
+| Data type | Device or other IDs → **Advertising ID** |
+| Collected? | Yes |
+| Shared with third parties? | Yes (Google AdMob + its ad network partners) |
+| Purpose | Advertising or marketing |
+| Processed ephemerally? | No |
+| Required or optional? | Optional — users can limit ad tracking in device Settings, and the app's own UMP consent flow (EEA/UK) lets users decline personalized ads |
+| Data encrypted in transit? | Yes |
+
+Don't declare anything beyond Advertising ID for AdMob specifically — Firebase
+Analytics/Auth/Sentry stay as their own separate rows, already listed above.
 
 ---
 
@@ -228,7 +257,7 @@ anywhere else. Check what's actually resolved with:
 this project is already at the required level; don't let a future `expo
 upgrade` silently drop it back down.
 
-**CI steps** (same toolchain as local): `npm ci` → `npx tsc --noEmit` →
+**CI steps** (same toolchain as local): `pnpm install --frozen-lockfile` → `npx tsc --noEmit` →
 `npm test` → `npx expo config --type prebuild --json` (validates config) →
 `npm run android:release:check` (Gradle release checks + `bundleRelease` +
 manifest/permission/16 KB report — see `scripts/android-release-preflight.sh`).
@@ -252,9 +281,10 @@ Actual Play-bound signing/versioning happens on EAS (§3), not in this repo's CI
   boilerplate ("OPTIONAL PERMISSIONS, REMOVE WHATEVER YOU DO NOT NEED"), never
   used by any code in this repo, and a Play-sensitive permission. Removed via
   `app.json` → `android.blockedPermissions` (the same mechanism already used
-  for `ACTIVITY_RECOGNITION`) rather than hand-editing the gitignored,
-  prebuild-regenerated `android/app/src/main/AndroidManifest.xml`, so it
-  survives every future `expo prebuild`.
+  for `ACTIVITY_RECOGNITION`) rather than hand-editing
+  `android/app/src/main/AndroidManifest.xml` directly — it's tracked in git
+  but still gets overwritten by every `expo prebuild`, so edits belong in
+  `app.json`/`.env`, not the generated file.
 - **Microphone and legacy storage**: the app only plays bundled/remote audio;
   it does not record audio or browse shared storage. `RECORD_AUDIO`,
   `READ_EXTERNAL_STORAGE`, and `WRITE_EXTERNAL_STORAGE` are blocked in Expo
@@ -264,12 +294,26 @@ Actual Play-bound signing/versioning happens on EAS (§3), not in this repo's CI
   optimization settings instead of declaring
   `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` and directly requesting a Play-
   restricted exemption.
+- **`ACCESS_NOTIFICATION_POLICY`** (Focus's "Silence Notifications" toggle,
+  added via `mind-pulse-screen-usage`'s native module): a **normal**
+  permission, not one of Play's restricted/"Permissions Declaration Form"
+  permissions (that list is things like SMS, Call Log, Accessibility
+  Service, All Files Access) — declaring it needs no extra Play Console
+  justification. Actually toggling system DND still requires the user to
+  separately grant "Do Not Disturb access" from Android Settings (special
+  access, same shape as Usage Access — no runtime popup exists for this on
+  Android, by OS design). Uses `INTERRUPTION_FILTER_PRIORITY` ("Priority
+  only", the standard DND mode), never `FILTER_NONE` — alarms and the
+  user's own starred contacts still get through. Opt-in only, toggle lives
+  on the Focus Block setup screen. No Data Safety form changes needed: this
+  is a local device-setting toggle, not data collection or sharing.
 - **Data Safety**: `AD_ID` / `ACCESS_ADSERVICES_*` permissions and the
   `google_analytics_default_allow_ad_*` meta-data flags in the merged
   manifest come from Firebase Analytics' own defaults (bundled with
-  `@react-native-firebase/app`), not anything this app opted into — Well Mode
-  doesn't show ads. Declare Firebase Analytics + Firebase Auth + Sentry crash
-  reporting in the Data Safety form; nothing else transmits data off-device.
+  `@react-native-firebase/app`). Well Mode now also shows AdMob ads
+  (`react-native-google-mobile-ads`, IDs in `.env` under `EXPO_PUBLIC_ADMOB_*`)
+  — declare Firebase Analytics + Firebase Auth + Sentry crash reporting +
+  AdMob/Advertising ID in the Data Safety form.
 
 ## 9) Troubleshooting
 

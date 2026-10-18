@@ -98,18 +98,18 @@ export function ExpandingCircleGuide({ active }: Props) {
 
           {/* Mountains high-fidelity shading */}
           <LinearGradient id="mountFarGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor="rgba(123, 97, 255, 0.45)" />
+            <Stop offset="0%" stopColor="rgba(123,92,255, 0.45)" />
             <Stop offset="100%" stopColor="#0B0D1B" />
           </LinearGradient>
           <LinearGradient id="mountNearGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor="rgba(79, 195, 247, 0.35)" />
+            <Stop offset="0%" stopColor="rgba(77,225,193, 0.35)" />
             <Stop offset="100%" stopColor="#080914" />
           </LinearGradient>
 
           {/* Glowing horizon sun/moon */}
           <RadialGradient id="celestialGlow" cx="130" cy="95" r="35">
-            <Stop offset="0%" stopColor="#4FC3F7" stopOpacity="0.8" />
-            <Stop offset="45%" stopColor="#00E0FF" stopOpacity="0.25" />
+            <Stop offset="0%" stopColor="#4DE1C1" stopOpacity="0.8" />
+            <Stop offset="45%" stopColor="#4DE1C1" stopOpacity="0.25" />
             <Stop offset="100%" stopColor="#000" stopOpacity="0" />
           </RadialGradient>
         </Defs>
@@ -137,12 +137,12 @@ export function ExpandingCircleGuide({ active }: Props) {
         <Path d={mountainNear} fill="url(#mountNearGrad)" />
 
         {/* Horizon guidance line */}
-        <Line x1="25" y1="180" x2="235" y2="180" stroke="rgba(79, 195, 247, 0.18)" strokeWidth="1" strokeDasharray="4,4" />
+        <Line x1="25" y1="180" x2="235" y2="180" stroke="rgba(77,225,193, 0.18)" strokeWidth="1" strokeDasharray="4,4" />
 
         {/* Focus Ring that scales up and shifts from bottom (near) to center (far) */}
         <AnimatedCircle
           cx="130"
-          stroke="#4FC3F7"
+          stroke="#4DE1C1"
           strokeWidth="2"
           strokeDasharray="4,6"
           fill="none"

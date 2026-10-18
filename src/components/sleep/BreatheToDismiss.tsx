@@ -29,7 +29,7 @@ const MOVEMENT_THRESHOLD = 0.08; // Acceleration delta G-force threshold
 
 // This is a Sleep-pillar screen — same frozen indigo as the rest of the
 // Sleep tab. `colors.accent.purple` (the old identity color here) is
-// actually blue (#1A8FFF), the same mislabeled token fixed elsewhere.
+// actually blue (#7B5CFF), the same mislabeled token fixed elsewhere.
 const ACCENT = PILLAR_COLORS.sleep;
 const PHASE_COLOR: Record<BreathingPhase, string> = {
   idle: ACCENT,

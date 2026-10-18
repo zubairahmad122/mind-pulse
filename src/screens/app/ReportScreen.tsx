@@ -338,7 +338,7 @@ export default function ReportScreen() {
       <View style={styles.shareCard}>
         <View style={styles.shareCardHeader}>
           <View style={styles.shareCardBrand}>
-            <Activity size={16} color={'#a78bfa'} />
+            <Activity size={16} color={'#A48BFF'} />
             <Text style={styles.shareCardTitle}>Well Mode</Text>
           </View>
           <Text style={styles.shareCardDate}>{today}</Text>
@@ -389,7 +389,7 @@ export default function ReportScreen() {
       <GradientCTA
         label="Share My Score"
         icon={<Share2 size={18} color={colors.background.primary} />}
-        colors={['#a78bfa', '#8b6cf0']}
+        colors={['#A48BFF', '#8b6cf0']}
         textColor={colors.background.primary}
         onPress={() => void handleShare()}
         style={{ marginBottom: spacing.lg }}
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
   shareCardTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#a78bfa',
+    color: '#A48BFF',
   },
   shareCardDate: {
     fontSize: 11,

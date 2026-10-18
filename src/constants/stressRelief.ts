@@ -18,7 +18,7 @@ export const STRESS_ACTIVITIES: StressActivity[] = [
     emoji: '🧘',
     durationMin: 8,
     route: ROUTES.appBodyScan,
-    color: '#4FC3F7',
+    color: '#4DE1C1',
   },
   {
     id: 'grounding',

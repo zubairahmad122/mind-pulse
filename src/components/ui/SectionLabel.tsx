@@ -27,7 +27,7 @@ type Props = {
  * label styling stay perfectly consistent (replaces the various ad-hoc
  * `SectionLabel` / `SectionHeader` implementations that lived inside screens).
  */
-export function SectionLabel({ children, action, first = false, accent = '#60a5fa', spacingTop }: Props) {
+export function SectionLabel({ children, action, first = false, accent = '#A48BFF', spacingTop }: Props) {
   return (
     <View style={[styles.row, { marginTop: spacingTop ?? (first ? 4 : SPACING.section) }]}>
       <Text style={styles.label}>{children}</Text>

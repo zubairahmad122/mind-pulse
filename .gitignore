@@ -1,8 +1,11 @@
 node_modules/
 .expo/
+.firebase/
 android/app/build/
 android/.gradle/
 android/build/
+modules/*/android/build/
+modules/*/android/.gradle/
 ios/build/
 *.log
 .DS_Store

@@ -12,6 +12,16 @@
     tools:ignore="ProtectedPermissions" />
 
   <!--
+    Normal permission (no runtime prompt, no manual Settings grant needed
+    just to declare it) — but actually calling `setInterruptionFilter` still
+    requires "Do Not Disturb access", a separate special-access toggle the
+    user grants from Settings (see MindPulseScreenUsageModule.openDndAccessSettings).
+    Declaring this is what lets the module call `NotificationManager`'s DND
+    APIs at all once that access is granted.
+  -->
+  <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+
+  <!--
     Android 11+ package-visibility rules hide `PackageManager` lookups
     (app labels, launcher resolution) for packages this app hasn't declared
     a matching <queries> entry for, even though UsageStatsManager itself

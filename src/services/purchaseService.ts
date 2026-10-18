@@ -4,6 +4,7 @@ import Purchases, {
   type PurchasesError,
   type PurchasesPackage,
 } from 'react-native-purchases';
+import { PRO_ENTITLEMENT_ID } from '@/constants/entitlements';
 import { trackPurchase } from './analytics';
 
 export type PurchaseResult = {
@@ -60,6 +61,16 @@ export async function restorePurchases(): Promise<PurchaseResult> {
       error: purchasesError?.message ?? 'Restore failed. Please try again.',
     };
   }
+}
+
+/**
+ * Whether `customerInfo` carries the active "pro" entitlement. RevenueCat's
+ * `restorePurchases()` resolves successfully even when the account has
+ * nothing to restore — callers must check this before treating a restore as
+ * having actually unlocked anything.
+ */
+export function hasActiveProEntitlement(customerInfo: CustomerInfo | null | undefined): boolean {
+  return Boolean(customerInfo?.entitlements.active[PRO_ENTITLEMENT_ID]);
 }
 
 /**

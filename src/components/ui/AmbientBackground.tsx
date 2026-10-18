@@ -28,8 +28,8 @@ function AmbientGlow({ accent }: { accent: string }) {
           <Stop offset="100%" stopColor={accent} stopOpacity={0} />
         </RadialGradient>
         <RadialGradient id="glowBottom" cx="88%" cy="78%" r="42%">
-          <Stop offset="0%" stopColor="#2563EB" stopOpacity={0.14} />
-          <Stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
+          <Stop offset="0%" stopColor="#3B2ED0" stopOpacity={0.14} />
+          <Stop offset="100%" stopColor="#3B2ED0" stopOpacity={0} />
         </RadialGradient>
       </Defs>
       <Rect x="0" y="0" width="100%" height="100%" fill="url(#glowTop)" />

@@ -3,9 +3,9 @@ import { MinimalHeroFrame } from './MinimalHeroFrame';
 
 export function MindHero() {
   return (
-    <MinimalHeroFrame accent="#3b82f6">
+    <MinimalHeroFrame accent="#6C63FF">
       <Image
-        source={require('@/assets/expo.icon/Assets/playstore.png')}
+        source={require('@/assets/images/splash-icon.png')}
         style={{ width: 176, height: 176 }}
         resizeMode="contain"
       />

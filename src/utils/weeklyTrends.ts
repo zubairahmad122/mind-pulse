@@ -89,6 +89,70 @@ export function chartMaxScreenTimeMs(days: WeekDayTrend[]): number | null {
   return max > 0 ? max : null;
 }
 
+/** A single day this high counts as a "high usage" day for the weekly alert
+ * and for any UI that wants to flag it — 6 hours, the lower end of the
+ * "6-7 hours" range a long screen day is commonly flagged at. */
+export const HIGH_SCREEN_TIME_DAY_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * Mean screen time across days that actually have data — days with
+ * `screenTimeMs === null` (Usage Access unavailable that day) are excluded
+ * from both the sum and the divisor, never counted as zero, which would
+ * otherwise quietly drag the average down. `null` if no day has data at all.
+ * Takes the minimal shape (not the full `WeekDayTrend`) so the screen-time
+ * trend notification can call it directly on raw `ScreenTimeHistory.days`.
+ */
+export function weeklyAverageScreenTimeMs(days: { screenTimeMs: number | null }[]): number | null {
+  const known = days.filter((d) => d.screenTimeMs !== null);
+  if (known.length === 0) return null;
+  const sum = known.reduce((acc, d) => acc + (d.screenTimeMs as number), 0);
+  return Math.round(sum / known.length);
+}
+
+/** The most recent day (today excluded — its total is still partial) whose
+ * screen time met/exceeded `HIGH_SCREEN_TIME_DAY_MS`, or `null` if none did. */
+export function highestRecentScreenTimeDay(days: WeekDayTrend[]): WeekDayTrend | null {
+  let found: WeekDayTrend | null = null;
+  for (const day of days) {
+    if (day.isToday) continue;
+    if (day.screenTimeMs !== null && day.screenTimeMs >= HIGH_SCREEN_TIME_DAY_MS) {
+      if (!found || day.screenTimeMs > (found.screenTimeMs as number)) found = day;
+    }
+  }
+  return found;
+}
+
+/** Same "high day" check as `highestRecentScreenTimeDay`, but on the raw
+ * `{date, screenTimeMs}` shape `getScreenTimeHistory` returns — used by the
+ * notification service, which doesn't build full `WeekDayTrend`s. */
+export function anyDayAtOrAboveMs(
+  days: { date: string; screenTimeMs: number | null }[],
+  thresholdMs: number,
+  excludeDate?: string,
+): boolean {
+  return days.some(
+    (d) => d.date !== excludeDate && d.screenTimeMs !== null && d.screenTimeMs >= thresholdMs,
+  );
+}
+
+export type WeeklyTrendDirection = 'up' | 'down' | 'flat';
+
+/**
+ * Compares this week's daily average against last week's. `'flat'` absorbs
+ * normal day-to-day noise (±5%) so a trivial fluctuation never reads as a
+ * trend — only a real, sustained rise/fall crosses the band.
+ */
+export function compareWeeklyAverages(
+  currentAvgMs: number,
+  previousAvgMs: number,
+): WeeklyTrendDirection {
+  if (previousAvgMs <= 0) return 'flat';
+  const change = (currentAvgMs - previousAvgMs) / previousAvgMs;
+  if (change > 0.05) return 'up';
+  if (change < -0.05) return 'down';
+  return 'flat';
+}
+
 /** The day with the most focus minutes this week, or `null` if no focus time was recorded on any day. */
 export function bestFocusDay(days: WeekDayTrend[]): WeekDayTrend | null {
   let best: WeekDayTrend | null = null;

@@ -1,9 +1,14 @@
 import {
+  anyDayAtOrAboveMs,
   bestFocusDay,
   buildWeeklyTrends,
   chartMaxScreenTimeMs,
+  compareWeeklyAverages,
   dayDetailText,
+  HIGH_SCREEN_TIME_DAY_MS,
+  highestRecentScreenTimeDay,
   weekDayAccessibilityLabel,
+  weeklyAverageScreenTimeMs,
   type WeekDayTrend,
 } from '../weeklyTrends';
 
@@ -168,5 +173,84 @@ describe('dayDetailText', () => {
 
   it('reads "Screen time unavailable" instead of a fabricated duration', () => {
     expect(dayDetailText(day('a', { screenTimeMs: null }))).toContain('Screen time unavailable');
+  });
+});
+
+describe('weeklyAverageScreenTimeMs', () => {
+  it('averages only days with known screen time, excluding null days from the divisor', () => {
+    // 2h + 4h across 2 known days = 3h average, not divided by 3.
+    const days = [
+      { screenTimeMs: 2 * 60 * 60 * 1000 },
+      { screenTimeMs: 4 * 60 * 60 * 1000 },
+      { screenTimeMs: null },
+    ];
+    expect(weeklyAverageScreenTimeMs(days)).toBe(3 * 60 * 60 * 1000);
+  });
+
+  it('returns null when every day is unavailable, never NaN or zero', () => {
+    expect(weeklyAverageScreenTimeMs([{ screenTimeMs: null }, { screenTimeMs: null }])).toBeNull();
+  });
+
+  it('returns null for an empty list', () => {
+    expect(weeklyAverageScreenTimeMs([])).toBeNull();
+  });
+});
+
+describe('highestRecentScreenTimeDay', () => {
+  it('picks the highest day at/above the threshold, excluding today', () => {
+    const days = [
+      day('a', { screenTimeMs: HIGH_SCREEN_TIME_DAY_MS - 1 }), // just under — doesn't count
+      day('b', { screenTimeMs: HIGH_SCREEN_TIME_DAY_MS + 1_000 }),
+      day('c', { screenTimeMs: HIGH_SCREEN_TIME_DAY_MS + 2_000 }),
+      day('today', { isToday: true, screenTimeMs: HIGH_SCREEN_TIME_DAY_MS + 99_000 }), // excluded — still partial
+    ];
+    expect(highestRecentScreenTimeDay(days)?.date).toBe('c');
+  });
+
+  it('returns null when no day reaches the threshold', () => {
+    const days = [day('a', { screenTimeMs: 1_000 }), day('b', { screenTimeMs: null })];
+    expect(highestRecentScreenTimeDay(days)).toBeNull();
+  });
+});
+
+describe('anyDayAtOrAboveMs', () => {
+  const raw = [
+    { date: '2026-08-10', screenTimeMs: HIGH_SCREEN_TIME_DAY_MS },
+    { date: '2026-08-11', screenTimeMs: 1_000 },
+    { date: '2026-08-12', screenTimeMs: null },
+  ];
+
+  it('is true when a day meets or exceeds the threshold', () => {
+    expect(anyDayAtOrAboveMs(raw, HIGH_SCREEN_TIME_DAY_MS)).toBe(true);
+  });
+
+  it('excludes the given date even if it qualifies — e.g. today, still partial', () => {
+    expect(anyDayAtOrAboveMs(raw, HIGH_SCREEN_TIME_DAY_MS, '2026-08-10')).toBe(false);
+  });
+
+  it('is false when no day meets the threshold', () => {
+    expect(anyDayAtOrAboveMs(raw, HIGH_SCREEN_TIME_DAY_MS * 2)).toBe(false);
+  });
+
+  it('treats null (unavailable) days as not qualifying', () => {
+    expect(anyDayAtOrAboveMs([{ date: 'x', screenTimeMs: null }], 1)).toBe(false);
+  });
+});
+
+describe('compareWeeklyAverages', () => {
+  it('reads "up" for a real increase beyond the noise band', () => {
+    expect(compareWeeklyAverages(4 * 60 * 60 * 1000, 3 * 60 * 60 * 1000)).toBe('up'); // +33%
+  });
+
+  it('reads "down" for a real decrease beyond the noise band', () => {
+    expect(compareWeeklyAverages(2 * 60 * 60 * 1000, 3 * 60 * 60 * 1000)).toBe('down'); // -33%
+  });
+
+  it('reads "flat" for a trivial change within the ±5% noise band', () => {
+    expect(compareWeeklyAverages(3_060_000, 3_000_000)).toBe('flat'); // +2%
+  });
+
+  it('reads "flat" rather than dividing by zero when last week had no data', () => {
+    expect(compareWeeklyAverages(1_000_000, 0)).toBe('flat');
   });
 });

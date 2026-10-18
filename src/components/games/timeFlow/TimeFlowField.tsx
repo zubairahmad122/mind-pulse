@@ -16,7 +16,7 @@ import Animated, {
 } from "react-native-reanimated";
 import type { FlowCell, FlowLayout } from "@/engine/core/games/timeFlow";
 
-const CYAN = "#72E8F6";
+const CYAN = "#4DE1C1";
 
 type CellState =
   | "idle"
@@ -116,7 +116,7 @@ const TimeFlowCell = memo(function TimeFlowCell({
                 width="96"
                 height="96"
                 rx="22"
-                fill={wrong ? "rgba(239,113,133,.12)" : "rgba(114,232,246,.12)"}
+                fill={wrong ? "rgba(239,113,133,.12)" : "rgba(77,225,193,.12)"}
               />
             )}
             <Rect
@@ -146,8 +146,8 @@ const TimeFlowCell = memo(function TimeFlowCell({
               fill="none"
               stroke={
                 active || correct
-                  ? "rgba(114,232,246,.32)"
-                  : "rgba(169,139,255,.08)"
+                  ? "rgba(77,225,193,.32)"
+                  : "rgba(164,139,255,.08)"
               }
               strokeWidth="1"
             />
@@ -157,9 +157,9 @@ const TimeFlowCell = memo(function TimeFlowCell({
               r={active || correct ? 17 : 13}
               fill={
                 active || correct
-                  ? "rgba(114,232,246,.16)"
+                  ? "rgba(77,225,193,.16)"
                   : state === "trail"
-                    ? "rgba(114,232,246,.06)"
+                    ? "rgba(77,225,193,.06)"
                     : "rgba(95,111,180,.045)"
               }
             />
@@ -167,8 +167,8 @@ const TimeFlowCell = memo(function TimeFlowCell({
               d="M 50 38 L 62 50 L 50 62 L 38 50 Z"
               fill={
                 active || correct
-                  ? "rgba(114,232,246,.24)"
-                  : "rgba(169,139,255,.05)"
+                  ? "rgba(77,225,193,.24)"
+                  : "rgba(164,139,255,.05)"
               }
               stroke={active || correct ? CYAN : "rgba(145,157,210,.24)"}
               strokeWidth="1.7"
@@ -197,7 +197,7 @@ const TimeFlowCell = memo(function TimeFlowCell({
                 fill="none"
                 stroke={
                   active || correct
-                    ? "rgba(114,232,246,.52)"
+                    ? "rgba(77,225,193,.52)"
                     : "rgba(131,143,193,.16)"
                 }
                 strokeWidth="1.4"

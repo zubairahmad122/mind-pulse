@@ -124,22 +124,22 @@ export function PalmingGuide({ active }: Props) {
             {/* Calming golden warm core */}
             <RadialGradient id="warmthCore" cx="130" cy="120" r="110">
               <Stop offset="0%" stopColor="#FFA726" stopOpacity="0.4" />
-              <Stop offset="45%" stopColor="#00E0FF" stopOpacity="0.12" />
-              <Stop offset="100%" stopColor="#0A0E1A" stopOpacity="0" />
+              <Stop offset="45%" stopColor="#4DE1C1" stopOpacity="0.12" />
+              <Stop offset="100%" stopColor="#0F0C29" stopOpacity="0" />
             </RadialGradient>
 
             {/* Smooth linear gradient for glass shields */}
             <LinearGradient id="glassShieldGrad" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0%" stopColor="rgba(123, 97, 255, 0.4)" />
-              <Stop offset="40%" stopColor="rgba(79, 195, 247, 0.2)" />
+              <Stop offset="0%" stopColor="rgba(123,92,255, 0.4)" />
+              <Stop offset="40%" stopColor="rgba(77,225,193, 0.2)" />
               <Stop offset="100%" stopColor="rgba(255, 255, 255, 0.03)" />
             </LinearGradient>
 
             {/* Glowing contour */}
             <LinearGradient id="contourGrad" x1="0" y1="0" x2="1" y2="1">
               <Stop offset="0%" stopColor="#FFA726" stopOpacity="0.8" />
-              <Stop offset="60%" stopColor="#00E0FF" stopOpacity="0.8" />
-              <Stop offset="100%" stopColor="#4FC3F7" stopOpacity="0.6" />
+              <Stop offset="60%" stopColor="#4DE1C1" stopOpacity="0.8" />
+              <Stop offset="100%" stopColor="#4DE1C1" stopOpacity="0.6" />
             </LinearGradient>
           </Defs>
 
@@ -148,8 +148,8 @@ export function PalmingGuide({ active }: Props) {
 
           {/* Radiating concentric heat waves */}
           <AnimatedCircle cx="130" cy="120" stroke="url(#contourGrad)" strokeWidth="2.5" strokeDasharray="3,6" fill="none" animatedProps={waveProps1} />
-          <AnimatedCircle cx="130" cy="120" stroke="#00E0FF" strokeWidth="1.5" fill="none" animatedProps={waveProps2} />
-          <AnimatedCircle cx="130" cy="120" stroke="#4FC3F7" strokeWidth="1" strokeDasharray="2,2" fill="none" animatedProps={waveProps3} />
+          <AnimatedCircle cx="130" cy="120" stroke="#4DE1C1" strokeWidth="1.5" fill="none" animatedProps={waveProps2} />
+          <AnimatedCircle cx="130" cy="120" stroke="#4DE1C1" strokeWidth="1" strokeDasharray="2,2" fill="none" animatedProps={waveProps3} />
 
           {/* Shielding geometric cupped hands (static <G> — pulse comes from the wrapping Animated.View) */}
           <G>

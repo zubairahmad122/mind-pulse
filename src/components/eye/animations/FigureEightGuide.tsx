@@ -145,7 +145,7 @@ export function FigureEightGuide({ active }: Props) {
         <Defs>
           <LinearGradient id="f8Track" x1="0" y1="0" x2="1" y2="0">
             <Stop offset="0%" stopColor="#8A7CFF" stopOpacity="0.32" />
-            <Stop offset="50%" stopColor="#63E8FF" stopOpacity="0.38" />
+            <Stop offset="50%" stopColor="#4DE1C1" stopOpacity="0.38" />
             <Stop offset="100%" stopColor="#8A7CFF" stopOpacity="0.32" />
           </LinearGradient>
         </Defs>
@@ -167,18 +167,18 @@ const styles = StyleSheet.create({
   arena: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   halo: {
     position: 'absolute', left: 0, top: 0, width: HALO, height: HALO, borderRadius: HALO / 2,
-    backgroundColor: '#7B61FF', opacity: 0.28,
+    backgroundColor: '#7B5CFF', opacity: 0.28,
   },
   core: {
     position: 'absolute', left: 0, top: 0, width: CORE, height: CORE, borderRadius: CORE / 2,
-    backgroundColor: '#63E8FF', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#63E8FF', shadowOpacity: 0.7, shadowRadius: 6, shadowOffset: { width: 0, height: 0 },
+    backgroundColor: '#4DE1C1', alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#4DE1C1', shadowOpacity: 0.7, shadowRadius: 6, shadowOffset: { width: 0, height: 0 },
   },
   highlight: {
     position: 'absolute', top: 3, left: 3.5, width: 5, height: 5, borderRadius: 2.5,
     backgroundColor: '#FFFFFF', opacity: 0.9,
   },
-  trailDot: { position: 'absolute', left: 0, top: 0, borderRadius: 50, backgroundColor: '#63E8FF' },
+  trailDot: { position: 'absolute', left: 0, top: 0, borderRadius: 50, backgroundColor: '#4DE1C1' },
   trailDotNear: { width: 10, height: 10, opacity: 0.28 },
   trailDotFar: { width: 7, height: 7, opacity: 0.16 },
   leadDot: { position: 'absolute', left: 0, top: 0, borderRadius: 50, backgroundColor: '#B9F3FF' },

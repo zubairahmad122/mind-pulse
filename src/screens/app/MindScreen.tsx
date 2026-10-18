@@ -24,6 +24,7 @@ import { EYE_GAMES, ROUTES } from "@/constants";
 import { formatActivityDuration } from "@/constants/eyeRelax";
 import {
   FONTS,
+  PALETTE,
   SURFACE_TINT,
   TYPOGRAPHY,
 } from "@/constants/designSystem";
@@ -61,10 +62,10 @@ const MIND_GAMES = [
 const FEATURED_GAME =
   MIND_GAMES[Math.floor(Date.now() / 86_400_000) % MIND_GAMES.length];
 
-const SCHULTE_ACCENT = "#48A8FF";
+const SCHULTE_ACCENT = PALETTE.indigoLight;
 const MILLS_ACCENT = "#37D5D0";
 const PATTERN_ACCENT = "#9D7CFF";
-const TIME_FLOW_ACCENT = "#72E8F6";
+const TIME_FLOW_ACCENT = "#4DE1C1";
 const SCHULTE_ARTWORK = <SchulteCardArtwork />;
 const MILLS_ARTWORK = <MillsCardArtwork />;
 const PATTERN_ARTWORK = <PatternShiftCardArtwork />;
@@ -229,6 +230,18 @@ function useMindProgress(uid: string | undefined): MindProgressState {
   return state;
 }
 
+/** The matching grid-card data for whichever game `FEATURED_GAME` resolves
+ * to — same shape as a `games` array entry. The hero reads its category,
+ * description, and accent straight from here instead of a second,
+ * hand-maintained copy of the same text, so the hero and the grid card for
+ * the same game can never show two different descriptions again. */
+type FeaturedGameCard = {
+  id: string;
+  category: string;
+  description: string;
+  accent: string;
+};
+
 /**
  * The Mind hero — "Continue" surface when real Schulte progress exists,
  * otherwise falls back to today's featured-pick presentation. Same shape,
@@ -237,27 +250,27 @@ function useMindProgress(uid: string | undefined): MindProgressState {
 function MindHero({
   onPress,
   progress,
+  game,
 }: {
   onPress: () => void;
   progress: MindProgressState;
+  game: FeaturedGameCard;
 }) {
   const duration =
     FEATURED_GAME.durationLabel ??
     formatActivityDuration(FEATURED_GAME.durationSeconds);
   const { hasProgress, currentLevel, missionInLevel, levelProgress } = progress;
-  const featuredAccent =
-    FEATURED_GAME.id === "math-gap" ? TIME_FLOW_ACCENT : FEATURED_GAME.id === "time-flow"
-      ? TIME_FLOW_ACCENT
-      : FEATURED_GAME.id === "pattern-shift"
-        ? PATTERN_ACCENT
-        : SCHULTE_ACCENT;
+  // Schulte alone tracks "Mission N" within a level; every other game just
+  // shows its level — a genuine per-game difference, not duplicated copy.
+  const levelLabel =
+    game.id === "schulte-nexus" ? `Mission ${missionInLevel + 1}` : game.category;
 
   return (
     <HeroCard style={styles.heroCard}>
       <View style={styles.heroInner}>
         <Text style={styles.heroLabel}>TODAY&apos;S MIND PICK</Text>
         <View pointerEvents="none" style={styles.heroFeaturedArt}>
-          <View style={[styles.heroFeaturedGlow, { backgroundColor: `${featuredAccent}12` }]} />
+          <View style={[styles.heroFeaturedGlow, { backgroundColor: `${game.accent}12` }]} />
           <MindGameArtwork gameId={FEATURED_GAME.id} variant="featured" />
         </View>
 
@@ -272,34 +285,22 @@ function MindHero({
         </TouchableOpacity>
 
         <Text style={styles.heroMeta}>
-          {hasProgress
-            ? FEATURED_GAME.id === "math-gap" ? `Level ${currentLevel} · Numerical Reasoning` : FEATURED_GAME.id === "time-flow"
-              ? `Level ${currentLevel} · Working Memory`
-              : FEATURED_GAME.id === "pattern-shift"
-                ? `Level ${currentLevel} · Visual Discrimination`
-                : `Level ${currentLevel} · Mission ${missionInLevel + 1}`
-            : `${duration} · ${FEATURED_GAME.id === "math-gap" ? "Numerical Reasoning" : FEATURED_GAME.id === "time-flow" ? "Working Memory" : FEATURED_GAME.id === "pattern-shift" ? "Visual Discrimination" : "Number Search"}`}
+          {hasProgress ? `Level ${currentLevel} · ${levelLabel}` : `${duration} · ${game.category}`}
         </Text>
 
         <Text style={styles.heroMessage} numberOfLines={2}>
-          {hasProgress
-            ? "Pick up where you left off."
-            : FEATURED_GAME.id === "math-gap" ? "Calculate. Compare. Choose fast." : FEATURED_GAME.id === "time-flow"
-              ? "Remember sequences as the flow evolves"
-              : FEATURED_GAME.id === "pattern-shift"
-                ? "Spot, recall, and adapt to changing rules"
-                : "Adaptive number-search missions"}
+          {hasProgress ? "Pick up where you left off." : game.description}
         </Text>
 
         {hasProgress && (
           <ProgressBar
             progress={levelProgress / 100}
-            fill={featuredAccent}
+            fill={game.accent}
             style={styles.heroBar}
           />
         )}
 
-        <View style={styles.heroCtaWrap}>
+        <View style={[styles.heroCtaWrap, !hasProgress && styles.heroCtaWrapNoProgress]}>
           <GradientCTA
             label={hasProgress ? "Continue Mission" : "Play Challenge"}
             icon={<ArrowRight size={17} color="#03212C" strokeWidth={2.5} />}
@@ -341,7 +342,7 @@ function WeekChart({
                       ? "rgba(255,255,255,0.08)"
                       : isToday
                         ? SCHULTE_ACCENT
-                        : "rgba(157,92,255,0.55)",
+                        : "rgba(123,92,255,0.55)",
                   },
                 ]}
               />
@@ -416,9 +417,13 @@ export default function MindScreen() {
   const open = (route: string) => router.push(route as never);
   const games = [
     {
-      id: "schulte",
+      // Matches EYE_GAMES's canonical id ('schulte-nexus') — FEATURED_GAME
+      // is drawn from EYE_GAMES, so this must agree with it or the
+      // `games.find(g => g.id === FEATURED_GAME.id)` lookup in the hero
+      // silently returns undefined on the 1-in-4 days Schulte is featured.
+      id: "schulte-nexus",
       title: "Schulte Nexus",
-      category: "NUMBER SEARCH",
+      category: "Number Search",
       description: "Scan numbers with speed and precision",
       metadata: `2–3 min  •  ${progress.schulteTier}`,
       accent: SCHULTE_ACCENT,
@@ -429,7 +434,7 @@ export default function MindScreen() {
     {
       id: "mills",
       title: "Mills",
-      category: "STRATEGY",
+      category: "Strategy",
       description: "Plan ahead. Align. Capture.",
       metadata: "10–20 min  •  Two Player",
       accent: MILLS_ACCENT,
@@ -440,7 +445,7 @@ export default function MindScreen() {
     {
       id: "pattern-shift",
       title: "Pattern Shift",
-      category: "VISUAL DISCRIMINATION",
+      category: "Visual Discrimination",
       description: "Detect subtle structural changes",
       metadata: `2–4 min  •  Level ${progress.patternLevel}`,
       accent: PATTERN_ACCENT,
@@ -451,7 +456,7 @@ export default function MindScreen() {
     {
       id: "math-gap",
       title: "Math Gap",
-      category: "NUMERICAL REASONING",
+      category: "Numerical Reasoning",
       description: "Calculate. Compare. Choose fast.",
       metadata: `1–2 min  •  Level ${progress.mathGapLevel}`,
       accent: TIME_FLOW_ACCENT,
@@ -462,7 +467,7 @@ export default function MindScreen() {
     {
       id: "time-flow",
       title: "TimeFlow",
-      category: "WORKING MEMORY",
+      category: "Working Memory",
       description: "Remember and replay the flow",
       metadata: `2–3 min  •  Level ${progress.timeFlowLevel}`,
       accent: TIME_FLOW_ACCENT,
@@ -472,8 +477,15 @@ export default function MindScreen() {
     },
   ] as const;
 
+  // The one `games` entry matching today's featured pick. Falls back to the
+  // first grid entry rather than crashing if a future id ever drifts out of
+  // sync between this array and MIND_GAMES/EYE_GAMES (see the 2026-10-06
+  // Schulte id-mismatch bug this guarded against) — a slightly wrong hero
+  // card is recoverable, a hard crash on the whole tab isn't.
+  const featuredGameCard = games.find((g) => g.id === FEATURED_GAME.id) ?? games[0];
+
   return (
-    <ScreenShell pillar="mind" ambient={<AmbientBackground subtle />}>
+    <ScreenShell pillar="mind" ambient={<AmbientBackground subtle />} bannerAd>
       <ScreenTransition>
         <ScreenHeader
           title="Mind"
@@ -485,6 +497,7 @@ export default function MindScreen() {
         <MindHero
           onPress={() => open(FEATURED_GAME.route)}
           progress={progress}
+          game={featuredGameCard}
         />
 
         {/* ── Your Games — distinct premium game cards ── */}
@@ -564,6 +577,13 @@ const styles = StyleSheet.create({
   },
   heroCtaWrap: {
     marginTop: spacing.sm,
+  },
+  /* Eye's hero always renders a progress bar before its CTA, which already
+   * gives it breathing room above the button. Mind's bar only renders when
+   * `hasProgress`, so the no-progress state needs its own extra margin here
+   * to match — otherwise the button sits right under the description text. */
+  heroCtaWrapNoProgress: {
+    marginTop: spacing.md,
   },
 
   /* ── Game rows (shared game-library surface) ── */

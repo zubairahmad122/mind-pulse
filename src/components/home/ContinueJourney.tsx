@@ -3,14 +3,12 @@ import { ROUTES } from '@/constants';
 import { colors } from '@/constants/colors';
 import { PILLAR_COLORS } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useProgressStore } from '@/stores/useProgressStore';
-
-const STORAGE_KEY = '@mindpulse/last-feature';
+import { useLatestActivity } from '@/hooks/useActivity';
+import type { ActivityType } from '@/types/activity.types';
 
 type LastFeature = {
   id: string;
@@ -20,51 +18,29 @@ type LastFeature = {
   color: string;
 };
 
-const FEATURE_MAP: Record<string, LastFeature> = {
-  // Both eye features wear the single Eyes-pillar cyan — the old green
-  // (#6ee7b7) / teal (#22d3ee) split made the same pillar two colours.
-  'eye-exercise': { id: 'eye-exercise', label: 'Eye Comfort', subtitle: 'Take a guided screen break', route: ROUTES.appEyeRelax, color: PILLAR_COLORS.eye },
-  'eye-game':     { id: 'eye-game',     label: 'Visual Games', subtitle: 'Play a short coordination activity', route: ROUTES.appEyeRelax, color: PILLAR_COLORS.eye },
-  'relax':        { id: 'relax',        label: 'Relaxation',   subtitle: 'Unwind and breathe', route: ROUTES.appRelax, color: '#4FC3F7' },
-  'mind':         { id: 'mind',         label: 'Mind & Breath', subtitle: 'Stress relief', route: ROUTES.appBoxBreathing, color: '#60a5fa' },
-  'sleep':        { id: 'sleep',        label: 'Sleep',        subtitle: 'Track tonight', route: ROUTES.appSleep, color: '#a78bfa' },
+const EYE_COMFORT: Omit<LastFeature, 'id'> = { label: 'Eye Comfort', subtitle: 'Take a guided screen break', route: ROUTES.appEyeRelax, color: PILLAR_COLORS.eye };
+
+/** Where each completed activity type continues from. */
+const FEATURE_MAP: Record<ActivityType, LastFeature> = {
+  // Every eye activity wears the single Eyes-pillar cyan.
+  EYE_RESET_COMPLETED:     { id: 'eye-exercise', ...EYE_COMFORT },
+  EYE_BREAK_COMPLETED:     { id: 'eye-exercise', ...EYE_COMFORT },
+  EYE_GAME_COMPLETED:      { id: 'eye-game', label: 'Visual Games', subtitle: 'Play a short coordination activity', route: ROUTES.appEyeRelax, color: PILLAR_COLORS.eye },
+  RELAX_SESSION_COMPLETED: { id: 'relax',    label: 'Relaxation',   subtitle: 'Unwind and breathe', route: ROUTES.appRelax, color: '#4DE1C1' },
+  MIND_GAME_COMPLETED:     { id: 'mind',     label: 'Mind Games',   subtitle: 'Train your focus', route: ROUTES.appMind, color: '#A48BFF' },
+  FOCUS_SESSION_COMPLETED: { id: 'focus',    label: 'Focus',        subtitle: 'Start another focus block', route: ROUTES.appFocusBlock, color: PILLAR_COLORS.mind },
+  SLEEP_SESSION_COMPLETED: { id: 'sleep',    label: 'Sleep',        subtitle: 'Track tonight', route: ROUTES.appSleep, color: '#A48BFF' },
 };
 
-/** Save the last feature the user interacted with. Call from each feature screen. */
-export async function recordLastFeature(featureId: string): Promise<void> {
-  if (FEATURE_MAP[featureId]) {
-    await AsyncStorage.setItem(STORAGE_KEY, featureId);
-  }
-}
-
-function getWeeklyCount(featureId: string, weekly: { eye: number; eyeGames: number; relax: number; mind: number; sleep: number }): number {
-  switch (featureId) {
-    case 'eye-exercise': return weekly.eye;
-    case 'eye-game': return weekly.eyeGames;
-    case 'relax': return weekly.relax;
-    case 'mind': return weekly.mind;
-    case 'sleep': return weekly.sleep;
-    default: return 0;
-  }
-}
-
-/** The last feature the user interacted with, plus whether they've already done it again this week. */
+/**
+ * The feature of the user's most recent COMPLETED activity (unified activity
+ * log) — never just a tab they opened. `isCompleted` is true whenever there is
+ * one, since only completions are logged.
+ */
 export function useLastFeature(): { last: LastFeature | null; isCompleted: boolean } {
-  const [last, setLast] = useState<LastFeature | null>(null);
-  const weeklySessions = useProgressStore((s) => s.weeklySessions);
-
-  useEffect(() => {
-    void AsyncStorage.getItem(STORAGE_KEY).then((val) => {
-      if (val && FEATURE_MAP[val]) setLast(FEATURE_MAP[val]);
-    });
-  }, []);
-
-  const isCompleted = useMemo(() => {
-    if (!last) return false;
-    return getWeeklyCount(last.id, weeklySessions) > 0;
-  }, [last, weeklySessions]);
-
-  return { last, isCompleted };
+  const latest = useLatestActivity();
+  const last = useMemo(() => (latest ? FEATURE_MAP[latest.type] : null), [latest]);
+  return { last, isCompleted: last !== null };
 }
 
 export const ContinueJourney = memo(function ContinueJourney() {

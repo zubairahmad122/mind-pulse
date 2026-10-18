@@ -32,6 +32,7 @@ import {
 } from '@/constants/designSystem';
 import { spacing } from '@/constants/spacing';
 import { useAuth } from '@/context/AuthContext';
+import { recordMindGameActivity } from '@/services/mindGameActivity';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useSessionCompleteInterstitial } from '@/services/ads/useSessionCompleteInterstitial';
 import { useGameFeedbackPrefs } from '@/hooks/useGameFeedbackPrefs';
@@ -542,7 +543,7 @@ function SchulteCell({
   }));
 
   const backgroundColor = locked
-    ? 'rgba(0,224,255,0.16)'
+    ? 'rgba(77,225,193,0.16)'
     : isNeutral
       ? 'rgba(255,255,255,0.03)'
       : 'rgba(255,255,255,0.05)';
@@ -1266,7 +1267,7 @@ export default function SchulteNexusMissionScreen() {
       setPersistedState(state);
       await resolveMission(state);
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('[SchulteNexus] handleNextChallenge failed:', err);
       setPhase('error');
     }
@@ -1288,7 +1289,7 @@ export default function SchulteNexusMissionScreen() {
       setPersistedState(state);
       await resolveMission(state);
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('[SchulteNexus] handleRetryError failed:', err);
       setPhase('error');
     }
@@ -1336,6 +1337,22 @@ export default function SchulteNexusMissionScreen() {
       startedAt: startedAtRef.current ?? Date.now(),
       completedAt: Date.now(),
     };
+
+    // A mission that ran to its end (cleared, timed out, or out of mistakes)
+    // is a finished game; leaving mid-mission never reaches this effect.
+    void recordMindGameActivity(
+      uid,
+      'schulte-nexus',
+      `${challenge.id}-${attemptInput.startedAt}`,
+      attemptInput.startedAt,
+      attemptInput.completedAt,
+      undefined,
+      {
+        result: attemptInput.result,
+        level: persistedState.levelState.currentLevel,
+        accuracy: attemptInput.accuracy,
+      },
+    );
 
     void (async () => {
       try {
@@ -1549,9 +1566,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,224,255,0.1)',
+    backgroundColor: 'rgba(77,225,193,0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(0,224,255,0.22)',
+    borderColor: 'rgba(77,225,193,0.22)',
   },
 
   // Loading
@@ -1689,7 +1706,7 @@ const styles = StyleSheet.create({
     borderRadius: 35,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,224,255,0.14)',
+    backgroundColor: 'rgba(77,225,193,0.14)',
     borderWidth: 1,
     borderColor: 'rgba(139,92,246,0.45)',
   },
@@ -1734,9 +1751,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,224,255,0.16)',
+    backgroundColor: 'rgba(77,225,193,0.16)',
     borderWidth: 1,
-    borderColor: 'rgba(0,224,255,0.35)',
+    borderColor: 'rgba(77,225,193,0.35)',
     marginBottom: 10,
   },
   boardLockTitle: {
@@ -1769,7 +1786,7 @@ const styles = StyleSheet.create({
   startCtaGlow: {
     ...StyleSheet.absoluteFill,
     borderRadius: BUTTON.radius,
-    backgroundColor: 'rgba(0,224,255,0.4)',
+    backgroundColor: 'rgba(77,225,193,0.4)',
   },
   startCta: {
     width: '100%',
@@ -1851,9 +1868,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.4,
     color: EYE_COLOR,
-    backgroundColor: 'rgba(0,224,255,0.12)',
+    backgroundColor: 'rgba(77,225,193,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(0,224,255,0.25)',
+    borderColor: 'rgba(77,225,193,0.25)',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 3,
@@ -1861,8 +1878,8 @@ const styles = StyleSheet.create({
   },
   microMessageTextStrong: {
     color: '#FFFFFF',
-    backgroundColor: 'rgba(0,224,255,0.28)',
-    borderColor: 'rgba(0,224,255,0.5)',
+    backgroundColor: 'rgba(77,225,193,0.28)',
+    borderColor: 'rgba(77,225,193,0.5)',
   },
   microMessageTextWarning: {
     color: STATUS_COLORS.warning,
@@ -1894,7 +1911,7 @@ const styles = StyleSheet.create({
     right: -6,
     bottom: -6,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,224,255,0.4)',
+    backgroundColor: 'rgba(77,225,193,0.4)',
   },
   cellHighlight: {
     position: 'absolute',
@@ -1977,9 +1994,9 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,224,255,0.12)',
+    backgroundColor: 'rgba(77,225,193,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(0,224,255,0.3)',
+    borderColor: 'rgba(77,225,193,0.3)',
     marginBottom: 6,
   },
   completeBadgeMuted: {
@@ -2134,9 +2151,9 @@ const styles = StyleSheet.create({
   // Level up badge
   levelUpBadge: {
     alignSelf: 'center',
-    backgroundColor: 'rgba(0,224,255,0.15)',
+    backgroundColor: 'rgba(77,225,193,0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(0,224,255,0.35)',
+    borderColor: 'rgba(77,225,193,0.35)',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 6,

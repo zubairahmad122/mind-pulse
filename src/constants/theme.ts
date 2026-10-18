@@ -8,7 +8,7 @@
  */
 import { COLORS } from './colors';
 
-export type PillarKey = 'mind' | 'sleep' | 'eyes';
+export type PillarKey = 'mind' | 'sleep' | 'eyes' | 'focus';
 
 export type PillarTheme = {
   accent: string;
@@ -20,37 +20,48 @@ export type PillarTheme = {
 };
 
 export const PILLAR_THEME: Record<PillarKey, PillarTheme> = {
-  mind: {
-    accent: '#3b82f6',
-    bgGradient: ['#0C1225', '#080D1A', '#040810'],
-    cardTint: ['rgba(16,20,40,0.3)', 'rgba(8,12,24,0.55)'],
-    buttonGradient: ['#3b82f6', '#2563eb'],
+  // Same violet as PILLAR_COLORS.mind (designSystem.ts) — the accent Focus
+  // already uses on Home (FeaturedSection, the first-run feature guide), so
+  // onboarding's lead slide stays visually consistent with the real feature.
+  focus: {
+    accent: '#7B5CFF',
+    bgGradient: ['#22185A', '#0F0C29', '#08061A'],
+    cardTint: ['rgba(40,28,96,0.3)', 'rgba(10,6,20,0.55)'],
+    buttonGradient: ['#7B5CFF', '#6C63FF'],
     buttonTextColor: '#fff',
-    buttonShadow: 'rgba(37,99,235,0.6)',
+    buttonShadow: 'rgba(123,92,255,0.5)',
+  },
+  mind: {
+    accent: '#6C63FF',
+    bgGradient: ['#1A1650', '#0F0C29', '#08061A'],
+    cardTint: ['rgba(30,24,80,0.3)', 'rgba(8,12,24,0.55)'],
+    buttonGradient: ['#6C63FF', '#3B2ED0'],
+    buttonTextColor: '#fff',
+    buttonShadow: 'rgba(59,46,208,0.6)',
   },
   sleep: {
-    accent: '#a78bfa',
-    bgGradient: ['#1e1438', '#0d0a1a', '#06040e'],
+    accent: '#A48BFF',
+    bgGradient: ['#1E1450', '#0F0C29', '#08061A'],
     cardTint: ['rgba(20,14,44,0.25)', 'rgba(8,4,18,0.55)'],
-    buttonGradient: ['#a78bfa', '#7c3aed'],
+    buttonGradient: ['#A48BFF', '#7B5CFF'],
     buttonTextColor: '#fff',
-    buttonShadow: 'rgba(124,58,237,0.6)',
+    buttonShadow: 'rgba(123,92,255,0.6)',
   },
   eyes: {
-    accent: '#22d3ee',
-    bgGradient: ['#0B1920', '#071216', '#03080B'],
-    cardTint: ['rgba(12,22,28,0.3)', 'rgba(6,12,16,0.55)'],
-    buttonGradient: ['#5eead4', '#06b6d4'],
+    accent: '#4DE1C1',
+    bgGradient: ['#19124A', '#0F0C29', '#08061A'],
+    cardTint: ['rgba(24,28,80,0.3)', 'rgba(6,12,16,0.55)'],
+    buttonGradient: ['#4DE1C1', '#3BC9AB'],
     buttonTextColor: '#03212c',
-    buttonShadow: 'rgba(8,145,178,0.6)',
+    buttonShadow: 'rgba(59,201,171,0.5)',
   },
 };
 
 /** Used by screens with no pillar of their own (e.g. Sign In / Sign Up). */
 export const DEFAULT_PILLAR_THEME: PillarTheme = {
   accent: COLORS.purple,
-  bgGradient: ['#0C1225', '#080D1A', '#040810'],
-  cardTint: ['rgba(16,20,40,0.3)', 'rgba(8,12,24,0.55)'],
+  bgGradient: ['#1A1650', '#0F0C29', '#08061A'],
+  cardTint: ['rgba(30,24,80,0.3)', 'rgba(8,12,24,0.55)'],
   buttonGradient: [COLORS.purpleLight, COLORS.purple],
   buttonTextColor: '#fff',
   buttonShadow: COLORS.purpleDim,

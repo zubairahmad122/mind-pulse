@@ -187,7 +187,7 @@ const s = StyleSheet.create({
   // depth cue as much as the text does.
   labelFar: { fontWeight: '600', fontSize: 10.5 },
   labelNear: {
-    textShadowColor: 'rgba(0,224,255,0.5)',
+    textShadowColor: 'rgba(77,225,193,0.5)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 6,
   },

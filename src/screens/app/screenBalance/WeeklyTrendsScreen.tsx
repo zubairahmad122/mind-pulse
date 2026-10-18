@@ -14,7 +14,13 @@ import { useAuth } from '@/context/AuthContext';
 import { getDailyHistory } from '@/services/screenBalanceHistoryPersistence';
 import { getScreenTimeHistory, isScreenUsageSupported, WEEKLY_TRENDS_DAYS } from '@/services/screenUsageService';
 import { formatScreenTimeMs } from '@/utils/screenUsageFormat';
-import { bestFocusDay, buildWeeklyTrends, dayDetailText, type WeeklyTrends } from '@/utils/weeklyTrends';
+import {
+  bestFocusDay,
+  buildWeeklyTrends,
+  dayDetailText,
+  weeklyAverageScreenTimeMs,
+  type WeeklyTrends,
+} from '@/utils/weeklyTrends';
 
 const ACCENT = PILLAR_COLORS.reset;
 
@@ -39,6 +45,7 @@ export default function WeeklyTrendsScreen() {
   );
 
   const best = trends ? bestFocusDay(trends.days) : null;
+  const dailyAverageMs = trends ? weeklyAverageScreenTimeMs(trends.days) : null;
   const hasAnyLocalActivity =
     trends != null &&
     (trends.totals.focusMinutes > 0 || trends.totals.offlineMinutes > 0 || trends.totals.resetsCompleted > 0);
@@ -77,7 +84,10 @@ export default function WeeklyTrendsScreen() {
             <Text style={styles.hero}>
               {trends.hasScreenTimePermission ? formatScreenTimeMs(trends.totals.screenTimeMs) : '—'}
             </Text>
-            <Text style={styles.heroCaption}>Screen time</Text>
+            <Text style={styles.heroCaption}>
+              Screen time
+              {dailyAverageMs !== null ? ` · ${formatScreenTimeMs(dailyAverageMs)}/day average` : ''}
+            </Text>
 
             <View style={styles.secondaryRow}>
               <View style={styles.secondaryStat}>

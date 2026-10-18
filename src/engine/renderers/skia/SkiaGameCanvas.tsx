@@ -60,7 +60,7 @@ function SkiaGameCanvasImpl({
   popups,
   popupCapacity = 12,
   onPointer,
-  backgroundColor = '#080D1A',
+  backgroundColor = '#0F0C29',
 }: SkiaGameCanvasProps) {
   // Built exactly once, via a lazy state initialiser. The SkImage is a
   // native resource, so it must not be recreated on re-render — and a

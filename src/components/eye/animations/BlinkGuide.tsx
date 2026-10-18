@@ -109,7 +109,7 @@ export function BlinkGuide({ active }: Props) {
           {/* Iris gradient: warm center, cool outer */}
           <RadialGradient id="irisGrad" cx="130" cy="130" r="32" fx="126" fy="126" gradientUnits="userSpaceOnUse">
             <Stop offset="0%" stopColor="#80F5FF" stopOpacity="1" />
-            <Stop offset="55%" stopColor="#4FC3F7" stopOpacity="0.95" />
+            <Stop offset="55%" stopColor="#4DE1C1" stopOpacity="0.95" />
             <Stop offset="100%" stopColor="#2C3E78" stopOpacity="0.85" />
           </RadialGradient>
 
@@ -121,7 +121,7 @@ export function BlinkGuide({ active }: Props) {
           </RadialGradient>
 
           <RadialGradient id="outerGlow" cx="130" cy="130" r="110" gradientUnits="userSpaceOnUse">
-            <Stop offset="0%" stopColor="rgba(123,97,255,0.18)" />
+            <Stop offset="0%" stopColor="rgba(123,92,255,0.18)" />
             <Stop offset="100%" stopColor="rgba(10,14,38,0)" />
           </RadialGradient>
 
@@ -150,7 +150,7 @@ export function BlinkGuide({ active }: Props) {
         {/* Soft dotted contour */}
         <Circle
           cx="130" cy="130" r="78"
-          stroke="rgba(123,97,255,0.35)"
+          stroke="rgba(123,92,255,0.35)"
           strokeWidth="1.5"
           fill="none"
         />
@@ -161,7 +161,7 @@ export function BlinkGuide({ active }: Props) {
           <AnimatedG animatedProps={irisProps}>
             <Circle cx="130" cy="130" r="32" fill="url(#irisGrad)" />
             {/* Limbus ring (the dark outer iris boundary) */}
-            <Circle cx="130" cy="130" r="32" stroke="#0A0E1A" strokeWidth="1.5" fill="none" opacity="0.6" />
+            <Circle cx="130" cy="130" r="32" stroke="#0F0C29" strokeWidth="1.5" fill="none" opacity="0.6" />
             {/* Radial fibers — gives the iris real texture */}
             {FIBERS.map((f, i) => (
               <Line
@@ -238,7 +238,7 @@ export function BlinkGuide({ active }: Props) {
         {/* Outer eye contour (over everything) */}
         <Circle
           cx="130" cy="130" r="78"
-          stroke="rgba(123,97,255,0.4)"
+          stroke="rgba(123,92,255,0.4)"
           strokeWidth="1.2"
           fill="none"
         />

@@ -79,7 +79,7 @@ export const ALARM_RINGTONES: AlarmRingtoneOption[] = [
     icon: Bell,
     soundFile: 'gentle-chime.mp3',
     remoteUrl: '',
-    color: '#4FC3F7',
+    color: '#4DE1C1',
   },
   {
     id: 'peaceful-morning',
@@ -108,7 +108,7 @@ export const ALARM_RINGTONES: AlarmRingtoneOption[] = [
     icon: CloudMoon,
     soundFile: 'night-bells.mp3',
     remoteUrl: '',
-    color: '#a78bfa',
+    color: '#A48BFF',
     isPremium: true,
   },
   {

@@ -6,6 +6,8 @@ import type { BreathingMusicId } from '@/constants/breathingMusic';
 import { useAuth } from './AuthContext';
 import { reportError } from '@/utils/errorLogger';
 import { trackMoodSelected, trackSessionComplete, trackSessionStart } from '@/services/analytics';
+import { getSessionById } from '@/constants/relaxSessions';
+import { recordActivity } from '@/stores/useActivityStore';
 
 export interface SessionCompletionRecord {
   sessionId: string;
@@ -177,10 +179,18 @@ export const RelaxProvider: React.FC<RelaxProviderProps> = ({ children }) => {
     }
 
     trackSessionComplete(currentSessionId);
+    void recordActivity(user?.uid, {
+      id: `relax-${currentSessionId}-${newRecord.completedAt}`,
+      type: 'RELAX_SESSION_COMPLETED',
+      source: 'relax-player',
+      timestamp: newRecord.completedAt,
+      durationSeconds: getSessionById(currentSessionId)?.durationSeconds ?? sessionElapsed,
+      metadata: { sessionId: currentSessionId },
+    });
     setCurrentSessionId(null);
     setSessionElapsed(0);
     setSessionPaused(false);
-  }, [currentSessionId, lastEmotion, selectedSound, user?.uid]);
+  }, [currentSessionId, lastEmotion, selectedSound, sessionElapsed, user?.uid]);
 
   // Attach the post-session mood/rating to the record completeSession created.
   const handleUpdateLastCompletion = useCallback(

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Check, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   StyleSheet,
@@ -38,6 +38,7 @@ import { useSessionLifecycle } from '@/hooks/useSessionLifecycle';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { incrementBreaksTaken } from '@/services/dailyEyeGoalsPersistence';
 import { recordBreakTaken } from '@/services/lastBreakPersistence';
+import { recordActivity } from '@/stores/useActivityStore';
 import { recordResetCompleted } from '@/services/screenBalancePersistence';
 import { colors } from '@/constants/colors';
 import { FONTS, PILLAR_COLORS, RADIUS, STATUS_COLORS } from '@/constants/designSystem';
@@ -49,19 +50,14 @@ const DEFAULT_DURATION = 20;
 const EYE_ACCENT = PILLAR_COLORS.eye;
 const RING_SIZE = 280;
 const RING_STROKE = 6;
+// Horizon scene sits inside the ring with a gap, so it never covers the progress arc.
+const HORIZON_SIZE = RING_SIZE - (RING_STROKE + 8) * 2;
 
 function breakDurationLabel(seconds: number): string {
   if (seconds < 60) return `${seconds} seconds`;
   const minutes = seconds / 60;
   return `${minutes} minute${minutes === 1 ? '' : 's'}`;
 }
-
-/** Rotating calm guidance lines — shown one at a time. */
-const GUIDANCE_LINES = [
-  'Look away from the screen',
-  'Blink naturally',
-  'Relax your face',
-] as const;
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -166,19 +162,19 @@ function HorizonScene({ active, reducedMotion }: { active: boolean; reducedMotio
 
   return (
     <View style={styles.horizonContainer}>
-      <Svg width={RING_SIZE} height={RING_SIZE} viewBox="0 0 260 260">
+      <Svg width={HORIZON_SIZE} height={HORIZON_SIZE} viewBox="0 0 260 260">
         <Defs>
           {/* Deep sky gradient */}
           <LinearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0%" stopColor="#060814" />
-            <Stop offset="50%" stopColor="#0D1025" />
+            <Stop offset="50%" stopColor="#100D25" />
             <Stop offset="100%" stopColor="#1A1040" />
           </LinearGradient>
 
           {/* Moon glow */}
           <RadialGradient id="moonGlow" cx="130" cy="85" r="40">
-            <Stop offset="0%" stopColor="#4FC3F7" stopOpacity="0.6" />
-            <Stop offset="50%" stopColor="#00E0FF" stopOpacity="0.15" />
+            <Stop offset="0%" stopColor="#4DE1C1" stopOpacity="0.6" />
+            <Stop offset="50%" stopColor="#4DE1C1" stopOpacity="0.15" />
             <Stop offset="100%" stopColor="#000" stopOpacity="0" />
           </RadialGradient>
 
@@ -194,9 +190,9 @@ function HorizonScene({ active, reducedMotion }: { active: boolean; reducedMotio
 
           {/* Horizon line glow */}
           <LinearGradient id="horizonGlow" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0%" stopColor="#00E0FF" stopOpacity="0" />
-            <Stop offset="50%" stopColor="#00E0FF" stopOpacity="0.2" />
-            <Stop offset="100%" stopColor="#00E0FF" stopOpacity="0" />
+            <Stop offset="0%" stopColor="#4DE1C1" stopOpacity="0" />
+            <Stop offset="50%" stopColor="#4DE1C1" stopOpacity="0.2" />
+            <Stop offset="100%" stopColor="#4DE1C1" stopOpacity="0" />
           </LinearGradient>
         </Defs>
 
@@ -321,8 +317,6 @@ export default function EyeBreakScreen() {
 
   const [done, setDone] = useState(false);
   const [lifecyclePaused, setLifecyclePaused] = useState(false);
-  const [guidanceIndex, setGuidanceIndex] = useState(0);
-  const [showInfo, setShowInfo] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const reminderResolvedRef = useRef(false);
   const fromReminder = params.source === 'reminder';
@@ -332,9 +326,23 @@ export default function EyeBreakScreen() {
     onResume: () => setLifecyclePaused(true),
   });
 
+  const breakRecordedRef = useRef(false);
+
   const completeBreak = useCallback(() => {
     if (isBackgrounded) return;
     setDone(true);
+    if (!breakRecordedRef.current) {
+      breakRecordedRef.current = true;
+      const completedAt = Date.now();
+      void recordActivity(user?.uid, {
+        id: `eye-break-${completedAt}`,
+        type: 'EYE_BREAK_COMPLETED',
+        source: 'eye-break',
+        timestamp: completedAt,
+        durationSeconds: breakSeconds,
+        metadata: { fromReminder },
+      });
+    }
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     void recordBreakTaken(user?.uid ?? undefined);
     void incrementBreaksTaken(user?.uid ?? undefined);
@@ -347,7 +355,7 @@ export default function EyeBreakScreen() {
         notificationId: params.notificationId,
       });
     }
-  }, [isBackgrounded, fromReminder, params.notificationId, user?.uid]);
+  }, [isBackgrounded, fromReminder, params.notificationId, user?.uid, breakSeconds]);
 
   useEffect(() => {
     return () => {
@@ -374,30 +382,6 @@ export default function EyeBreakScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, []);
 
-  // Rotate guidance lines (unless reduced motion)
-  useEffect(() => {
-    if (reducedMotion || done) return;
-    const interval = setInterval(() => {
-      setGuidanceIndex(i => (i + 1) % GUIDANCE_LINES.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [reducedMotion, done]);
-
-  // Guidance fade animation
-  const guidanceOpacity = useSharedValue(1);
-  useEffect(() => {
-    if (reducedMotion) {
-      guidanceOpacity.value = 1;
-      return;
-    }
-    guidanceOpacity.value = 0;
-    guidanceOpacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) });
-  }, [guidanceIndex, reducedMotion, guidanceOpacity]);
-
-  const guidanceStyle = useAnimatedStyle(() => ({
-    opacity: guidanceOpacity.value,
-  }));
-
   const guideContent: EyeGuideContent = {
     title: breakSeconds === 20 ? '20-20-20 Eye Break' : 'Take Break',
     description: 'Take a short break from close-up screen viewing.',
@@ -406,6 +390,11 @@ export default function EyeBreakScreen() {
       'Choose something farther away.',
       'Rest your gaze there for about 20 seconds.',
       'Return when the timer completes.',
+    ],
+    tips: [
+      breakSeconds === 20
+        ? 'The 20-20-20 rule: every 20 minutes, look at something 20 feet away for 20 seconds — it gives your focusing muscles a real break from screens.'
+        : 'A longer break lets you stand up, stretch, and give your eyes a full rest from screens.',
     ],
     duration: breakDurationLabel(breakSeconds),
     accent: EYE_ACCENT,
@@ -443,46 +432,17 @@ export default function EyeBreakScreen() {
             reducedMotion={reducedMotion}
           />
 
-          {/* Main instruction */}
+          {/* One clear instruction — everything the earlier rotating pill
+              and accordion said, said once. A break screen that keeps
+              changing its own text works against itself: it gives the user
+              a reason to keep watching the screen instead of actually
+              looking away. The fuller "why" (20-20-20 rule) still lives in
+              the Guide sheet (top-left), on demand, not forced into the
+              break itself. */}
           <Text style={styles.instruction}>Look into the distance</Text>
           <Text style={styles.instructionSub}>
-            Let your focus soften for the remaining break.
+            Rest your eyes on something far away, blink naturally, and let your face relax.
           </Text>
-
-          {/* Rotating calm guidance */}
-          <Animated.View style={[styles.guidanceContainer, guidanceStyle]}>
-            <Text style={styles.guidanceText}>
-              {GUIDANCE_LINES[guidanceIndex]}
-            </Text>
-          </Animated.View>
-
-          {/* How this break works — accordion */}
-          <TouchableOpacity
-            style={styles.infoToggle}
-            onPress={() => setShowInfo(!showInfo)}
-            activeOpacity={0.7}
-            hitSlop={8}
-          >
-            <Text style={styles.infoToggleText}>How this break works</Text>
-            {showInfo ? (
-              <ChevronUp size={14} color={EYE_ACCENT} strokeWidth={2.2} />
-            ) : (
-              <ChevronDown size={14} color={EYE_ACCENT} strokeWidth={2.2} />
-            )}
-          </TouchableOpacity>
-
-          {showInfo && (
-            <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>
-                {breakSeconds === 20 ? 'THE 20-20-20 RULE' : 'WHY A LONGER BREAK'}
-              </Text>
-              <Text style={styles.infoText}>
-                {breakSeconds === 20
-                  ? 'Every 20 minutes, look at something 20 feet away for 20 seconds. It gives your focusing muscles a real break from screens.'
-                  : 'A longer break — stand up, stretch, and give your eyes a full rest from screens.'}
-              </Text>
-            </View>
-          )}
 
           {/* Skip break — subtle text action */}
           <TouchableOpacity
@@ -607,12 +567,12 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   horizonContainer: {
-    width: RING_SIZE,
-    height: RING_SIZE,
+    width: HORIZON_SIZE,
+    height: HORIZON_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    borderRadius: RING_SIZE / 2,
+    borderRadius: HORIZON_SIZE / 2,
   },
   /* Instructions */
   instruction: {
@@ -628,59 +588,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
-  },
-  /* Guidance */
-  guidanceContainer: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: RADIUS.button,
-    backgroundColor: EYE_ACCENT + '10',
-    borderWidth: 1,
-    borderColor: EYE_ACCENT + '25',
-    minHeight: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  guidanceText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: EYE_ACCENT,
-  },
-  /* Info accordion */
-  infoToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: RADIUS.button,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-  },
-  infoToggleText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.text.tertiary,
-  },
-  infoCard: {
-    alignSelf: 'stretch',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: RADIUS.card,
-    backgroundColor: 'rgba(255,255,255,0.035)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    gap: 4,
-  },
-  infoTitle: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    letterSpacing: 1.4,
-    color: EYE_ACCENT,
-  },
-  infoText: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.text.secondary,
   },
   /* Skip */
   skipBtn: {
@@ -699,7 +606,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     paddingHorizontal: 24,
-    backgroundColor: 'rgba(9,9,15,0.96)',
+    backgroundColor: 'rgba(15,12,41,0.96)',
     borderRadius: RADIUS.card,
     zIndex: 20,
   },

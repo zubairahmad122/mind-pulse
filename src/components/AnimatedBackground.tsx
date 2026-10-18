@@ -6,21 +6,21 @@ import Svg, {
   Rect,
   Stop,
 } from 'react-native-svg';
-import { BACKGROUND } from '@/constants/designSystem';
+import { BACKGROUND, PALETTE } from '@/constants/designSystem';
 
 /**
  * Soft nebula glow rendered as an SVG radial gradient so it has NO hard edges
- * or seams — background is ~80% black, purple is a faint accent confined to
- * behind the header, not a wash across the whole screen.
+ * or seams — a soft violet glow over the dark indigo base, strongest behind
+ * the header and fading out down the screen.
  */
 function Nebula() {
   return (
     <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
       <Defs>
-        <RadialGradient id="nebulaViolet" cx="24%" cy="0%" r="45%">
-          <Stop offset="0%" stopColor="#6d28d9" stopOpacity={0.14} />
-          <Stop offset="50%" stopColor="#4f46c8" stopOpacity={0.04} />
-          <Stop offset="100%" stopColor="#4f46c8" stopOpacity={0} />
+        <RadialGradient id="nebulaViolet" cx="30%" cy="0%" r="60%">
+          <Stop offset="0%" stopColor={PALETTE.violet} stopOpacity={0.2} />
+          <Stop offset="50%" stopColor={PALETTE.indigo} stopOpacity={0.06} />
+          <Stop offset="100%" stopColor={PALETTE.indigo} stopOpacity={0} />
         </RadialGradient>
       </Defs>
       {/* Full-bleed rect filled by the radial — the radial falloff is the only

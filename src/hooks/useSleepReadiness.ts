@@ -38,7 +38,7 @@ export interface SleepReadiness {
 function levelFor(score: number): { level: ReadinessLevel; label: string; color: string } {
   if (score < 35) return { level: 'low', label: 'Low Readiness', color: '#f97316' };
   if (score < 60) return { level: 'fair', label: 'Building Recovery', color: '#facc15' };
-  if (score < 80) return { level: 'good', label: 'Good Readiness', color: '#4FC3F7' };
+  if (score < 80) return { level: 'good', label: 'Good Readiness', color: '#4DE1C1' };
   return { level: 'high', label: 'Fully Recovered', color: '#34d399' };
 }
 

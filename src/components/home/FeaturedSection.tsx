@@ -9,7 +9,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { MiniTrendStrip, type TrendPoint } from '@/components/home/MiniTrendStrip';
 import { colors } from '@/constants/colors';
-import { FONTS, PILLAR_COLORS, RADIUS } from '@/constants/designSystem';
+import { BUTTON, FONTS, PILLAR_COLORS, RADIUS } from '@/constants/designSystem';
 import { ROUTES } from '@/constants/routes';
 import { useScreenUsage } from '@/hooks/useScreenUsage';
 import { loadScreenBalanceStats, type ScreenBalanceStats } from '@/services/screenBalancePersistence';
@@ -24,7 +24,7 @@ import { formatScreenTimeMs, formatSpokenDurationMs } from '@/utils/screenUsageF
 const TEAL = PILLAR_COLORS.reset;
 const VIOLET = PILLAR_COLORS.mind;
 /** Focus tab's "today" bar — violet→blue, distinct from Balance's cyan→blue. */
-const FOCUS_TODAY_GRADIENT = ['#9D5CFF', '#5A9EFF'] as const;
+const FOCUS_TODAY_GRADIENT = ['#7B5CFF', '#6C63FF'] as const;
 /** Purely illustrative duration hint on the empty Focus state — not a control, matches FocusBlockScreen's own presets. */
 const FOCUS_DURATION_PRESETS = [15, 25, 45] as const;
 
@@ -42,15 +42,16 @@ type Mode = 'balance' | 'focus';
  * Deliberate second exception to "every card uses the flat neutral fill"
  * (GlassCard's doc comment names the Hero card as the only other one) — the
  * Featured module needs its own identity so it doesn't read as a second Hero
- * card. Dark navy glass, not the Hero's violet gradient, not the flat card fill.
+ * card. Deep indigo glass — quieter than the Hero's indigo gradient, but
+ * brighter than the flat card fill.
  *
  * Bright enough to read as its own surface: the app's global background
- * (`BACKGROUND.overlay`, `#131028`→`#0C0B17`) sits in almost exactly this
- * same dark range, so an earlier, darker version of this tint (`#121A34`→
- * `#0A0E1F`) was visually indistinguishable from the bare screen behind it —
+ * (`BACKGROUND.overlay`, `#191343`→`#0F0C29`) sits in almost exactly this
+ * same dark range, so an earlier, darker version of this tint (`#171234`→
+ * `#0D0A1F`) was visually indistinguishable from the bare screen behind it —
  * the card had no real color of its own, just a border outline.
  */
-const NAVY_TINT = ['#1C2A50', '#111A36'] as const;
+const NAVY_TINT = ['#231D57', '#161233'] as const;
 
 /** mm:ss clock for active/paused Focus — same shape as FocusBlockScreen. */
 function formatClock(totalSeconds: number): string {
@@ -118,7 +119,7 @@ function FooterPrimaryButton({ label, onPress, accessibilityLabel }: { label: st
         accessibilityLabel={accessibilityLabel}
       >
         <LinearGradient
-          colors={['#3FBEDE', '#4C86E6']}
+          colors={BUTTON.primaryGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.footerPrimaryFill}
@@ -155,9 +156,9 @@ function FooterSecondaryButton({ label, onPress, accessibilityLabel, kind }: { l
       style={styles.footerSecondary}
     >
       {kind === 'reset' ? (
-        <TimerReset size={15} color="rgba(211,250,255,0.85)" strokeWidth={2.3} />
+        <TimerReset size={15} color="rgba(214,250,241,0.85)" strokeWidth={2.3} />
       ) : (
-        <ArrowRight size={15} color="rgba(211,250,255,0.85)" strokeWidth={2.3} />
+        <ArrowRight size={15} color="rgba(214,250,241,0.85)" strokeWidth={2.3} />
       )}
       <Text style={styles.footerSecondaryText} numberOfLines={1}>{label}</Text>
     </TouchableOpacity>
@@ -479,7 +480,7 @@ export function FeaturedSection({
               Goal · {currentGoal}
             </Text>
           ) : null}
-          <ProgressBar progress={elapsed} fill="rgba(157,92,255,0.4)" style={styles.focusProgressTrack} />
+          <ProgressBar progress={elapsed} fill="rgba(123,92,255,0.4)" style={styles.focusProgressTrack} />
           <CardFooter
             primary={{ label: 'Resume Focus', onPress: openFocus, accessibilityLabel: 'Resume Focus' }}
             secondary={{ label: 'View Focus', onPress: openFocus, accessibilityLabel: 'View Focus', kind: 'view' }}
@@ -567,7 +568,7 @@ export function FeaturedSection({
             not a soft glow. Spanning the full width and fading to fully
             transparent well inside the card avoids that edge entirely. */}
         <LinearGradient
-          colors={['rgba(0,224,255,0.11)', 'rgba(0,224,255,0.03)', 'rgba(0,224,255,0)']}
+          colors={['rgba(77,225,193,0.11)', 'rgba(77,225,193,0.03)', 'rgba(77,225,193,0)']}
           locations={[0, 0.55, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
@@ -575,7 +576,7 @@ export function FeaturedSection({
           pointerEvents="none"
         />
         <LinearGradient
-          colors={['rgba(157,92,255,0)', 'rgba(157,92,255,0.03)', 'rgba(157,92,255,0.09)']}
+          colors={['rgba(123,92,255,0)', 'rgba(123,92,255,0.03)', 'rgba(123,92,255,0.09)']}
           locations={[0, 0.45, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
@@ -658,7 +659,7 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 1.5,
-    color: 'rgba(211,250,255,0.62)',
+    color: 'rgba(214,250,241,0.62)',
     textTransform: 'uppercase',
     textAlign: 'center',
   },
@@ -745,7 +746,7 @@ const styles = StyleSheet.create({
     flex: 3,
     borderRadius: 15,
     overflow: 'hidden',
-    shadowColor: 'rgba(63,190,222,0.35)',
+    shadowColor: BUTTON.glow,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
@@ -781,15 +782,15 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     borderRadius: 15,
-    backgroundColor: 'rgba(28,42,80,0.5)',
+    backgroundColor: 'rgba(40,32,96,0.5)',
     borderWidth: 1,
-    borderColor: 'rgba(94,234,255,0.18)',
+    borderColor: 'rgba(77,225,193,0.18)',
   },
   footerSecondaryText: {
     fontFamily: FONTS.bodySemi,
     fontSize: 13.5,
     fontWeight: '600',
-    color: 'rgba(211,250,255,0.85)',
+    color: 'rgba(214,250,241,0.85)',
   },
   durationHintRow: {
     flexDirection: 'row',

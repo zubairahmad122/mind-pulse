@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   labelRow: { minHeight: 16, flexDirection: 'row', alignItems: 'center', gap: 8 },
   labelMark: { width: 3, height: 11, borderRadius: 2, backgroundColor: T.p1, opacity: .82 },
   label: { color: 'rgba(245,247,251,.66)', fontFamily: FONTS.bodyBold, fontSize: 9.5, letterSpacing: 1.65 },
-  card: { backgroundColor: 'rgba(25,27,52,.92)', borderColor: 'rgba(169,139,255,.2)', borderWidth: 1, borderBottomColor: 'rgba(114,232,246,.18)', borderBottomWidth: 1.5, borderRadius: 20, paddingHorizontal: 15, paddingVertical: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: .16, shadowRadius: 16, elevation: 2 },
+  card: { backgroundColor: 'rgba(28,23,72,.92)', borderColor: 'rgba(164,139,255,.2)', borderWidth: 1, borderBottomColor: 'rgba(77,225,193,.18)', borderBottomWidth: 1.5, borderRadius: 20, paddingHorizontal: 15, paddingVertical: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: .16, shadowRadius: 16, elevation: 2 },
   rule: { height: 1, backgroundColor: 'rgba(255,255,255,.075)' },
 
   /* Players */
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
 
   /* Piece style — compact pills, not oversized cards */
   pieceRow: { flexDirection: 'row', gap: 10 },
-  pieceCard: { flex: 1, minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: 17, backgroundColor: 'rgba(25,27,52,.88)', borderWidth: 1, borderColor: 'rgba(169,139,255,.18)', paddingHorizontal: 11, paddingVertical: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: .12, shadowRadius: 12 },
+  pieceCard: { flex: 1, minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: 17, backgroundColor: 'rgba(28,23,72,.88)', borderWidth: 1, borderColor: 'rgba(164,139,255,.18)', paddingHorizontal: 11, paddingVertical: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: .12, shadowRadius: 12 },
   pieceCardActive: { borderColor: T.p1, borderBottomWidth: 2, backgroundColor: 'rgba(55,213,208,0.11)', shadowColor: T.p1, shadowOpacity: .1 },
   piecePreviewRow: { flexDirection: 'row' },
   piecePreviewDot: { width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.25)', marginLeft: -5 },
@@ -242,24 +242,24 @@ const styles = StyleSheet.create({
 
   /* First player */
   chipRow: { flexDirection: 'row', gap: 8 },
-  chip: { flex: 1, minHeight: 50, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(169,139,255,.18)', backgroundColor: 'rgba(25,27,52,.88)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: .1, shadowRadius: 10 },
+  chip: { flex: 1, minHeight: 50, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(164,139,255,.18)', backgroundColor: 'rgba(28,23,72,.88)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: .1, shadowRadius: 10 },
   chipDot: { width: 7, height: 7, borderRadius: 3.5 },
   chipText: { color: T.textMuted, fontFamily: FONTS.bodySemi, fontSize: 12 },
 
   /* Match options — compact rows, one light card */
-  optionsCard: { backgroundColor: 'rgba(25,27,52,.92)', borderColor: 'rgba(169,139,255,.2)', borderWidth: 1, borderBottomColor: 'rgba(114,232,246,.18)', borderBottomWidth: 1.5, borderRadius: 20, paddingHorizontal: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: .16, shadowRadius: 16, elevation: 2 },
+  optionsCard: { backgroundColor: 'rgba(28,23,72,.92)', borderColor: 'rgba(164,139,255,.2)', borderWidth: 1, borderBottomColor: 'rgba(77,225,193,.18)', borderBottomWidth: 1.5, borderRadius: 20, paddingHorizontal: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: .16, shadowRadius: 16, elevation: 2 },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 11, minHeight: 50 },
   toggleText: { flex: 1, color: T.text, fontFamily: FONTS.bodySemi, fontSize: 14 },
 
   /* Rules — lightweight link, not a card. Row layout lives on an inner View
      (not the Pressable itself) so alignment can't be lost to a style-merge quirk. */
   rulesPressable: { borderRadius: 17 },
-  rulesLink: { minHeight: 52, borderRadius: 17, paddingHorizontal: 15, justifyContent: 'center', backgroundColor: 'rgba(25,27,52,.7)', borderWidth: 1, borderColor: 'rgba(169,139,255,.14)' },
+  rulesLink: { minHeight: 52, borderRadius: 17, paddingHorizontal: 15, justifyContent: 'center', backgroundColor: 'rgba(28,23,72,.7)', borderWidth: 1, borderColor: 'rgba(164,139,255,.14)' },
   rulesLinkPressed: { opacity: 0.6 },
   rulesLinkRow: { flexDirection: 'row', alignItems: 'center' },
   rulesLinkText: { flex: 1, color: T.text, fontFamily: FONTS.bodySemi, fontSize: 13.5, includeFontPadding: false },
   rulesLinkIcon: { marginTop: 1 },
 
   /* Sticky CTA footer — opaque scrim so scrolled content never visually collides with it */
-  footer: { paddingHorizontal: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(169,139,255,.1)', backgroundColor: 'rgba(8,9,24,.96)' },
+  footer: { paddingHorizontal: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(164,139,255,.1)', backgroundColor: 'rgba(8,9,24,.96)' },
 });

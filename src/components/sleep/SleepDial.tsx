@@ -318,7 +318,7 @@ export function SleepDial({
           />
 
           {/* Inner clock face */}
-          <Circle r={clockFaceRadius} fill="#12162e" stroke="rgba(255,255,255,0.1)" strokeWidth={1.5} />
+          <Circle r={clockFaceRadius} fill="#16122E" stroke="rgba(255,255,255,0.1)" strokeWidth={1.5} />
 
           {/* Tick marks — only the 4 major hours (12/3/6/9). The 44 minor
               half-hour ticks were removed: a cleaner, less "chunky" face,

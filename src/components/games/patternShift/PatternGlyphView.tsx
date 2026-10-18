@@ -3,7 +3,7 @@ import { memo, useMemo } from 'react';
 import type { GlyphArc, GlyphEdge, GlyphNode, PatternDefinition } from '@/engine/core/games/patternShift';
 
 type Props={glyph:PatternDefinition;size:number;emphasis?:'target'|'candidate'|'correct';dimmed?:boolean};
-const CYAN='#7DEBFA',VIOLET='#A98BFF',SUCCESS='#66E3A5',BLUE='#75BFFF';
+const CYAN='#4DE1C1',VIOLET='#A48BFF',SUCCESS='#66E3A5',BLUE='#75BFFF';
 
 function EdgeShape({edge,nodes,size,color,glow=false}:{edge:GlyphEdge;nodes:Map<string,GlyphNode>;size:number;color:string;glow?:boolean}){
   const path=useMemo(()=>{const from=nodes.get(edge.from),to=nodes.get(edge.to);if(!from||!to)return Skia.Path.Make();const p=Skia.Path.Make(),x1=from.x*size,y1=from.y*size,x2=to.x*size,y2=to.y*size;p.moveTo(x1,y1);if(edge.kind==='curved'){const dx=x2-x1,dy=y2-y1,bend=.12*size;p.cubicTo(x1+dx*.35-dy/Math.max(1,Math.hypot(dx,dy))*bend,y1+dy*.35+dx/Math.max(1,Math.hypot(dx,dy))*bend,x1+dx*.7-dy/Math.max(1,Math.hypot(dx,dy))*bend,y1+dy*.7+dx/Math.max(1,Math.hypot(dx,dy))*bend,x2,y2);}else if(edge.kind==='orthogonal'){const horizontalFirst=Math.abs(x2-x1)>=Math.abs(y2-y1),bx=horizontalFirst?x2:x1,by=horizontalFirst?y1:y2;p.lineTo(bx,by);p.lineTo(x2,y2);}else p.lineTo(x2,y2);return p;},[edge,nodes,size]);

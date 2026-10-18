@@ -100,8 +100,8 @@ export function StarfieldGuide({ active }: Props) {
       <Svg width="260" height="260" style={StyleSheet.absoluteFill}>
         <Defs>
           <RadialGradient id="zenGlow" cx="130" cy="130" r="75" fx="130" fy="130" gradientUnits="userSpaceOnUse">
-            <Stop offset="0%" stopColor="#00E0FF" stopOpacity="0.22" />
-            <Stop offset="50%" stopColor="#4FC3F7" stopOpacity="0.08" />
+            <Stop offset="0%" stopColor="#4DE1C1" stopOpacity="0.22" />
+            <Stop offset="50%" stopColor="#4DE1C1" stopOpacity="0.08" />
             <Stop offset="100%" stopColor="#040408" stopOpacity="0" />
           </RadialGradient>
         </Defs>
@@ -121,16 +121,16 @@ export function StarfieldGuide({ active }: Props) {
             cx="130"
             cy="130"
             r="48"
-            stroke="rgba(79, 195, 247, 0.3)"
+            stroke="rgba(77,225,193, 0.3)"
             strokeWidth="1.2"
             fill="none"
           />
 
           {/* Intersecting sacred geometry loops */}
-          <Circle cx="106" cy="130" r="24" stroke="rgba(123, 97, 255, 0.15)" strokeWidth="1" fill="none" />
-          <Circle cx="154" cy="130" r="24" stroke="rgba(123, 97, 255, 0.15)" strokeWidth="1" fill="none" />
-          <Circle cx="130" cy="106" r="24" stroke="rgba(123, 97, 255, 0.15)" strokeWidth="1" fill="none" />
-          <Circle cx="130" cy="154" r="24" stroke="rgba(123, 97, 255, 0.15)" strokeWidth="1" fill="none" />
+          <Circle cx="106" cy="130" r="24" stroke="rgba(123,92,255, 0.15)" strokeWidth="1" fill="none" />
+          <Circle cx="154" cy="130" r="24" stroke="rgba(123,92,255, 0.15)" strokeWidth="1" fill="none" />
+          <Circle cx="130" cy="106" r="24" stroke="rgba(123,92,255, 0.15)" strokeWidth="1" fill="none" />
+          <Circle cx="130" cy="154" r="24" stroke="rgba(123,92,255, 0.15)" strokeWidth="1" fill="none" />
         </AnimatedG>
 
         {/* Mandala Inner Group (Counter-Clockwise) */}

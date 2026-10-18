@@ -31,7 +31,7 @@ const PARTICLE_TYPES: Record<ParticleKind, ParticleTypeConfig> = {
     kind: 'rain',
     count: 30,
     color: 'rgba(100, 181, 246, 0.6)',
-    secondaryColor: 'rgba(79, 195, 247, 0.3)',
+    secondaryColor: 'rgba(77,225,193, 0.3)',
     symbol: '💧',
     speedRange: [180, 380],
     sizeRange: [10, 18],
@@ -42,7 +42,7 @@ const PARTICLE_TYPES: Record<ParticleKind, ParticleTypeConfig> = {
   bubbles: {
     kind: 'bubbles',
     count: 20,
-    color: 'rgba(79, 195, 247, 0.4)',
+    color: 'rgba(77,225,193, 0.4)',
     secondaryColor: 'rgba(179, 229, 252, 0.2)',
     symbol: '○',
     speedRange: [30, 80],

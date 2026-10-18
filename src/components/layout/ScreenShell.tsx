@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { BACKGROUND, SPACING } from '@/constants/designSystem';
 import { PillarProvider, type PillarKey } from '@/context/PillarContext';
 import { useTabBarSpace } from '@/components/layout/GlassTabBar';
+import { BannerAdSlot } from '@/components/ads/BannerAdSlot';
+import { useAds } from '@/hooks/useAds';
 
 type Props = {
   children: React.ReactNode;
@@ -29,6 +31,13 @@ type Props = {
    * scroll to reach it. Only meaningful when `scroll` is true.
    */
   footer?: React.ReactNode;
+  /**
+   * Show the banner ad docked below the scroll area for free users. Unlike
+   * passing `<BannerAdSlot />` as `footer` (always truthy, so the footer's
+   * padding showed as an empty band even for Pro users or before an ad
+   * loaded), the footer space here is only reserved once an ad has loaded.
+   */
+  bannerAd?: boolean;
   /**
    * Optional fixed header — rendered above the scroll area, outside it, so
    * body content always starts below it and can never scroll underneath or
@@ -67,6 +76,7 @@ export function ScreenShell({
   pillar = 'mind',
   ambient,
   footer,
+  bannerAd = false,
   header,
   scrollEnabled = true,
   stickyHeaderIndices,
@@ -74,6 +84,11 @@ export function ScreenShell({
   const insets = useSafeAreaInsets();
   // On tab screens this is the floating glass bar's reserved space; 0 elsewhere.
   const tabBarSpace = useTabBarSpace();
+  const showAds = useAds();
+  const [adLoaded, setAdLoaded] = useState(false);
+  const adActive = bannerAd && showAds;
+  const adVisible = adActive && adLoaded;
+  const hasFooter = !!footer || adVisible;
 
   const bottomClearance =
     SPACING.screenBottom + tabBarSpace + (safeBottom ? Math.max(insets.bottom, 8) : 0);
@@ -89,7 +104,7 @@ export function ScreenShell({
       style={styles.flex}
       contentContainerStyle={[
         styles.scrollContent,
-        { paddingBottom: footer ? SPACING.section : bottomClearance },
+        { paddingBottom: hasFooter ? SPACING.section : bottomClearance },
         contentStyle,
       ]}
       showsVerticalScrollIndicator={false}
@@ -125,9 +140,20 @@ export function ScreenShell({
         <View style={styles.flex}>
           {header}
           {content}
-          {footer && (
-            <View style={[styles.footer, { paddingBottom: tabBarSpace + 12 }]}>
+          {/* One mount point for the banner, so it isn't remounted (and the
+              loaded ad thrown away) when it becomes visible. Until an ad
+              loads, the wrapper is absolute + transparent: the banner can
+              still request an ad but takes no layout space. */}
+          {(footer || adActive) && (
+            <View
+              style={
+                hasFooter
+                  ? [styles.footer, { paddingBottom: tabBarSpace + 12 }]
+                  : styles.adPending
+              }
+            >
               {footer}
+              {adActive && <BannerAdSlot onLoadedChange={setAdLoaded} />}
             </View>
           )}
         </View>
@@ -148,6 +174,16 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: SPACING.screenH,
     paddingTop: 12,
-    backgroundColor: BACKGROUND.base,
+    // No background fill — lets the shared AnimatedBackground gradient
+    // show through behind it, same as everywhere else on the screen,
+    // instead of a flat block that reads as a visual glitch.
+  },
+  adPending: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0,
+    pointerEvents: 'none',
   },
 });

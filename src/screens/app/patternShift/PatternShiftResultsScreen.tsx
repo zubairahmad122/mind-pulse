@@ -66,10 +66,10 @@ export default function PatternShiftResultsScreen() {
     </GlassCard>
 
     <View style={styles.grid}>
-      <Metric icon={<Crosshair size={16} color="#74E6F5" />} value={`${Math.round(record.accuracy * 100)}%`} label="ACCURACY" />
-      <Metric icon={<Clock3 size={16} color="#74E6F5" />} value={`${(record.averageResponseMs / 1000).toFixed(1)}s`} label="AVG RESPONSE" />
-      <Metric icon={<Flame size={16} color="#74E6F5" />} value={String(record.bestStreak)} label="BEST STREAK" />
-      <Metric icon={<Gauge size={16} color="#74E6F5" />} value={`Tier ${record.highestDifficulty}`} label="HIGHEST" />
+      <Metric icon={<Crosshair size={16} color="#4DE1C1" />} value={`${Math.round(record.accuracy * 100)}%`} label="ACCURACY" />
+      <Metric icon={<Clock3 size={16} color="#4DE1C1" />} value={`${(record.averageResponseMs / 1000).toFixed(1)}s`} label="AVG RESPONSE" />
+      <Metric icon={<Flame size={16} color="#4DE1C1" />} value={String(record.bestStreak)} label="BEST STREAK" />
+      <Metric icon={<Gauge size={16} color="#4DE1C1" />} value={`Tier ${record.highestDifficulty}`} label="HIGHEST" />
     </View>
 
     <View style={styles.insight}>
@@ -109,12 +109,12 @@ const styles = StyleSheet.create({
   hero: { alignItems: 'center', paddingTop: 30, paddingBottom: 24 },
   score: { fontFamily: FONTS.heading, fontSize: 52, lineHeight: 58, color: '#fff' },
   scoreLabel: { fontSize: 9, fontWeight: '900', letterSpacing: 1.5, color: colors.text.tertiary, marginTop: 2 },
-  xp: { fontFamily: FONTS.headingSemi, fontSize: 16, color: '#7DEBFA', marginTop: 12 },
+  xp: { fontFamily: FONTS.headingSemi, fontSize: 16, color: '#4DE1C1', marginTop: 12 },
   levelCard: { paddingVertical: 15, marginBottom: 12 },
   levelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   level: { fontFamily: FONTS.headingSemi, fontSize: 15, color: '#fff', letterSpacing: .5 },
   levelXp: { fontSize: 11, color: colors.text.secondary },
-  levelUp: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: '#7DEBFA' },
+  levelUp: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: '#4DE1C1' },
   unlock: { fontFamily: FONTS.headingSemi, fontSize: 16, color: '#fff', marginTop: 4 },
   bar: { marginTop: 11 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

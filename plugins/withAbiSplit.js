@@ -1,4 +1,4 @@
-const { withAppBuildGradle } = require("@expo/config-plugins");
+const { withAppBuildGradle } = require("expo/config-plugins");
 
 // APK builds (dev client / preview / local `assembleRelease`) otherwise ship
 // one universal binary containing arm64-v8a + armeabi-v7a + x86 + x86_64 native

@@ -27,11 +27,12 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useSleep } from "@/context/SleepContext";
 import { useSubscription } from "@/context/SubscriptionContext";
 import { useEveningReminderSetting } from "@/hooks/useEveningReminderSetting";
+import { useScreenTimeAlertSetting } from "@/hooks/useScreenTimeAlertSetting";
 import { useEyeScore } from "@/hooks/useEyeScore";
 import { useMindScore } from "@/hooks/useMindScore";
 import { useSleepScore } from "@/hooks/useSleepScore";
 import { useUnlockedAchievements } from "@/hooks/useUnlockedAchievements";
-import { useProgressStore } from "@/stores/useProgressStore";
+import { useWeeklyActivity } from "@/hooks/useActivity";
 import { useWellnessStore } from "@/stores/useWellnessStore";
 import { calculateMindPulseScore } from "@/utils/scoring";
 import { addDaysISO, getMondayISO, todayISO } from "@/utils/dateUtils";
@@ -48,6 +49,7 @@ import {
   LogOut,
   Moon,
   Sparkles,
+  TrendingUp,
   Trophy,
 } from "lucide-react-native";
 import {
@@ -181,6 +183,11 @@ export default function ProfileScreen() {
     loading: reminderLoading,
     toggle: toggleReminder,
   } = useEveningReminderSetting(user?.uid);
+  const {
+    enabled: screenTimeAlertEnabled,
+    loading: screenTimeAlertLoading,
+    toggle: toggleScreenTimeAlert,
+  } = useScreenTimeAlertSetting(user?.uid);
 
   const eyeResult = useEyeScore(user?.uid ?? undefined);
   const mindResult = useMindScore(user?.uid ?? undefined);
@@ -189,7 +196,7 @@ export default function ProfileScreen() {
     user?.isAnonymous ?? true,
   );
   const { unlockedCount, totalCount } = useUnlockedAchievements();
-  const weeklySessions = useProgressStore((s) => s.weeklySessions);
+  const { activities: weekActivities } = useWeeklyActivity();
 
   const isGuest = user?.isAnonymous ?? true;
   const displayName = isGuest
@@ -217,12 +224,8 @@ export default function ProfileScreen() {
         ? 100
         : 0;
 
-  const totalWeeklySessions =
-    weeklySessions.eye +
-    weeklySessions.eyeGames +
-    weeklySessions.relax +
-    weeklySessions.mind +
-    weeklySessions.sleep;
+  // Every completed activity this week, any pillar (unified activity log).
+  const totalWeeklySessions = weekActivities.length;
 
   const handleSignOut = () => {
     Alert.alert(
@@ -249,7 +252,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScreenShell safeBottom ambient={<AmbientBackground />}>
+    <ScreenShell ambient={<AmbientBackground />} bannerAd>
       <ScreenTransition>
         <ScreenHeader
           title="Profile"
@@ -344,7 +347,7 @@ export default function ProfileScreen() {
         <View style={styles.statsRow}>
           <StatCell
             icon={Flame}
-            color="#FF9800"
+            color={PILLAR_COLORS.challenge}
             value={String(streak)}
             label="Day streak"
             context={streak > 0 ? "Keep going" : undefined}
@@ -359,7 +362,7 @@ export default function ProfileScreen() {
           />
           <StatCell
             icon={Sparkles}
-            color="#22d3ee"
+            color="#4DE1C1"
             value={
               anyLoading
                 ? "–"
@@ -459,8 +462,47 @@ export default function ProfileScreen() {
               value={reminderEnabled}
               onValueChange={toggleReminder}
               disabled={reminderLoading}
-              trackColor={{ false: "#252542", true: ACCENT }}
+              trackColor={{ false: "#2A2460", true: ACCENT }}
               thumbColor={reminderEnabled ? "#FFFFFF" : colors.text.secondary}
+            />
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.settingsCard}>
+          <View style={styles.settingsRow}>
+            <View
+              style={[
+                styles.settingsIconWrap,
+                {
+                  backgroundColor: screenTimeAlertEnabled
+                    ? ACCENT + "26"
+                    : "rgba(255,255,255,0.08)",
+                  borderColor: screenTimeAlertEnabled
+                    ? ACCENT + "40"
+                    : "rgba(255,255,255,0.12)",
+                },
+              ]}
+            >
+              <TrendingUp
+                size={18}
+                color={screenTimeAlertEnabled ? ACCENT : colors.text.tertiary}
+                strokeWidth={2}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingsTitle}>Screen Time Alerts</Text>
+              <Text style={styles.settingsSub}>
+                {screenTimeAlertEnabled
+                  ? "Weekly trend & high-usage-day alerts are on"
+                  : "Get notified if your screen time is climbing"}
+              </Text>
+            </View>
+            <Switch
+              value={screenTimeAlertEnabled}
+              onValueChange={toggleScreenTimeAlert}
+              disabled={screenTimeAlertLoading}
+              trackColor={{ false: "#2A2460", true: ACCENT }}
+              thumbColor={screenTimeAlertEnabled ? "#FFFFFF" : colors.text.secondary}
             />
           </View>
         </GlassCard>

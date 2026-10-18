@@ -32,27 +32,27 @@ export type SessionCategory = 'breathe' | 'release' | 'ground' | 'sleep';
  * session-by-session within the same category. Used everywhere a category
  * shows up on the Relax screen: hero, cards, icons, progress bar, buttons.
  *
- * NOTE: `sleep` (Wind Down) no longer matches PILLAR_COLORS.sleep (#a78bfa) —
+ * NOTE: `sleep` (Wind Down) no longer matches PILLAR_COLORS.sleep (#A48BFF) —
  * an earlier round deliberately aligned them so Relax's Wind Down matched the
  * Sleep tab's own accent. This palette is a newer, explicit instruction to
  * use one fixed 4-color set inside Relax; flagging the tradeoff since it
  * re-introduces that cross-screen mismatch.
  */
 export const CATEGORY_COLOR: Record<SessionCategory, string> = {
-  breathe: '#36D3FF',
-  release: '#5CE4B4',
+  breathe: '#A48BFF',
+  release: '#4DE1C1',
   ground: '#F3B74D',
-  sleep: '#8D6BFF',
+  sleep: '#6C63FF',
 };
 
 /** A brighter tint of each category color, for text that sits on a filled
  * pill of the base color (e.g. the Start button) — plain base-color text on
  * a base-color-tinted background reads flat/low-contrast. */
 export const CATEGORY_COLOR_LIGHT: Record<SessionCategory, string> = {
-  breathe: '#6FD8FF',
-  release: '#8FF0D0',
+  breathe: '#C9B8FF',
+  release: '#8EF0DA',
   ground: '#FFD98F',
-  sleep: '#B9A6FF',
+  sleep: '#A9A3FF',
 };
 
 export interface RelaxSession {

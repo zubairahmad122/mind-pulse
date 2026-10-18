@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   },
   sheet: {
     maxHeight: '62%',
-    backgroundColor: '#11162a',
+    backgroundColor: '#1A1545',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     overflow: 'hidden',

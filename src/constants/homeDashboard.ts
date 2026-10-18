@@ -14,8 +14,8 @@ export type QuickAction = {
 };
 
 export const QUICK_ACTIONS: QuickAction[] = [
-  { id: 'audio', label: 'Start Relax Session', description: 'Guided audio to unwind', accent: '#4FC3F7', icon: Music, route: '/(app)/(tabs)/relax' },
-  { id: 'sleep', label: 'Sleep Analysis', description: 'Plan tonight & review rest', accent: '#a78bfa', icon: Moon, route: '/(app)/(tabs)/sleep?tab=tonight' },
+  { id: 'audio', label: 'Start Relax Session', description: 'Guided audio to unwind', accent: '#4DE1C1', icon: Music, route: '/(app)/(tabs)/relax' },
+  { id: 'sleep', label: 'Sleep Analysis', description: 'Plan tonight & review rest', accent: '#A48BFF', icon: Moon, route: '/(app)/(tabs)/sleep?tab=tonight' },
   // The eye quick action wears the single Eyes-pillar cyan, matching every
   // eye card (was a mismatched green here).
   { id: 'eye', label: 'Eye Exercise', description: 'Reduce strain & refocus', accent: PILLAR_COLORS.eye, icon: Eye, route: '/(app)/(tabs)/eye-relax' },

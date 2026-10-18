@@ -79,6 +79,18 @@ class MindPulseScreenUsageModule : Module() {
     AsyncFunction("setSmartResetLastResetCompletedAt") { lastResetCompletedAt: Double? ->
       SmartResetReminderState.setLastResetCompletedAt(context, lastResetCompletedAt?.toLong())
     }
+
+    AsyncFunction("hasDndAccess") {
+      hasDndAccess()
+    }
+
+    AsyncFunction("openDndAccessSettings") {
+      openDndAccessSettings()
+    }
+
+    AsyncFunction("setFocusDndEnabled") { enabled: Boolean ->
+      setFocusDndEnabled(enabled)
+    }
   }
 
   private fun hasUsageAccess(): Boolean {
@@ -110,6 +122,61 @@ class MindPulseScreenUsageModule : Module() {
   private fun notificationsEnabled(): Boolean {
     val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     return manager.areNotificationsEnabled()
+  }
+
+  /**
+   * "Do Not Disturb access" — a separate special-access toggle from ordinary
+   * notification permission, granted per-app from Android's own Settings
+   * screen (same shape as Usage Access: no runtime prompt, user must
+   * explicitly flip it on). Required before [setFocusDndEnabled] can
+   * actually change the system-wide interruption filter.
+   */
+  private fun hasDndAccess(): Boolean {
+    val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    return manager.isNotificationPolicyAccessGranted
+  }
+
+  /**
+   * Deep link into Android's "Do Not Disturb access" settings list.
+   * Unlike Usage Access, AOSP has no officially supported app-scoped variant
+   * of this intent — stock Android always opens the general list, full stop.
+   * `EXTRA_APP_PACKAGE` isn't part of this action's documented contract, but
+   * costs nothing to include: ignored on stock AOSP, and some OEM skins
+   * (MIUI's "Modes access" list included) do use it to pre-select or filter
+   * to the calling app. Best-effort, not a guarantee on every device.
+   * Returns whether `startActivity` actually succeeded — some OEM builds
+   * don't resolve this intent at all, and the JS side needs to know that
+   * rather than assume a silent no-op meant "already handled".
+   */
+  private fun openDndAccessSettings(): Boolean {
+    return runCatching {
+      context.startActivity(
+        Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
+      )
+    }.isSuccess
+  }
+
+  /**
+   * Toggles system-wide Do Not Disturb for the duration of a Focus session.
+   * Uses `INTERRUPTION_FILTER_PRIORITY` — the same "Priority only" mode the
+   * user already knows from the system DND toggle — not `FILTER_NONE`
+   * (total silence), so alarms and the user's own starred priority
+   * contacts/apps still get through; only ordinary notification noise is
+   * held back. Returns `false` (and changes nothing) if DND access hasn't
+   * been granted yet — the JS side gates the toggle UI on [hasDndAccess]
+   * first, but this guard exists in case that state goes stale (e.g. the
+   * user revoked access in Settings mid-session).
+   */
+  private fun setFocusDndEnabled(enabled: Boolean): Boolean {
+    val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    if (!manager.isNotificationPolicyAccessGranted) return false
+    manager.setInterruptionFilter(
+      if (enabled) NotificationManager.INTERRUPTION_FILTER_PRIORITY
+      else NotificationManager.INTERRUPTION_FILTER_ALL,
+    )
+    return true
   }
 
   /** Best-effort deep link into MindPulse's own row in Usage Access settings. */

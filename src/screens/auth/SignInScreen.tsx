@@ -118,15 +118,15 @@ export default function SignInScreen() {
                     >
                       <Stop
                         offset="0%"
-                        stopColor="#00D4FF"
+                        stopColor="#4DE1C1"
                         stopOpacity={0.16}
                       />
                       <Stop
                         offset="52%"
-                        stopColor="#1A8FFF"
+                        stopColor="#7B5CFF"
                         stopOpacity={0.05}
                       />
-                      <Stop offset="100%" stopColor="#1A8FFF" stopOpacity={0} />
+                      <Stop offset="100%" stopColor="#7B5CFF" stopOpacity={0} />
                     </RadialGradient>
                   </Defs>
                   <Rect width="108" height="100" fill="url(#signInIconGlow)" />
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   brandIcon: {
     width: 92,
     height: 92,
-    shadowColor: '#00D4FF',
+    shadowColor: '#4DE1C1',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.14,
     shadowRadius: 8,

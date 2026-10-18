@@ -178,6 +178,57 @@ export async function setNativeSmartResetLastResetCompletedAt(
   }
 }
 
+/** Whether this app currently has "Do Not Disturb access" granted — a
+ * separate special-access toggle from Usage Access, required before
+ * {@link setFocusDndEnabled} can do anything. */
+export async function hasDndAccess(): Promise<boolean> {
+  const native = getNativeModule();
+  if (!native?.hasDndAccess) return false;
+  try {
+    return await native.hasDndAccess();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Opens Android's "Do Not Disturb access" settings list. Never assume
+ * access was granted just because this resolved — re-check with
+ * {@link hasDndAccess} on return, same convention as `openUsageAccessSettings`.
+ *
+ * Returns whether the Settings screen was actually reachable — `false`
+ * means either this build's native module doesn't have the function yet
+ * (needs a fresh native build, not just a JS reload) or the OS itself
+ * couldn't resolve the intent. Callers should surface `false` to the user
+ * instead of letting the tap silently do nothing.
+ */
+export async function openDndAccessSettings(): Promise<boolean> {
+  const native = getNativeModule();
+  if (!native?.openDndAccessSettings) return false;
+  try {
+    return await native.openDndAccessSettings();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Turns system-wide Do Not Disturb on/off for a Focus session — Android
+ * only, no-ops (returns `false`) without DND access granted or on any
+ * other platform. Safe to call from a `finally`/cleanup path: failures are
+ * swallowed rather than thrown, since failing to restore DND should never
+ * crash the surrounding focus-session logic.
+ */
+export async function setFocusDndEnabled(enabled: boolean): Promise<boolean> {
+  const native = getNativeModule();
+  if (!native?.setFocusDndEnabled) return false;
+  try {
+    return await native.setFocusDndEnabled(enabled);
+  } catch {
+    return false;
+  }
+}
+
 /** Defensive mirror of native's `ScreenUsageCalculator.TOP_APPS_MAX`. */
 const MAX_TOP_APPS = 5;
 

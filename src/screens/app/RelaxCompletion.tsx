@@ -1,111 +1,109 @@
-import { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { ArrowRight, Check, ChevronRight, Star } from 'lucide-react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+
+import { ScreenShell } from '@/components/layout/ScreenShell';
 import { AmbientBackground } from '@/components/ui';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GradientCTA } from '@/components/ui/GradientCTA';
-import { ScreenShell } from '@/components/layout/ScreenShell';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowRight, CheckCircle2, CheckCheck, Flame, Home, Star } from 'lucide-react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  Easing,
-} from 'react-native-reanimated';
+import { HeroCard } from '@/components/ui/HeroCard';
+import { SectionLabel } from '@/components/ui/SectionLabel';
+import { StaggerItem } from '@/components/ui/StaggerItem';
 
-import { EMOTIONAL_STATES, type EmotionalState } from '@/constants/emotionalStates';
-import { getSessionById, getRecommendedSession, getSessionRoute } from '@/constants/relaxSessions';
-import { useSessionCompleteInterstitial } from '@/services/ads/useSessionCompleteInterstitial';
 import { colors } from '@/constants/colors';
-import { PILLAR_COLORS } from '@/constants/designSystem';
+import { FONTS, PILLAR_COLORS, RADIUS, SPACING, SURFACE_TINT, TYPOGRAPHY } from '@/constants/designSystem';
+import { EMOTION_ICONS, EMOTIONAL_STATES, type EmotionalState } from '@/constants/emotionalStates';
+import {
+  CATEGORY_COLOR,
+  formatSessionDuration,
+  getRecommendedSession,
+  getSessionById,
+  getSessionRoute,
+} from '@/constants/relaxSessions';
 import { ROUTES } from '@/constants/routes';
 import { spacing } from '@/constants/spacing';
 import { useAuth } from '@/context/AuthContext';
 import { useRelaxContext } from '@/context/RelaxContext';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
+import { useSessionCompleteInterstitial } from '@/services/ads/useSessionCompleteInterstitial';
 import { recordResetCompleted } from '@/services/screenBalancePersistence';
 
-// Same accent as the Relax tab / session player — one color for the feature.
-// Was a stale green (#34D399) predating the frozen spec's blue Relax accent.
+/** The Relax pillar's single accent — same as the Relax tab and player. */
 const RELAX_ACCENT = PILLAR_COLORS.relax;
+const STAR_COLOR = '#FFC83D';
+const CATEGORY_LABEL = { breathe: 'Breathe', release: 'Release', ground: 'Ground', sleep: 'Wind Down' } as const;
 
-// Emotion grid: 3 columns. Card widths are computed in pixels from the
-// measured grid width — percentage widths + gap wrapped to a broken
-// 2-column layout on narrow screens.
-const EMOTION_GAP = 10;
-const EMOTION_COLUMNS = 3;
+/** Success badge — a soft ring that springs in, then the check fades up. */
+function SuccessBadge() {
+  const scale = useSharedValue(0.6);
+  const opacity = useSharedValue(0);
+  const check = useSharedValue(0);
+
+  useEffect(() => {
+    scale.value = withSpring(1, { damping: 11, stiffness: 140 });
+    opacity.value = withTiming(1, { duration: 320, easing: Easing.out(Easing.quad) });
+    check.value = withDelay(220, withTiming(1, { duration: 280 }));
+  }, [scale, opacity, check]);
+
+  const ringStyle = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ scale: scale.value }] }));
+  const checkStyle = useAnimatedStyle(() => ({ opacity: check.value, transform: [{ scale: 0.7 + check.value * 0.3 }] }));
+
+  return (
+    <Animated.View style={[styles.badgeRing, ringStyle]}>
+      <View style={styles.badgeCore}>
+        <Animated.View style={checkStyle}>
+          <Check size={30} color={RELAX_ACCENT} strokeWidth={2.6} />
+        </Animated.View>
+      </View>
+    </Animated.View>
+  );
+}
+
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <View style={styles.stat}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
 
 export default function RelaxCompletion() {
   const router = useRouter();
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const [selectedEmotion, setSelectedEmotion] = useState<EmotionalState | null>(null);
-  const [rated, setRated] = useState(false);
-  const [gridWidth, setGridWidth] = useState(0);
+  const [rating, setRating] = useState(0);
+
   // The closing narration from the session is still playing when we arrive —
   // let it finish here, and stop it only when the user leaves this screen.
   const { stop: stopVoice } = useAudioGuide();
-  useEffect(() => {
-    return () => stopVoice();
-  }, [stopVoice]);
+  useEffect(() => () => stopVoice(), [stopVoice]);
 
   const { maybeShow } = useSessionCompleteInterstitial();
   useEffect(() => {
     void maybeShow();
   }, [maybeShow]);
 
-  // Celebration animations
-  const heroScale = useSharedValue(0.5);
-  const heroOpacity = useSharedValue(0);
-  const statsSlide = useSharedValue(-50);
-  const statsOpacity = useSharedValue(0);
-  const emotionSlide = useSharedValue(-50);
-  const emotionOpacity = useSharedValue(0);
-
   useEffect(() => {
-    // Animate hero section
-    heroScale.value = withSpring(1, { damping: 8, mass: 1 });
-    heroOpacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) });
-
-    // Animate stats section
-    setTimeout(() => {
-      statsSlide.value = withTiming(0, { duration: 500, easing: Easing.out(Easing.ease) });
-      statsOpacity.value = withTiming(1, { duration: 500 });
-    }, 200);
-
-    // Animate emotion section
-    setTimeout(() => {
-      emotionSlide.value = withTiming(0, { duration: 500, easing: Easing.out(Easing.ease) });
-      emotionOpacity.value = withTiming(1, { duration: 500 });
-    }, 400);
-
-    // Haptic feedback on load
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  }, [heroScale, heroOpacity, statsSlide, statsOpacity, emotionSlide, emotionOpacity]);
+  }, []);
 
   const session = getSessionById(sessionId || '');
   const { completedSessions, completeSession, updateLastCompletion } = useRelaxContext();
   const { user } = useAuth();
   const [weekStart] = useState(() => Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const heroAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: heroScale.value }],
-    opacity: heroOpacity.value,
-  }));
-
-  const statsAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: statsSlide.value }],
-    opacity: statsOpacity.value,
-  }));
-
-  const emotionAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: emotionSlide.value }],
-    opacity: emotionOpacity.value,
-  }));
-
-  // Record the completion as soon as this screen opens, so the stats above are
+  // Record the completion as soon as this screen opens, so the stats are
   // correct immediately. Mood + rating get attached to this record afterwards.
   const recordedRef = useRef(false);
   useEffect(() => {
@@ -121,7 +119,7 @@ export default function RelaxCompletion() {
     return (
       <ScreenShell ambient={<AmbientBackground subtle />}>
         <View style={styles.notFound}>
-          <Text style={{ color: colors.text.primary }}>Session not found</Text>
+          <Text style={styles.notFoundText}>Session not found</Text>
         </View>
       </ScreenShell>
     );
@@ -130,212 +128,200 @@ export default function RelaxCompletion() {
   const handleSelectEmotion = (emotion: EmotionalState) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedEmotion(emotion);
+    // Save the mood on its own too — previously it was only kept if a rating followed.
+    updateLastCompletion(emotion, rating);
   };
 
-  const handleRate = (rating: number) => {
+  const handleRate = (value: number) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setRated(true);
-    updateLastCompletion(selectedEmotion, rating);
+    setRating(value);
+    updateLastCompletion(selectedEmotion, value);
   };
 
-  const handleHome = () => {
-    // Pop back to where the session was launched from; if there's nothing
-    // beneath (deep link), honor the button's label and go Home.
-    if (router.canGoBack()) router.back();
-    else router.replace(ROUTES.appHome as never);
+  // Always land on the main Relax tab — not wherever the session happened to
+  // be launched from (Home, Daily Challenge, Digital Sunset). dismissTo pops
+  // back to the existing tabs screen and selects Relax, or replaces with it
+  // when there's nothing to pop to (deep link).
+  const handleBackToRelax = () => {
+    router.dismissTo(ROUTES.appRelax as never);
   };
 
+  const thisWeek = completedSessions.filter(s => s.completedAt > weekStart);
+  const weekMinutes = Math.round(
+    thisWeek.reduce((sum, r) => sum + (getSessionById(r.sessionId)?.durationSeconds ?? 0), 0) / 60,
+  );
   const nextSession = selectedEmotion ? getRecommendedSession(selectedEmotion) : null;
-  const thisWeekSessions = completedSessions.filter(
-    (s: any) => s.completedAt > weekStart
-  ).length;
+  const showNext = !!nextSession && nextSession.id !== sessionId;
+  const categoryColor = CATEGORY_COLOR[session.category];
+  const SessionIcon = session.icon;
 
   return (
     <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
       <View style={styles.page}>
-        {/* ─── Celebration Hero Section ─────────────────────── */}
-        <Animated.View style={[styles.heroSection, heroAnimStyle]}>
-          <View style={[styles.celebrationGlow, { backgroundColor: RELAX_ACCENT + '20' }]} />
-
-          <View style={[styles.heroIcon, { borderColor: RELAX_ACCENT + '40', shadowColor: RELAX_ACCENT }]}>
-            <LinearGradient
-              colors={[RELAX_ACCENT + '30', RELAX_ACCENT + '10']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <CheckCircle2 size={52} color={RELAX_ACCENT} strokeWidth={1.8} />
+        {/* ── Header — success badge + what was completed ── */}
+        <StaggerItem index={0}>
+          <View style={styles.header}>
+            <SuccessBadge />
+            <Text style={styles.eyebrow}>SESSION COMPLETE</Text>
+            <Text style={styles.title}>Well done</Text>
+            <Text style={styles.subtitle}>You took a few minutes just for yourself.</Text>
           </View>
+        </StaggerItem>
 
-          <Text style={styles.celebrationText}>Well Done!</Text>
-          <Text style={[styles.sessionTitle, { color: RELAX_ACCENT }]}>{session.title}</Text>
-          <Text style={styles.sessionDuration}>
-            {Math.round(session.durationSeconds / 60)} minutes of peace
-          </Text>
-        </Animated.View>
-
-        {/* ─── Progress Stats ──────────────────────────────── */}
-        <Animated.View style={[styles.statsSection, statsAnimStyle]}>
-          <GlassCard style={styles.statCell}>
-            <View style={[styles.statIcon, { borderColor: RELAX_ACCENT + '38' }]}>
-              <LinearGradient
-                colors={[RELAX_ACCENT + '28', RELAX_ACCENT + '10']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-              />
-              <CheckCheck size={18} color={RELAX_ACCENT} />
-            </View>
-            <Text style={styles.statNumber}>{thisWeekSessions}</Text>
-            <Text style={styles.statLabel}>This week</Text>
-          </GlassCard>
-
-          <GlassCard style={styles.statCell}>
-            <View style={[styles.statIcon, { borderColor: RELAX_ACCENT + '38' }]}>
-              <LinearGradient
-                colors={[RELAX_ACCENT + '28', RELAX_ACCENT + '10']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-              />
-              <Flame size={18} color={RELAX_ACCENT} />
-            </View>
-            <Text style={styles.statNumber}>{completedSessions.length}</Text>
-            <Text style={styles.statLabel}>Total sessions</Text>
-          </GlassCard>
-        </Animated.View>
-
-        {/* ─── Emotion Feedback ──────────────────────────── */}
-        <Animated.View style={[styles.feedbackSection, emotionAnimStyle]}>
-          <Text style={styles.sectionTitle}>How are you feeling now?</Text>
-
-          <View
-            style={styles.emotionGrid}
-            onLayout={e => setGridWidth(e.nativeEvent.layout.width)}
-          >
-            {EMOTIONAL_STATES.map(emotion => {
-              const isSelected = selectedEmotion === emotion.state;
-              const cardWidth = gridWidth
-                ? Math.floor((gridWidth - EMOTION_GAP * (EMOTION_COLUMNS - 1)) / EMOTION_COLUMNS)
-                : undefined;
-              return (
-                <TouchableOpacity
-                  key={emotion.state}
-                  onPress={() => handleSelectEmotion(emotion.state)}
-                  style={[
-                    styles.emotionCard,
-                    cardWidth != null && { width: cardWidth },
-                    isSelected && {
-                      backgroundColor: emotion.color + '1f',
-                      borderColor: emotion.color,
-                      shadowColor: emotion.color,
-                      shadowOpacity: 0.35,
-                    },
-                  ]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.emotionEmoji}>{emotion.emoji}</Text>
-                  <Text
-                    style={[
-                      styles.emotionName,
-                      isSelected && { color: emotion.color, fontWeight: '800' },
-                    ]}
-                  >
-                    {emotion.label}
+        {/* ── Hero — the session + this week's real totals ── */}
+        <StaggerItem index={1}>
+          <HeroCard>
+            <View style={styles.heroInner}>
+              <View style={styles.heroTitleRow}>
+                <View style={[styles.heroIcon, { borderColor: categoryColor + '40', backgroundColor: categoryColor + '18' }]}>
+                  {SessionIcon ? (
+                    <SessionIcon size={17} color={categoryColor} strokeWidth={2} />
+                  ) : (
+                    <Text style={styles.heroEmoji}>{session.emoji}</Text>
+                  )}
+                </View>
+                <View style={styles.heroTitleText}>
+                  <Text style={styles.heroTitle} numberOfLines={1}>{session.title}</Text>
+                  <Text style={styles.heroMeta}>
+                    {formatSessionDuration(session.durationSeconds)} · {CATEGORY_LABEL[session.category]}
                   </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </Animated.View>
+                </View>
+              </View>
 
-        {/* ─── Rating Section ───────────────────────────── */}
-        {selectedEmotion && !rated && (
-          <View style={styles.ratingSection}>
-            <Text style={styles.sectionTitle}>Rate your session</Text>
+              <View style={styles.statsRow}>
+                <Stat value={String(thisWeek.length)} label="This week" />
+                <View style={styles.statDivider} />
+                <Stat value={`${weekMinutes} min`} label="Calm time" />
+                <View style={styles.statDivider} />
+                <Stat value={String(completedSessions.length)} label="All time" />
+              </View>
+            </View>
+          </HeroCard>
+        </StaggerItem>
 
-            <View style={styles.starsRow}>
-              {[1, 2, 3, 4, 5].map(rating => {
-                const starColors = ['#fbbf24', '#fbbf24', '#f59e0b', '#f97316', '#ea580c'];
-                const color = starColors[rating - 1];
+        {/* ── Mood after — same picker as the Relax tab ── */}
+        <StaggerItem index={2}>
+          <SectionLabel accent={RELAX_ACCENT}>HOW DO YOU FEEL NOW?</SectionLabel>
+          <GlassCard noPadding tint={SURFACE_TINT.card} style={styles.card}>
+            <View style={styles.moodRow}>
+              {EMOTIONAL_STATES.map(emotion => {
+                const Icon = EMOTION_ICONS[emotion.state];
+                const selected = selectedEmotion === emotion.state;
                 return (
-                  <TouchableOpacity
-                    key={rating}
-                    onPress={() => handleRate(rating)}
-                    style={[styles.starButton, { borderColor: color + '40', backgroundColor: color + '14' }]}
-                    activeOpacity={0.8}
+                  <Pressable
+                    key={emotion.state}
+                    onPress={() => handleSelectEmotion(emotion.state)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={emotion.label}
+                    style={styles.moodCell}
                   >
-                    <Star size={30} color={color} fill={color} />
-                  </TouchableOpacity>
+                    <View
+                      style={[
+                        styles.moodIcon,
+                        selected && { backgroundColor: emotion.color + '1f', borderColor: emotion.color },
+                      ]}
+                    >
+                      <Icon size={20} color={selected ? emotion.color : colors.text.tertiary} strokeWidth={1.9} />
+                    </View>
+                    <Text
+                      style={[styles.moodLabel, selected && { color: emotion.color }]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
+                      {emotion.label}
+                    </Text>
+                  </Pressable>
                 );
               })}
             </View>
-          </View>
-        )}
+          </GlassCard>
+        </StaggerItem>
 
-        {/* ─── Next Session ─────────────────────────────── */}
-        {rated && nextSession && nextSession.id !== sessionId && (
-          <View style={styles.nextSection}>
-            <Text style={styles.sectionTitle}>Continue your journey</Text>
+        {/* ── Rating — optional, editable ── */}
+        <StaggerItem index={3}>
+          <SectionLabel accent={RELAX_ACCENT}>RATE THIS SESSION</SectionLabel>
+          <GlassCard noPadding tint={SURFACE_TINT.card} style={styles.card}>
+            <View style={styles.ratingInner}>
+              <View style={styles.starsRow}>
+                {[1, 2, 3, 4, 5].map(value => {
+                  const filled = value <= rating;
+                  return (
+                    <Pressable
+                      key={value}
+                      onPress={() => handleRate(value)}
+                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${value} star${value === 1 ? '' : 's'}`}
+                      style={styles.starButton}
+                    >
+                      <Star
+                        size={30}
+                        color={filled ? STAR_COLOR : 'rgba(255,255,255,0.28)'}
+                        fill={filled ? STAR_COLOR : 'transparent'}
+                        strokeWidth={1.8}
+                      />
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={styles.ratingHint}>
+                {rating > 0 ? 'Thanks — this helps us suggest better sessions.' : 'Tap a star to rate'}
+              </Text>
+            </View>
+          </GlassCard>
+        </StaggerItem>
 
+        {/* ── Up next — appears once a mood is picked ── */}
+        {showNext && nextSession && (
+          <StaggerItem index={0}>
+            <SectionLabel accent={RELAX_ACCENT}>UP NEXT</SectionLabel>
             <TouchableOpacity
-              onPress={() => {
-                // replace, not push: ending the next session must not land
-                // back on this stale "Well Done" screen.
-                router.replace(getSessionRoute(nextSession.id) as never);
-              }}
               activeOpacity={0.85}
+              // replace, not push: ending the next session must not land back
+              // on this stale completion screen.
+              onPress={() => router.replace(getSessionRoute(nextSession.id) as never)}
             >
-              <GlassCard simple noPadding style={[styles.nextCard, { borderColor: nextSession.color + '40' }]}>
-                <LinearGradient
-                  colors={[nextSession.color + '14', 'transparent']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={StyleSheet.absoluteFill}
-                />
+              <GlassCard simple noPadding tint={SURFACE_TINT.card} style={styles.card}>
                 <View style={styles.nextRow}>
-                  <View style={[styles.nextIcon, { borderColor: nextSession.color + '40' }]}>
-                    <LinearGradient
-                      colors={[nextSession.color + '30', nextSession.color + '12']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFill}
-                    />
+                  <View
+                    style={[
+                      styles.nextIcon,
+                      {
+                        borderColor: CATEGORY_COLOR[nextSession.category] + '40',
+                        backgroundColor: CATEGORY_COLOR[nextSession.category] + '18',
+                      },
+                    ]}
+                  >
                     {nextSession.icon ? (
                       (() => {
                         const NextIcon = nextSession.icon!;
-                        return <NextIcon size={24} color={nextSession.color} strokeWidth={1.9} />;
+                        return <NextIcon size={20} color={CATEGORY_COLOR[nextSession.category]} strokeWidth={2} />;
                       })()
                     ) : (
-                      <Text style={styles.nextEmoji}>{nextSession.emoji}</Text>
+                      <Text style={styles.heroEmoji}>{nextSession.emoji}</Text>
                     )}
                   </View>
                   <View style={styles.nextInfo}>
-                    <Text style={[styles.nextTitle, { color: nextSession.color }]}>
-                      {nextSession.title}
-                    </Text>
-                    <Text style={styles.nextDesc} numberOfLines={2}>
-                      {nextSession.useCase}
+                    <Text style={styles.nextTitle} numberOfLines={1}>{nextSession.title}</Text>
+                    <Text style={styles.nextMeta} numberOfLines={1}>
+                      {formatSessionDuration(nextSession.durationSeconds)} · {CATEGORY_LABEL[nextSession.category]}
                     </Text>
                   </View>
-                  <View style={[styles.nextArrow, { backgroundColor: nextSession.color + '18', borderColor: nextSession.color + '30' }]}>
-                    <ArrowRight size={17} color={nextSession.color} strokeWidth={2.3} />
-                  </View>
+                  <ChevronRight size={18} color={RELAX_ACCENT} strokeWidth={2.4} />
                 </View>
               </GlassCard>
             </TouchableOpacity>
-          </View>
+          </StaggerItem>
         )}
 
-        {/* ─── Actions ──────────────────────────────────── */}
-        <View style={styles.actionSection}>
+        <View style={styles.actions}>
           <GradientCTA
-            label="BACK TO HOME"
-            icon={<Home size={18} color="#fff" />}
-            onPress={handleHome}
-            colors={[RELAX_ACCENT, RELAX_ACCENT + 'cc']}
-            glowColor={RELAX_ACCENT + '88'}
-            letterSpacing={1.5}
+            label="Back to Relax"
+            icon={<ArrowRight size={17} color="#03212C" strokeWidth={2.5} />}
+            textColor="#03212C"
+            onPress={handleBackToRelax}
           />
         </View>
       </View>
@@ -345,231 +331,215 @@ export default function RelaxCompletion() {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: spacing.sm,
+    paddingTop: SPACING.screenTop,
+    paddingBottom: spacing.md,
   },
   notFound: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  notFoundText: {
+    color: colors.text.primary,
+  },
 
-  // Hero section
-  heroSection: {
+  // Header
+  header: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
-    paddingVertical: spacing.lg,
-    position: 'relative',
+    marginBottom: SPACING.section - 8,
   },
-
-  celebrationGlow: {
-    position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    top: 0,
-    zIndex: -1,
-    opacity: 0.4,
-  },
-
-  heroIcon: {
-    width: 92,
-    height: 92,
-    borderRadius: 28,
+  badgeRing: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    backgroundColor: RELAX_ACCENT + '14',
     borderWidth: 1,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 8,
+    borderColor: RELAX_ACCENT + '33',
   },
-
-  celebrationText: {
-    fontSize: 40,
-    fontWeight: '800',
+  badgeCore: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: RELAX_ACCENT + '1f',
+    borderWidth: 1.5,
+    borderColor: RELAX_ACCENT + '66',
+  },
+  eyebrow: {
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+    fontWeight: TYPOGRAPHY.sectionLabel.fontWeight,
+    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+    color: 'rgba(255,255,255,0.5)',
+    marginTop: spacing.lg,
+  },
+  title: {
+    fontFamily: FONTS.heading,
+    fontSize: 28,
     color: colors.text.primary,
-    letterSpacing: -1,
-    marginTop: 18,
-  },
-
-  sessionTitle: {
-    fontSize: 22,
-    fontWeight: '800',
     marginTop: 6,
   },
-
-  sessionDuration: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.45)',
+  subtitle: {
+    fontSize: TYPOGRAPHY.subtitle.fontSize,
+    fontWeight: TYPOGRAPHY.subtitle.fontWeight,
+    color: TYPOGRAPHY.subtitle.color,
     marginTop: 4,
-    fontWeight: '500',
+    textAlign: 'center',
   },
 
-  // Stats
-  statsSection: {
+  // Hero
+  heroInner: {
+    padding: 18,
+  },
+  heroTitleRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: spacing.xl,
+    alignItems: 'center',
+    gap: 10,
   },
-
-  statCell: {
+  heroIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  heroEmoji: {
+    fontSize: 17,
+  },
+  heroTitleText: {
+    flex: 1,
+  },
+  heroTitle: {
+    fontFamily: FONTS.heading,
+    fontSize: 19,
+    color: colors.text.primary,
+  },
+  heroMeta: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(245,247,251,0.55)',
+    marginTop: 2,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 18,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+  },
+  stat: {
     flex: 1,
     alignItems: 'center',
-    gap: 8,
+    gap: 2,
+  },
+  statValue: {
+    fontFamily: FONTS.heading,
+    fontSize: 20,
+    color: colors.text.primary,
+  },
+  statLabel: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: 'rgba(245,247,251,0.55)',
+  },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
 
-  statIcon: {
+  // Shared card
+  card: {
+    borderRadius: RADIUS.card,
+  },
+
+  // Mood
+  moodRow: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+  },
+  moodCell: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+  },
+  moodIcon: {
     width: 44,
     height: 44,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-  },
-
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.text.primary,
-    letterSpacing: -0.5,
-  },
-
-  statLabel: {
-    fontSize: 11,
-    color: colors.text.tertiary,
-    fontWeight: '600',
-  },
-
-  // Emotion feedback
-  feedbackSection: {
-    marginBottom: spacing.xl,
-  },
-
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.text.primary,
-    letterSpacing: -0.2,
-    marginBottom: spacing.md,
-  },
-
-  emotionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: EMOTION_GAP,
-    // Full rows fill edge-to-edge; the 2-card last row sits centered.
-    justifyContent: 'center',
-  },
-
-  emotionCard: {
-    width: '30%', // pre-measure fallback; replaced by the computed pixel width
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.035)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Content-sized with even padding — the old square aspectRatio left the
-    // label pressed against the bottom edge with dead space above the emoji.
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-    gap: 8,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0,
-    shadowRadius: 10,
-  },
-
-  emotionEmoji: {
-    fontSize: 30,
-  },
-
-  emotionName: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.6)',
-    textAlign: 'center',
-    paddingHorizontal: 4,
-  },
-
-  // Rating
-  ratingSection: {
-    marginBottom: spacing.xl,
-  },
-
-  starsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-    marginTop: spacing.xs,
-  },
-
-  starButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-
-  // Next session
-  nextSection: {
-    marginBottom: spacing.xl,
-  },
-
-  nextCard: {
-    borderWidth: 1,
-  },
-  nextRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    minHeight: 76,
-  },
-  nextIcon: {
-    width: 52,
-    height: 52,
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    flexShrink: 0,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.035)',
   },
-  nextEmoji: {
-    fontSize: 26,
+  moodLabel: {
+    alignSelf: 'stretch',
+    textAlign: 'center',
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: 'rgba(245,247,251,0.55)',
+  },
+
+  // Rating
+  ratingInner: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  starButton: {
+    padding: 2,
+  },
+  ratingHint: {
+    fontSize: 12.5,
+    fontWeight: '500',
+    color: colors.text.secondary,
+  },
+
+  // Up next
+  nextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    minHeight: 70,
+  },
+  nextIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
   nextInfo: {
     flex: 1,
     gap: 2,
   },
   nextTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15.5,
+    fontWeight: '700',
+    color: colors.text.primary,
   },
-  nextDesc: {
-    fontSize: 12.5,
-    color: 'rgba(245,247,251,0.5)',
-    lineHeight: 17,
-    marginTop: 1,
-  },
-  nextArrow: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    flexShrink: 0,
+  nextMeta: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'rgba(245,247,251,0.55)',
   },
 
-  // Actions
-  actionSection: {
-    gap: 12,
+  actions: {
+    marginTop: SPACING.section,
   },
 });

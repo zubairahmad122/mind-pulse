@@ -29,7 +29,7 @@ type Props = {
   spacingBottom?: number;
 };
 
-const DEFAULT_ACCENT = "#60a5fa";
+const DEFAULT_ACCENT = "#A48BFF";
 const CARD_RADIUS = RADIUS.card;
 
 /**

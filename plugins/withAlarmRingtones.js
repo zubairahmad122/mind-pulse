@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { withDangerousMod } = require("@expo/config-plugins");
+const { withDangerousMod } = require("expo/config-plugins");
 
 const ALARM_RINGTONES = [
   ["assets/sounds/alarms/morning-alarm.mp3", "morning_alarm.mp3"],

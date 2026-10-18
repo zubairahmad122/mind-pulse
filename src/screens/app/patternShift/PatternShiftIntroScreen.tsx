@@ -78,7 +78,7 @@ export default function PatternShiftIntroScreen() {
       )}
       <Pressable accessibilityRole="button" accessibilityLabel="How to play Pattern Shift" onPress={() => setShowHelp(true)} style={styles.howPressable}>
         {({ pressed }) => <View style={[styles.howRow, pressed && styles.howRowPressed]}>
-          <View style={styles.howIcon}><Info size={18} color="#7DEBFA" /></View>
+          <View style={styles.howIcon}><Info size={18} color="#4DE1C1" /></View>
           <View style={styles.howCopy}><Text style={styles.howLabel}>How to Play</Text><Text style={styles.howSub}>Learn the rules in 20 sec</Text></View>
           <ChevronRight size={18} color={colors.text.tertiary} />
         </View>}
@@ -111,9 +111,9 @@ function HowStep({ number, title, copy }: { number: string; title: string; copy:
 }
 
 const styles = StyleSheet.create({
-  hero: { height: 164, borderRadius: 26, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingLeft: 20, marginBottom: spacing.md, backgroundColor: 'rgba(24,21,45,.76)', borderWidth: 1, borderColor: 'rgba(169,139,255,.18)' },
+  hero: { height: 164, borderRadius: 26, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingLeft: 20, marginBottom: spacing.md, backgroundColor: 'rgba(24,21,45,.76)', borderWidth: 1, borderColor: 'rgba(164,139,255,.18)' },
   heroCopy: { flex: 1, zIndex: 1 },
-  eyebrow: { fontSize: 9, fontWeight: '900', letterSpacing: 1.25, color: '#A98BFF' },
+  eyebrow: { fontSize: 9, fontWeight: '900', letterSpacing: 1.25, color: '#A48BFF' },
   heroTitle: { fontFamily: FONTS.heading, fontSize: 21, color: '#fff', marginTop: 8 },
   description: { fontSize: 12.5, lineHeight: 18, color: colors.text.secondary, marginTop: 5 },
   heroArt: { width: '44%', height: '88%', alignItems: 'center', justifyContent: 'center' },
@@ -131,20 +131,20 @@ const styles = StyleSheet.create({
   cta: { marginTop: 2 },
   duration: { textAlign: 'center', fontSize: 11, color: colors.text.tertiary, marginTop: 8 },
   howPressable: { width: '100%', marginTop: 14, borderRadius: 20 },
-  howRow: { width: '100%', minHeight: 68, paddingHorizontal: 14, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, backgroundColor: 'rgba(24,25,47,.78)', borderWidth: 1, borderColor: 'rgba(169,139,255,.14)' },
-  howRowPressed: { backgroundColor: 'rgba(32,35,61,.9)', borderColor: 'rgba(125,235,250,.24)', transform: [{ scale: .99 }] },
-  howIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(125,235,250,.09)', borderWidth: 1, borderColor: 'rgba(125,235,250,.16)' },
+  howRow: { width: '100%', minHeight: 68, paddingHorizontal: 14, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, backgroundColor: 'rgba(27,22,66,.78)', borderWidth: 1, borderColor: 'rgba(164,139,255,.14)' },
+  howRowPressed: { backgroundColor: 'rgba(36,30,84,.9)', borderColor: 'rgba(77,225,193,.24)', transform: [{ scale: .99 }] },
+  howIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(77,225,193,.09)', borderWidth: 1, borderColor: 'rgba(77,225,193,.16)' },
   howCopy: { display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'center' },
   howLabel: { fontFamily: FONTS.headingSemi, fontSize: 14, color: colors.text.primary },
   howSub: { fontSize: 11, color: colors.text.tertiary, marginTop: 3 },
   overlayClearance: { height: 64 },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', padding: 18, paddingBottom: 34, backgroundColor: 'rgba(4,5,15,.72)' },
-  modalCard: { borderRadius: 24, padding: 21, backgroundColor: '#17182C', borderWidth: 1, borderColor: 'rgba(169,139,255,.2)' },
+  modalCard: { borderRadius: 24, padding: 21, backgroundColor: '#1A1545', borderWidth: 1, borderColor: 'rgba(164,139,255,.2)' },
   modalHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   modalTitle: { fontFamily: FONTS.heading, fontSize: 20, color: '#fff' },
   howStep: { flexDirection: 'row', gap: 12, marginTop: 17 },
-  stepNumber: { width: 25, height: 25, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(125,235,250,.09)', borderWidth: 1, borderColor: 'rgba(125,235,250,.18)' },
-  stepNumberText: { fontSize: 11, fontWeight: '900', color: '#7DEBFA' },
+  stepNumber: { width: 25, height: 25, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(77,225,193,.09)', borderWidth: 1, borderColor: 'rgba(77,225,193,.18)' },
+  stepNumberText: { fontSize: 11, fontWeight: '900', color: '#4DE1C1' },
   stepCopy: { flex: 1 },
   stepTitle: { fontFamily: FONTS.headingSemi, fontSize: 13.5, color: '#fff' },
   stepText: { fontSize: 11.5, lineHeight: 17, color: colors.text.secondary, marginTop: 2 },

@@ -41,6 +41,32 @@ function enabledKey(uid?: string) {
 function scheduledKey(uid?: string) {
   return `@mindpulse/evening-reminder-scheduled:${uid ?? 'guest'}`;
 }
+function offeredKey(uid?: string) {
+  return `@mindpulse/evening-reminder-offered:${uid ?? 'guest'}`;
+}
+
+/**
+ * Whether the user has already been asked, in-context, right after their
+ * first completed session, whether they want this reminder — gates the
+ * one-time Home offer sheet so it's never shown twice. Independent of
+ * `getEveningReminderEnabled`: a "no" to the offer still counts as
+ * offered (never re-ask), but doesn't enable the reminder.
+ */
+export async function hasOfferedEveningReminder(uid?: string): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(offeredKey(uid))) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function markEveningReminderOffered(uid?: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(offeredKey(uid), '1');
+  } catch {
+    // ignore
+  }
+}
 
 interface ScheduledReminder {
   /** Local YYYY-MM-DD this notification was scheduled for — the guard that
