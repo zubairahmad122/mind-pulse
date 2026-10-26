@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -25,7 +25,7 @@ import { AmbientBackground } from '@/components/ui/AmbientBackground';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { BUTTON, FONTS, PILLAR_COLORS, PRO_GOLD, RADIUS, STATUS_COLORS, TYPOGRAPHY } from '@/constants/designSystem';
 import { useSubscription } from '@/context/SubscriptionContext';
-import { getOfferings, hasActiveProEntitlement, purchasePackage, restorePurchases } from '@/services/purchaseService';
+import { freeTrialLabel, getOfferings, hasActiveProEntitlement, purchasePackage, restorePurchases } from '@/services/purchaseService';
 
 // ── Design Tokens ──────────────────────────────────────────────────────────────
 // Radius/gradient now read from the frozen design system (RADIUS.card,
@@ -160,7 +160,9 @@ export default function PremiumScreen() {
   const annualPkg = packages.find(p => p.packageType === PACKAGE_TYPE.ANNUAL) ?? null;
   // Only used if the offering has neither a recognized monthly nor annual
   // package — still lets a single configured plan work instead of showing nothing.
-  const fallbackPkg = packages.length > 0 && !monthlyPkg && !annualPkg ? packages[0] : null;
+  const lifetimePkg = packages.find(p => p.packageType === PACKAGE_TYPE.LIFETIME) ?? null;
+  const fallbackPkg = packages.length > 0 && !monthlyPkg && !annualPkg && !lifetimePkg ? packages[0] : null;
+  const annualTrial = annualPkg ? freeTrialLabel(annualPkg) : null;
 
   // Real monthly-equivalent for the annual plan, and a real savings % against
   // the actual monthly price — never a hardcoded "Save 40%".
@@ -177,28 +179,36 @@ export default function PremiumScreen() {
     ? Math.round((1 - annualMonthlyEquivalent / monthlyPkg.product.price) * 100)
     : null;
 
+  // Synchronous guard: state only updates next render, so two taps in the
+  // same frame both got past a `purchasingId` check.
+  const busyRef = useRef(false);
+
   const handlePurchase = useCallback(async (pkg: PurchasesPackage) => {
-    if (purchasingId || restoring) return;
+    if (busyRef.current) return;
+    busyRef.current = true;
     setError(null);
     setPurchasingId(pkg.identifier);
     const result = await purchasePackage(pkg);
     setPurchasingId(null);
+    busyRef.current = false;
     if (result.success) {
-      await refreshSubscription();
+      await refreshSubscription(result.customerInfo);
       setJustUnlocked(true);
       return;
     }
     if (result.error) setError(result.error);
-  }, [purchasingId, restoring, refreshSubscription]);
+  }, [refreshSubscription]);
 
   const handleRestore = useCallback(async () => {
-    if (purchasingId || restoring) return;
+    if (busyRef.current) return;
+    busyRef.current = true;
     setError(null);
     setRestoring(true);
     const result = await restorePurchases();
     setRestoring(false);
+    busyRef.current = false;
     if (result.success) {
-      await refreshSubscription();
+      await refreshSubscription(result.customerInfo);
       if (hasActiveProEntitlement(result.customerInfo)) {
         setJustUnlocked(true);
       } else {
@@ -207,7 +217,7 @@ export default function PremiumScreen() {
       return;
     }
     if (result.error) setError(result.error);
-  }, [purchasingId, restoring, refreshSubscription]);
+  }, [refreshSubscription]);
 
   const showAlreadyPro = isPremium || justUnlocked;
   const anyBusy = purchasingId !== null || restoring;
@@ -299,7 +309,7 @@ export default function PremiumScreen() {
 
               {loadingOfferings ? (
                 <ActivityIndicator color={PILLAR_COLORS.mind} size="small" style={{ marginVertical: 24 }} />
-              ) : !annualPkg && !monthlyPkg && !fallbackPkg ? (
+              ) : !annualPkg && !monthlyPkg && !lifetimePkg && !fallbackPkg ? (
                 <Text style={styles.finePrint}>Plans unavailable — check your connection and try again.</Text>
               ) : (
                 <Animated.View entering={FadeInUp.delay(400).duration(300)} style={styles.pricingSection}>
@@ -312,8 +322,10 @@ export default function PremiumScreen() {
                         </View>
                         <PlanButton
                           variant="primary"
-                          line1="Continue with Yearly"
-                          line2={annualMonthlyEquivalentString != null
+                          line1={annualTrial ? `Start ${annualTrial}` : 'Continue with Yearly'}
+                          line2={annualTrial
+                            ? `then ${annualPkg.product.priceString}/year · cancel anytime`
+                            : annualMonthlyEquivalentString != null
                             ? (savingsPct != null
                               ? `${annualMonthlyEquivalentString}/month · Save ${savingsPct}%`
                               : `${annualMonthlyEquivalentString}/month`)
@@ -332,6 +344,16 @@ export default function PremiumScreen() {
                         loading={purchasingId === monthlyPkg.identifier}
                         disabled={anyBusy}
                         onPress={() => void handlePurchase(monthlyPkg)}
+                      />
+                    )}
+                    {lifetimePkg && (
+                      <PlanButton
+                        variant={annualPkg || monthlyPkg ? 'secondary' : 'primary'}
+                        line1="Buy Lifetime"
+                        line2={`${lifetimePkg.product.priceString} once · no subscription`}
+                        loading={purchasingId === lifetimePkg.identifier}
+                        disabled={anyBusy}
+                        onPress={() => void handlePurchase(lifetimePkg)}
                       />
                     )}
                     {fallbackPkg && (

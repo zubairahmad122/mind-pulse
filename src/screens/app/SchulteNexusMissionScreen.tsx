@@ -34,7 +34,9 @@ import { spacing } from '@/constants/spacing';
 import { useAuth } from '@/context/AuthContext';
 import { recordMindGameActivity } from '@/services/mindGameActivity';
 import { useSubscription } from '@/context/SubscriptionContext';
-import { useSessionCompleteInterstitial } from '@/services/ads/useSessionCompleteInterstitial';
+import { useSessionCompleteMonetization } from '@/services/ads/useSessionCompleteMonetization';
+import { useRewardedUnlock } from '@/services/ads/useRewardedUnlock';
+import { usePaywall } from '@/hooks/usePaywall';
 import { useGameFeedbackPrefs } from '@/hooks/useGameFeedbackPrefs';
 import { useGameSounds } from '@/hooks/useGameSounds';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -239,7 +241,18 @@ function BoardLockOverlay({
 
 // ─── Premium lock screen ────────────────────────────────────────────────────
 
-function PremiumRequiredCard({ level, onBack }: { level: number; onBack: () => void }) {
+function PremiumRequiredCard({
+  level,
+  onExplore,
+  onWatchAd,
+  onBack,
+}: {
+  level: number;
+  onExplore: () => void;
+  /** Present only while a rewarded ad is loaded. */
+  onWatchAd?: () => void;
+  onBack: () => void;
+}) {
   return (
     <GlassCard tint={SURFACE_TINT.card} style={styles.completeCard}>
       <View style={[styles.completeBadge, styles.completeBadgePremium]}>
@@ -248,7 +261,16 @@ function PremiumRequiredCard({ level, onBack }: { level: number; onBack: () => v
       <Text style={styles.completeTitle}>LEVEL {level}</Text>
       <Text style={styles.completeSubtitle}>Adaptive Sequence Missions</Text>
       <Text style={styles.completeSubtitle}>Premium required to continue.</Text>
-      <GradientCTA label="Explore Premium" onPress={onBack} height={54} style={styles.completeCtaGap} />
+      <GradientCTA label="Explore Premium" onPress={onExplore} height={54} style={styles.completeCtaGap} />
+      {onWatchAd && (
+        <GradientCTA
+          label="Watch Ad to Play Once"
+          variant="secondary"
+          onPress={onWatchAd}
+          height={54}
+          style={styles.completeCtaGap}
+        />
+      )}
       <GradientCTA label="Back to Games" variant="secondary" onPress={onBack} height={54} />
     </GlassCard>
   );
@@ -990,10 +1012,16 @@ export default function SchulteNexusMissionScreen() {
   const [persistedState, setPersistedState] = useState<SchultePersistedState | null>(null);
   const [challenge, setChallenge] = useState<SchulteChallenge | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
-  const { maybeShow: maybeShowInterstitial } = useSessionCompleteInterstitial();
+  const { maybeShow: maybeShowInterstitial } = useSessionCompleteMonetization();
   useEffect(() => {
     if (phase === 'complete') void maybeShowInterstitial();
   }, [phase, maybeShowInterstitial]);
+  const { showPaywall } = usePaywall();
+  const { isLoaded: rewardLoaded, isEarnedReward, show: showRewarded } = useRewardedUnlock();
+  useEffect(() => {
+    if (isEarnedReward) void handleRewardedUnlock();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire once per earned reward
+  }, [isEarnedReward]);
   const [lockedValues, setLockedValues] = useState<ReadonlySet<number>>(() => new Set());
   const [targetIndex, setTargetIndex] = useState(0);
   const [errors, setErrors] = useState(0);
@@ -1035,13 +1063,14 @@ export default function SchulteNexusMissionScreen() {
 
   // ─── Load persisted state and resolve first mission ─────────────────────
 
+  // `adUnlock`: the user just earned a rewarded ad for one locked level.
   const resolveMission = useCallback(
-    async (state: SchultePersistedState) => {
+    async (state: SchultePersistedState, adUnlock = false) => {
       try {
         const result = await selectPersistedNextLevelMission(uid, {
           userStableId: uid ?? 'guest',
           level: state.levelState.currentLevel,
-          isPremium,
+          isPremium: isPremium || adUnlock,
           mode: 'next',
         });
 
@@ -1282,6 +1311,19 @@ export default function SchulteNexusMissionScreen() {
     }
   }
 
+  async function handleRewardedUnlock() {
+    resetRunState();
+    setPhase('loading');
+    try {
+      const state = await loadSchulteState(uid);
+      setPersistedState(state);
+      await resolveMission(state, true);
+    } catch (err) {
+      console.error('[SchulteNexus] handleRewardedUnlock failed:', err);
+      setPhase('error');
+    }
+  }
+
   async function handleRetryError() {
     setPhase('loading');
     try {
@@ -1436,7 +1478,12 @@ export default function SchulteNexusMissionScreen() {
 
         {/* Premium required */}
         {phase === 'premium' && (
-          <PremiumRequiredCard level={currentLevel} onBack={() => router.back()} />
+          <PremiumRequiredCard
+            level={currentLevel}
+            onExplore={() => showPaywall('mind_game_level_lock')}
+            onWatchAd={rewardLoaded ? () => showRewarded() : undefined}
+            onBack={() => router.back()}
+          />
         )}
 
         {/* Error state */}

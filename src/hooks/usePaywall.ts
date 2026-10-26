@@ -1,9 +1,18 @@
 import { createContext, useContext } from 'react';
 
+export type ShowPaywallOptions = {
+  /**
+   * When set, the paywall also offers "Watch an ad to try it once" — called
+   * after the user earns the reward, to grant that one use (e.g. start the
+   * locked session). Omit it where a one-off unlock makes no sense.
+   */
+  onRewardedUnlock?: () => void;
+};
+
 export type PaywallContextType = {
   isVisible: boolean;
   featureId: string | null;
-  showPaywall: (featureId: string) => void;
+  showPaywall: (featureId: string, options?: ShowPaywallOptions) => void;
   hidePaywall: () => void;
 };
 

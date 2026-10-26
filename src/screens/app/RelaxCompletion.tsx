@@ -35,7 +35,7 @@ import { spacing } from '@/constants/spacing';
 import { useAuth } from '@/context/AuthContext';
 import { useRelaxContext } from '@/context/RelaxContext';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
-import { useSessionCompleteInterstitial } from '@/services/ads/useSessionCompleteInterstitial';
+import { useSessionCompleteMonetization } from '@/services/ads/useSessionCompleteMonetization';
 import { recordResetCompleted } from '@/services/screenBalancePersistence';
 
 /** The Relax pillar's single accent — same as the Relax tab and player. */
@@ -89,7 +89,7 @@ export default function RelaxCompletion() {
   const { stop: stopVoice } = useAudioGuide();
   useEffect(() => () => stopVoice(), [stopVoice]);
 
-  const { maybeShow } = useSessionCompleteInterstitial();
+  const { maybeShow } = useSessionCompleteMonetization();
   useEffect(() => {
     void maybeShow();
   }, [maybeShow]);

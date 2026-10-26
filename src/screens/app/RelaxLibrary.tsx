@@ -118,7 +118,11 @@ export default function RelaxLibrary() {
               );
 
               return session.featureId ? (
-                <PaywallGate key={session.id} featureId={session.featureId}>
+                <PaywallGate
+                  key={session.id}
+                  featureId={session.featureId}
+                  onRewardedUnlock={() => handleStartSession(session.id)}
+                >
                   {card}
                 </PaywallGate>
               ) : (

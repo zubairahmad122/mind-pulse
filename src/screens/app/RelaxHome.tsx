@@ -218,7 +218,9 @@ export default function RelaxHome() {
     const session = getSessionById(sessionId);
     const locked = !isPremium && !!session?.featureId && ENTITLEMENTS[session.featureId] === 'pro';
     if (session?.featureId && locked) {
-      showPaywall(session.featureId);
+      showPaywall(session.featureId, {
+        onRewardedUnlock: () => router.push(getSessionRoute(sessionId) as never),
+      });
       return;
     }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

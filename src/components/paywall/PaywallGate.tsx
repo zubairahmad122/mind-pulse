@@ -16,6 +16,8 @@ const BENEFITS = ['Unlimited sessions', 'Track your weekly progress', 'Advanced 
 type Props = {
   featureId: FeatureId;
   children: ReactNode;
+  /** Passed to the paywall to offer "watch an ad to try it once" (see ShowPaywallOptions). */
+  onRewardedUnlock?: () => void;
 };
 
 /**
@@ -29,7 +31,7 @@ type Props = {
  * whole-screen lock pattern — a standalone locked-feature card). Tapping
  * anywhere opens the global PaywallModal via usePaywall().
  */
-export function PaywallGate({ featureId, children }: Props) {
+export function PaywallGate({ featureId, children, onRewardedUnlock }: Props) {
   const { isPremium, loading } = useSubscription();
   const { showPaywall } = usePaywall();
   const hasAccess = isPremium || ENTITLEMENTS[featureId] === 'free';
@@ -57,7 +59,7 @@ export function PaywallGate({ featureId, children }: Props) {
 
         <GradientCTA
           label="Unlock with Pro"
-          onPress={() => showPaywall(featureId)}
+          onPress={() => showPaywall(featureId, { onRewardedUnlock })}
           textColor="#03212C"
           style={styles.lockedCta}
         />
@@ -75,7 +77,7 @@ export function PaywallGate({ featureId, children }: Props) {
   }
 
   return (
-    <Pressable onPress={() => showPaywall(featureId)} style={styles.wrapper}>
+    <Pressable onPress={() => showPaywall(featureId, { onRewardedUnlock })} style={styles.wrapper}>
       <View pointerEvents="none">{children}</View>
       <View style={styles.cornerBadge}>
         <Crown size={10} color={colors.background.primary} />

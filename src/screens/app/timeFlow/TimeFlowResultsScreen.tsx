@@ -18,7 +18,7 @@ import {
   type TimeFlowSessionRecord,
 } from "@/engine/core/games/timeFlow";
 import { loadTimeFlowProgress } from "@/services/timeFlowPersistence";
-import { useSessionCompleteInterstitial } from "@/services/ads/useSessionCompleteInterstitial";
+import { useSessionCompleteMonetization } from "@/services/ads/useSessionCompleteMonetization";
 export default function TimeFlowResultsScreen() {
   const router = useRouter(),
     { id } = useLocalSearchParams<{ id: string }>(),
@@ -29,7 +29,7 @@ export default function TimeFlowResultsScreen() {
   useEffect(() => {
     void loadTimeFlowProgress(user?.uid).then(setProgress);
   }, [user?.uid]);
-  const { maybeShow } = useSessionCompleteInterstitial();
+  const { maybeShow } = useSessionCompleteMonetization();
   useEffect(() => {
     void maybeShow();
   }, [maybeShow]);

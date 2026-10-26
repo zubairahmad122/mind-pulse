@@ -1,7 +1,7 @@
 import { Check, Crown, X } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -28,12 +28,14 @@ import { typography } from '@/constants/typography';
 import type { FeatureId } from '@/constants/entitlements';
 import { useSubscription } from '@/context/SubscriptionContext';
 import {
+  freeTrialLabel,
   getOfferings,
   hasActiveProEntitlement,
   purchasePackage,
   restorePurchases,
 } from '@/services/purchaseService';
 import { GradientCTA } from '@/components/ui/GradientCTA';
+import { useRewardedUnlock } from '@/services/ads/useRewardedUnlock';
 
 type PaywallCopy = {
   title: string;
@@ -51,7 +53,17 @@ const DEFAULT_COPY: PaywallCopy = {
   ],
 };
 
-const PAYWALL_COPY: Partial<Record<FeatureId, PaywallCopy>> = {
+// Keyed by FeatureId, plus non-feature triggers (e.g. FIRST_SESSION_PAYWALL_ID).
+const PAYWALL_COPY: Partial<Record<FeatureId | 'first_session_complete', PaywallCopy>> = {
+  first_session_complete: {
+    title: 'Nice work — keep it going',
+    subtitle: 'You just finished your first session. Pro unlocks everything that builds on it.',
+    benefits: [
+      'Every guided session and game level',
+      'Weekly AI insights on your progress',
+      'No ads, ever',
+    ],
+  },
   relax_sleep_drop: {
     title: 'Improve your sleep quality',
     subtitle: 'Sleep Drop helps you wind down and fall asleep faster.',
@@ -121,9 +133,11 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   featureId?: string;
+  /** Set → offer "Watch an ad to try it once"; called once the reward is earned. */
+  onRewardedUnlock?: () => void;
 };
 
-export function PaywallModal({ visible, onClose, featureId }: Props) {
+export function PaywallModal({ visible, onClose, featureId, onRewardedUnlock }: Props) {
   const insets = useSafeAreaInsets();
   const { isPremium, refreshSubscription } = useSubscription();
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
@@ -132,8 +146,28 @@ export function PaywallModal({ visible, onClose, featureId }: Props) {
   const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Mounted for the app's lifetime, so a rewarded ad is usually preloaded
+  // by the time a free user hits a locked feature.
+  const { isLoaded: rewardLoaded, isEarnedReward, show: showRewarded } = useRewardedUnlock();
+  const watchingAdRef = useRef(false);
+  // Synchronous guard: `purchasingId`/`restoring` state only updates on the
+  // next render, so two taps in the same frame both got past it.
+  const busyRef = useRef(false);
+
+  useEffect(() => {
+    if (!isEarnedReward || !watchingAdRef.current) return;
+    watchingAdRef.current = false;
+    onRewardedUnlock?.();
+  }, [isEarnedReward, onRewardedUnlock]);
+
+  const handleWatchAd = () => {
+    if (!rewardLoaded || busyRef.current) return;
+    watchingAdRef.current = true;
+    showRewarded();
+  };
+
   const copy =
-    (featureId && PAYWALL_COPY[featureId as FeatureId]) || DEFAULT_COPY;
+    (featureId && PAYWALL_COPY[featureId as keyof typeof PAYWALL_COPY]) || DEFAULT_COPY;
 
   // Fetch offerings once each time the modal opens.
   useEffect(() => {
@@ -167,18 +201,23 @@ export function PaywallModal({ visible, onClose, featureId }: Props) {
     packages.find((p) => p.packageType === PACKAGE_TYPE.MONTHLY) ?? null;
   const annualPkg =
     packages.find((p) => p.packageType === PACKAGE_TYPE.ANNUAL) ?? null;
+  const lifetimePkg =
+    packages.find((p) => p.packageType === PACKAGE_TYPE.LIFETIME) ?? null;
   const fallbackPkg =
-    packages.length > 0 && !monthlyPkg && !annualPkg ? packages[0] : null;
+    packages.length > 0 && !monthlyPkg && !annualPkg && !lifetimePkg ? packages[0] : null;
+  const annualTrial = annualPkg ? freeTrialLabel(annualPkg) : null;
 
   const handlePurchase = async (pkg: PurchasesPackage | null) => {
-    if (!pkg || purchasingId || restoring) return;
+    if (!pkg || busyRef.current) return;
+    busyRef.current = true;
     setError(null);
     setPurchasingId(pkg.identifier);
     const result = await purchasePackage(pkg);
     setPurchasingId(null);
+    busyRef.current = false;
 
     if (result.success) {
-      await refreshSubscription();
+      await refreshSubscription(result.customerInfo);
       onClose();
       return;
     }
@@ -189,14 +228,16 @@ export function PaywallModal({ visible, onClose, featureId }: Props) {
   };
 
   const handleRestore = async () => {
-    if (purchasingId || restoring) return;
+    if (busyRef.current) return;
+    busyRef.current = true;
     setError(null);
     setRestoring(true);
     const result = await restorePurchases();
     setRestoring(false);
+    busyRef.current = false;
 
     if (result.success) {
-      await refreshSubscription();
+      await refreshSubscription(result.customerInfo);
       if (hasActiveProEntitlement(result.customerInfo)) {
         onClose();
       } else {
@@ -292,8 +333,10 @@ export function PaywallModal({ visible, onClose, featureId }: Props) {
                       <Text style={styles.bestValueText}>BEST VALUE</Text>
                     </View>
                     <GradientCTA
-                      label="Subscribe Yearly"
-                      sublabel={`${annualPkg.product.priceString} / year`}
+                      label={annualTrial ? `Start ${annualTrial}` : 'Subscribe Yearly'}
+                      sublabel={annualTrial
+                        ? `then ${annualPkg.product.priceString} / year · cancel anytime`
+                        : `${annualPkg.product.priceString} / year`}
                       onPress={() => handlePurchase(annualPkg)}
                       disabled={purchasingId !== null || restoring}
                       loading={purchasingId === annualPkg.identifier}
@@ -314,6 +357,18 @@ export function PaywallModal({ visible, onClose, featureId }: Props) {
                   />
                 )}
 
+                {lifetimePkg && (
+                  <GradientCTA
+                    variant="secondary"
+                    label="Buy Lifetime"
+                    sublabel={`${lifetimePkg.product.priceString} once · no subscription`}
+                    onPress={() => handlePurchase(lifetimePkg)}
+                    disabled={purchasingId !== null || restoring}
+                    loading={purchasingId === lifetimePkg.identifier}
+                    height={58}
+                  />
+                )}
+
                 {fallbackPkg && (
                   <GradientCTA
                     label="Subscribe"
@@ -325,6 +380,17 @@ export function PaywallModal({ visible, onClose, featureId }: Props) {
                   />
                 )}
               </View>
+            )}
+
+            {onRewardedUnlock && rewardLoaded && (
+              <TouchableOpacity
+                onPress={handleWatchAd}
+                disabled={purchasingId !== null || restoring}
+                activeOpacity={0.7}
+                style={styles.watchAdButton}
+              >
+                <Text style={styles.watchAdText}>Watch an ad to try it once</Text>
+              </TouchableOpacity>
             )}
 
             {error && <Text style={styles.errorText}>{error}</Text>}
@@ -496,6 +562,20 @@ const styles = StyleSheet.create({
     color: STATUS_COLORS.error,
     textAlign: 'center',
     marginBottom: spacing.md,
+  },
+  watchAdButton: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: RADIUS.button,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  watchAdText: {
+    ...typography.label,
+    color: colors.text.primary,
+    fontWeight: '600',
   },
   restoreButton: { paddingHorizontal: 18, paddingVertical: 12 },
   restoreText: {

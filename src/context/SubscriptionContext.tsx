@@ -23,7 +23,12 @@ interface SubscriptionContextType {
   isPremium: boolean;
   loading: boolean;
   customerInfo: CustomerInfo | null;
-  refreshSubscription: () => Promise<void>;
+  /**
+   * Re-reads entitlements. Pass the CustomerInfo a purchase/restore already
+   * returned to apply it directly — no extra network call that could fail
+   * (offline, timeout) right after the user has successfully paid.
+   */
+  refreshSubscription: (info?: CustomerInfo) => Promise<void>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -47,9 +52,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const refreshSubscription = useCallback(async () => {
-    const info = await Purchases.getCustomerInfo();
-    applyCustomerInfo(info);
+  const refreshSubscription = useCallback(async (known?: CustomerInfo) => {
+    if (known) {
+      applyCustomerInfo(known);
+      return;
+    }
+    try {
+      applyCustomerInfo(await Purchases.getCustomerInfo());
+    } catch (err) {
+      console.warn('[Subscription] refresh failed', err);
+    }
   }, [applyCustomerInfo]);
 
   useEffect(() => {
