@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useRewardedAd } from 'react-native-google-mobile-ads';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { REWARDED_AD_UNIT_ID } from './adUnits';
+import { suppressNextAppOpen } from './useAppOpenAd';
 
 /** Same back-off BannerAdSlot uses — don't hammer AdMob after a no-fill. */
 const RETRY_DELAY_MS = 30000;
@@ -20,7 +21,7 @@ const RETRY_DELAY_MS = 30000;
  */
 export function useRewardedUnlock() {
   const { isPremium } = useSubscription();
-  const { isLoaded, isClosed, isEarnedReward, error, load, show } = useRewardedAd(
+  const { isLoaded, isClosed, isEarnedReward, error, load, show: showAd } = useRewardedAd(
     isPremium ? null : REWARDED_AD_UNIT_ID,
   );
   const retryTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -39,6 +40,11 @@ export function useRewardedUnlock() {
     retryTimer.current = setTimeout(load, RETRY_DELAY_MS);
     return () => clearTimeout(retryTimer.current);
   }, [isPremium, error, load]);
+
+  const show = useCallback(() => {
+    suppressNextAppOpen();
+    showAd();
+  }, [showAd]);
 
   return { isLoaded, isEarnedReward, show };
 }

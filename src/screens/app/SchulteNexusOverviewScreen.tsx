@@ -28,7 +28,7 @@ export default function SchulteNexusOverviewScreen() {
   const tier = rating >= 650 ? 'EXPERT' : rating >= 450 ? 'ADVANCED' : rating >= 300 ? 'SHARP' : rating >= 150 ? 'STEADY' : 'STARTER';
 
   return <>
-    <ScreenShell pillar="mind" ambient={<AmbientBackground subtle />} safeBottom>
+    <ScreenShell bannerAd pillar="mind" ambient={<AmbientBackground subtle />} safeBottom>
       <ScreenHeader title="Schulte Nexus" subtitle="Visual Attention" showBack />
       <View style={styles.hero}>
         <View style={styles.heroCopy}>

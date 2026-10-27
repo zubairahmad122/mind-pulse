@@ -362,7 +362,7 @@ export default function ScreenBalanceDetailsScreen() {
         : undefined;
 
   return (
-    <ScreenShell safeBottom pillar="reset" ambient={<AmbientBackground subtle />}>
+    <ScreenShell bannerAd safeBottom pillar="reset" ambient={<AmbientBackground subtle />}>
       <ScreenHeader
         title="Screen Balance"
         subtitle="See your screen habits and reset with intention."

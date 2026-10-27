@@ -138,7 +138,7 @@ export default function ChallengesScreen() {
         : 'Keep it alive today.';
 
   return (
-    <ScreenShell scroll pillar="challenge" ambient={<AmbientBackground subtle />}>
+    <ScreenShell bannerAd scroll pillar="challenge" ambient={<AmbientBackground subtle />}>
       <ScreenTransition>
         <ScreenHeader title="Challenges" subtitle="Your streaks, goals & milestones" />
 

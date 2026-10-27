@@ -19,7 +19,7 @@ export default function VisualFlowExploreScreen() {
   const router = useRouter();
 
   return (
-    <ScreenShell pillar="eye" ambient={<AmbientBackground subtle />}>
+    <ScreenShell bannerAd pillar="eye" ambient={<AmbientBackground subtle />}>
       <ScreenHeader title="Explore Visual Flow" subtitle="Run any activity on its own." />
 
       <GlassCard simple noPadding tint={SURFACE_TINT.card} style={styles.listCard}>

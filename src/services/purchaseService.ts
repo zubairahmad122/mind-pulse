@@ -6,6 +6,7 @@ import Purchases, {
 } from 'react-native-purchases';
 import { PRO_ENTITLEMENT_ID } from '@/constants/entitlements';
 import { trackPurchase } from './analytics';
+import { suppressNextAppOpen } from './ads/useAppOpenAd';
 
 export type PurchaseResult = {
   success: boolean;
@@ -34,6 +35,7 @@ let inFlight: Promise<PurchaseResult> | null = null;
 
 function exclusive(run: () => Promise<PurchaseResult>): Promise<PurchaseResult> {
   if (inFlight) return inFlight;
+  suppressNextAppOpen(); // the Play sheet backgrounds the app
   inFlight = run().finally(() => {
     inFlight = null;
   });

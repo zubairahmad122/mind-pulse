@@ -51,7 +51,7 @@ export default function WeeklyTrendsScreen() {
     (trends.totals.focusMinutes > 0 || trends.totals.offlineMinutes > 0 || trends.totals.resetsCompleted > 0);
 
   return (
-    <ScreenShell safeBottom pillar="reset" ambient={<AmbientBackground subtle />}>
+    <ScreenShell bannerAd safeBottom pillar="reset" ambient={<AmbientBackground subtle />}>
       <ScreenHeader
         title="Weekly Trends"
         subtitle="Your last 7 days of screen balance."

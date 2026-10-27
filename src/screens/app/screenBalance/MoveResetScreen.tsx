@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -14,6 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSessionClock } from '@/hooks/useSessionClock';
 import { useSessionLifecycle } from '@/hooks/useSessionLifecycle';
 import { recordResetCompleted } from '@/services/screenBalancePersistence';
+import { useSessionCompleteMonetization } from '@/services/ads/useSessionCompleteMonetization';
 
 const MOVE_ACCENT = PILLAR_COLORS.challenge;
 const DURATION_SECONDS = 120;
@@ -30,6 +31,12 @@ export default function MoveResetScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [phase, setPhase] = useState<Phase>('idle');
+  // Natural break: the session just finished (never mid-session).
+  const { maybeShow: maybeShowInterstitial } = useSessionCompleteMonetization();
+  const sessionDone = phase === 'done';
+  useEffect(() => {
+    if (sessionDone) void maybeShowInterstitial();
+  }, [sessionDone, maybeShowInterstitial]);
   const [paused, setPaused] = useState(false);
 
   const { isBackgrounded } = useSessionLifecycle({

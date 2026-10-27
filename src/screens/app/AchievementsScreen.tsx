@@ -15,7 +15,7 @@ export default function AchievementsScreen() {
   const { earned, locked, unlockedCount, totalCount, percent: pct } = useUnlockedAchievements();
 
   return (
-    <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
+    <ScreenShell bannerAd safeBottom ambient={<AmbientBackground subtle />}>
       <ScreenHeader title="Achievements" showBack />
 
       {/* Progress */}

@@ -31,6 +31,7 @@ import { ROUTES } from '@/constants/routes';
 import { spacing } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { recordActivity } from '@/stores/useActivityStore';
+import { useSessionCompleteMonetization } from '@/services/ads/useSessionCompleteMonetization';
 
 function GameView({
   id, running, onGameEnd, onFocusSession,
@@ -108,6 +109,12 @@ export default function EyeGameScreen() {
   // (no subtitle / PB) and hosts the pause button.
   const [roundActive, setRoundActive] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  // Natural break: the session just finished (never mid-session).
+  const { maybeShow: maybeShowInterstitial } = useSessionCompleteMonetization();
+  const sessionDone = showComplete;
+  useEffect(() => {
+    if (sessionDone) void maybeShowInterstitial();
+  }, [sessionDone, maybeShowInterstitial]);
   const [progressReward, setProgressReward] = useState<EyeGameReward | null>(null);
   const [replayKey, setReplayKey] = useState(0);
   // Held above the `replayKey` remount boundary so replaying keeps the mode

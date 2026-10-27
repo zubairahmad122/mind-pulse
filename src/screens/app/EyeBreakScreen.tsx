@@ -45,6 +45,7 @@ import { FONTS, PILLAR_COLORS, RADIUS, STATUS_COLORS } from '@/constants/designS
 import { spacing } from '@/constants/spacing';
 import { GradientCTA } from '@/components/ui/GradientCTA';
 import { recordEyeBreakReminderEvent } from '@/services/eyeBreakReminderEvents';
+import { useSessionCompleteMonetization } from '@/services/ads/useSessionCompleteMonetization';
 
 const DEFAULT_DURATION = 20;
 const EYE_ACCENT = PILLAR_COLORS.eye;
@@ -316,6 +317,12 @@ export default function EyeBreakScreen() {
       : DEFAULT_DURATION;
 
   const [done, setDone] = useState(false);
+  // Natural break: the session just finished (never mid-session).
+  const { maybeShow: maybeShowInterstitial } = useSessionCompleteMonetization();
+  const sessionDone = done;
+  useEffect(() => {
+    if (sessionDone) void maybeShowInterstitial();
+  }, [sessionDone, maybeShowInterstitial]);
   const [lifecyclePaused, setLifecyclePaused] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const reminderResolvedRef = useRef(false);

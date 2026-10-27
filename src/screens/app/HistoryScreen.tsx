@@ -20,7 +20,7 @@ export default function HistoryScreen() {
 
   if (loading) {
     return (
-      <ScreenShell scroll={false} safeBottom pillar="sleep" ambient={<AmbientBackground subtle />}>
+      <ScreenShell bannerAd scroll={false} safeBottom pillar="sleep" ambient={<AmbientBackground subtle />}>
         <ScreenHeader title="Sleep History" showBack />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color={PILLAR_COLORS.sleep} size="large" />
@@ -30,7 +30,7 @@ export default function HistoryScreen() {
   }
 
   return (
-    <ScreenShell safeBottom pillar="sleep" ambient={<AmbientBackground subtle />}>
+    <ScreenShell bannerAd safeBottom pillar="sleep" ambient={<AmbientBackground subtle />}>
       <ScreenHeader title="Sleep History" showBack />
 
       {sessions.length === 0 ? (

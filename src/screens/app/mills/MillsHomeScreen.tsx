@@ -27,7 +27,7 @@ export default function MillsHomeScreen() {
     return () => { active = false; };
   }, []));
 
-  return <ScreenShell pillar="mind" ambient={<AmbientBackground subtle />} safeBottom>
+  return <ScreenShell bannerAd pillar="mind" ambient={<AmbientBackground subtle />} safeBottom>
     <ScreenHeader title="Mills" subtitle="Strategic Reasoning" showBack />
     <View style={styles.hero}>
       <View style={styles.heroCopy}>

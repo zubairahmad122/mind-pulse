@@ -74,6 +74,7 @@ import {
 import { getComfortChange } from '@/utils/eyeComfort';
 import { EYE_RESET_DURATION_SECONDS, EYE_RESET_STEPS_SECONDS } from '@/constants/eyeRelax';
 import { useEyeAudioGuide } from '@/hooks/useEyeAudioGuide';
+import { useSessionCompleteMonetization } from '@/services/ads/useSessionCompleteMonetization';
 
 // One accent for the whole Eyes feature — matches the Eye tab (was
 // PILLAR_THEME.eyes.accent, a different teal-cyan from the separate
@@ -358,6 +359,12 @@ export default function CVSProtocolScreen() {
   );
 
   const [phase, setPhase] = useState<Phase>('idle');
+  // Natural break: the session just finished (never mid-session).
+  const { maybeShow: maybeShowInterstitial } = useSessionCompleteMonetization();
+  const sessionDone = phase === 'done';
+  useEffect(() => {
+    if (sessionDone) void maybeShowInterstitial();
+  }, [sessionDone, maybeShowInterstitial]);
   const [stepIndex, setStepIndex] = useState(0);
   // Bump to force a fresh countdown without changing the step (Restart
   // Exercise / re-run) — the step timer itself lives in useSessionClock.

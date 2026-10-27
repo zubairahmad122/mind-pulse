@@ -55,7 +55,7 @@ export default function TimeFlowResultsScreen() {
   const threshold = xpForLevel(progress.level),
     levelUp = record.levelAfter > record.levelBefore;
   return (
-    <ScreenShell
+    <ScreenShell bannerAd
       pillar="mind"
       ambient={<AmbientBackground subtle />}
       safeBottom

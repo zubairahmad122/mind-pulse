@@ -45,7 +45,7 @@ export default function RelaxLibrary() {
   };
 
   return (
-    <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
+    <ScreenShell bannerAd safeBottom ambient={<AmbientBackground subtle />}>
       <ScreenTransition>
         <View style={styles.page}>
           <ScreenHeader

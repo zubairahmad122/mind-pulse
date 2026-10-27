@@ -32,6 +32,7 @@ import { typography } from '@/constants/typography';
 import type { AudioClipId } from '@/constants/audioGuide';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
 import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
+import { useSessionCompleteMonetization } from '@/services/ads/useSessionCompleteMonetization';
 
 // One accent across the whole Relax feature — matches RelaxSessionPlayer.
 // Same accent as the Relax tab / session player — one color for the feature
@@ -60,6 +61,12 @@ export default function BodyScanScreen() {
   const { play, stop } = useAudioGuide();
 
   const [phase, setPhase]       = useState<'idle' | 'intro' | 'running' | 'done'>('idle');
+  // Natural break: the session just finished (never mid-session).
+  const { maybeShow: maybeShowInterstitial } = useSessionCompleteMonetization();
+  const sessionDone = phase === 'done';
+  useEffect(() => {
+    if (sessionDone) void maybeShowInterstitial();
+  }, [sessionDone, maybeShowInterstitial]);
   useRelaxSessionCompletion('body-scan', 'body-scan', phase !== 'idle', phase === 'done');
   const [zoneIdx, setZoneIdx]   = useState(0);
   const [secondsLeft, setSecs]  = useState(ZONE_DURATIONS[0]);

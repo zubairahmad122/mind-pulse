@@ -31,6 +31,7 @@ import { useSessionClock } from '@/hooks/useSessionClock';
 import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
 import { useSessionLifecycle } from '@/hooks/useSessionLifecycle';
 import { recordVisualFlowSession } from '@/services/visualFlowPersistence';
+import { useSessionCompleteMonetization } from '@/services/ads/useSessionCompleteMonetization';
 
 const ACCENT = PILLAR_COLORS.eye;
 const TRANSITION_MS = 1000;
@@ -70,6 +71,12 @@ export default function VisualFlowSessionScreen() {
   const totalSeconds = useMemo(() => totalVisualFlowSeconds(queue), [queue]);
 
   const [phase, setPhase] = useState<Phase>('prep');
+  // Natural break: the session just finished (never mid-session).
+  const { maybeShow: maybeShowInterstitial } = useSessionCompleteMonetization();
+  const sessionDone = phase === 'complete';
+  useEffect(() => {
+    if (sessionDone) void maybeShowInterstitial();
+  }, [sessionDone, maybeShowInterstitial]);
   const [queueIndex, setQueueIndex] = useState(0);
   const [userPaused, setUserPaused] = useState(false);
   const [lifecyclePaused, setLifecyclePaused] = useState(false);

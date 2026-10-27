@@ -4,9 +4,22 @@ import { AdEventType, InterstitialAd } from 'react-native-google-mobile-ads';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { usePaywall } from '@/hooks/usePaywall';
 import { INTERSTITIAL_AD_UNIT_ID } from './adUnits';
+import { suppressNextAppOpen } from './useAppOpenAd';
 
 const LAST_SHOWN_KEY = '@mindpulse/ads/interstitial-last-shown';
-const MIN_INTERVAL_MS = 3 * 60 * 1000;
+/** Minimum gap between ANY two interstitials (session-complete or tab-switch). */
+const MIN_INTERVAL_MS = 2 * 60 * 1000;
+
+/** Whether enough time has passed since the last interstitial of any kind. */
+export async function interstitialCooldownOver(): Promise<boolean> {
+  const lastShownRaw = await AsyncStorage.getItem(LAST_SHOWN_KEY).catch(() => null);
+  const lastShown = lastShownRaw ? Number(lastShownRaw) : 0;
+  return Date.now() - lastShown >= MIN_INTERVAL_MS;
+}
+
+export async function markInterstitialShown(): Promise<void> {
+  await AsyncStorage.setItem(LAST_SHOWN_KEY, String(Date.now())).catch(() => {});
+}
 const RETRY_DELAY_MS = 30000;
 
 const FIRST_SESSION_PAYWALL_KEY = '@mindpulse/paywall/first-session-shown';
@@ -94,18 +107,17 @@ export function useSessionCompleteMonetization() {
     if (sessionsCompletedSinceLaunch <= 1) return; // never immediately after launch
     if (!ad || !adLoaded) return;
 
-    const lastShownRaw = await AsyncStorage.getItem(LAST_SHOWN_KEY).catch(() => null);
-    const lastShown = lastShownRaw ? Number(lastShownRaw) : 0;
-    if (Date.now() - lastShown < MIN_INTERVAL_MS) return;
+    if (!(await interstitialCooldownOver())) return;
 
     adLoaded = false;
+    suppressNextAppOpen();
     try {
       await ad.show();
     } catch {
       loadAd();
       return;
     }
-    await AsyncStorage.setItem(LAST_SHOWN_KEY, String(Date.now())).catch(() => {});
+    await markInterstitialShown();
   }, [isPremium, loading, showPaywall]);
 
   return { maybeShow };

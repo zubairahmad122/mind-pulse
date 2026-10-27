@@ -50,7 +50,7 @@ export default function TimeFlowOverviewScreen() {
   }, [isEarnedReward, router]);
   return (
     <>
-      <ScreenShell
+      <ScreenShell bannerAd
         pillar="mind"
         ambient={<AmbientBackground subtle />}
         safeBottom

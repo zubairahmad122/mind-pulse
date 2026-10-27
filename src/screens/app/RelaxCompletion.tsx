@@ -117,7 +117,7 @@ export default function RelaxCompletion() {
 
   if (!session) {
     return (
-      <ScreenShell ambient={<AmbientBackground subtle />}>
+      <ScreenShell bannerAd ambient={<AmbientBackground subtle />}>
         <View style={styles.notFound}>
           <Text style={styles.notFoundText}>Session not found</Text>
         </View>
@@ -156,7 +156,7 @@ export default function RelaxCompletion() {
   const SessionIcon = session.icon;
 
   return (
-    <ScreenShell safeBottom ambient={<AmbientBackground subtle />}>
+    <ScreenShell bannerAd safeBottom ambient={<AmbientBackground subtle />}>
       <View style={styles.page}>
         {/* ── Header — success badge + what was completed ── */}
         <StaggerItem index={0}>

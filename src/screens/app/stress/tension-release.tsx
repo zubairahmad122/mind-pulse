@@ -36,6 +36,7 @@ import { resolveGuideLang, type AudioClipId } from '@/constants/audioGuide';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAudioGuide } from '@/hooks/useAudioGuide';
 import { useSessionKeepAwake } from '@/hooks/useSessionKeepAwake';
+import { useSessionCompleteMonetization } from '@/services/ads/useSessionCompleteMonetization';
 
 // One accent across the whole Relax feature — matches RelaxSessionPlayer.
 // Same accent as the Relax tab / session player — one color for the feature
@@ -71,6 +72,12 @@ export default function TensionReleaseScreen() {
   const phaseSeconds = PHASE_SECONDS[resolveGuideLang(langCode)];
 
   const [phase, setPhase]      = useState<'idle' | 'intro' | 'running' | 'done'>('idle');
+  // Natural break: the session just finished (never mid-session).
+  const { maybeShow: maybeShowInterstitial } = useSessionCompleteMonetization();
+  const sessionDone = phase === 'done';
+  useEffect(() => {
+    if (sessionDone) void maybeShowInterstitial();
+  }, [sessionDone, maybeShowInterstitial]);
   useRelaxSessionCompletion('muscle-release', 'muscle-release', phase !== 'idle', phase === 'done');
   const [zoneIdx, setZoneIdx]  = useState(0);
   const [sub, setSub]          = useState<'squeeze' | 'release'>('squeeze');

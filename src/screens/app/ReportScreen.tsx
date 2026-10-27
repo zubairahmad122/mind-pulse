@@ -208,7 +208,7 @@ export default function ReportScreen() {
   };
 
   return (
-    <ScreenShell ambient={<AmbientBackground subtle />}>
+    <ScreenShell bannerAd ambient={<AmbientBackground subtle />}>
       <ScreenTransition>
       <ScreenHeader title="Today's Reality Report" subtitle={today} />
 

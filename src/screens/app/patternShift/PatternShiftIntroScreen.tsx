@@ -47,7 +47,7 @@ export default function PatternShiftIntroScreen() {
   }, [isEarnedReward, router]);
 
   return <>
-    <ScreenShell pillar="mind" ambient={<AmbientBackground subtle />} safeBottom>
+    <ScreenShell bannerAd pillar="mind" ambient={<AmbientBackground subtle />} safeBottom>
       <ScreenHeader title="Pattern Shift" subtitle="Visual Discrimination" showBack />
       <View style={styles.hero}>
         <View style={styles.heroCopy}>

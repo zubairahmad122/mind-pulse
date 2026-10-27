@@ -47,7 +47,7 @@ export default function PatternShiftResultsScreen() {
   const heading = performanceHeading(record, progress);
   const tip = performanceTip(record);
 
-  return <ScreenShell pillar="mind" ambient={<AmbientBackground subtle />} safeBottom>
+  return <ScreenShell bannerAd pillar="mind" ambient={<AmbientBackground subtle />} safeBottom>
     <View style={styles.hero}>
       <Text style={styles.score}>{record.score}</Text>
       <Text style={styles.scoreLabel}>FINAL SCORE</Text>

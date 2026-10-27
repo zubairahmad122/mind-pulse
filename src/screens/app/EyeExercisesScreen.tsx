@@ -133,7 +133,7 @@ export default function EyeExercisesScreen() {
   const [guideOpen, setGuideOpen] = useState(false);
 
   return (
-    <ScreenShell pillar="eye" ambient={<AmbientBackground subtle />}>
+    <ScreenShell bannerAd pillar="eye" ambient={<AmbientBackground subtle />}>
       <ScreenTransition>
         <ScreenHeader
           title="Eye Exercises"
