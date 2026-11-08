@@ -108,20 +108,6 @@ android {
         versionName "1.0.0"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
-
-        // react-native-google-mobile-ads' own AndroidManifest.xml references these
-        // as ${appJSONGoogleMobileAds*} placeholders -- normally resolved by its
-        // config plugin during `expo prebuild`, which doesn't run here since
-        // android/ is checked into git. APPLICATION_ID is set directly on the
-        // app's own manifest entry (with tools:replace to win the merge); these
-        // three have no app-manifest override, so they need a placeholder value
-        // or the manifest merger fails with "placeholder not found". Values
-        // match the plugin's own defaults when left unconfigured in app.json.
-        manifestPlaceholders = [
-            appJSONGoogleMobileAdsDelayAppMeasurementInit: "false",
-            appJSONGoogleMobileAdsOptimizeInitialization: "true",
-            appJSONGoogleMobileAdsOptimizeAdLoading: "true",
-        ]
     }
     signingConfigs {
         debug {

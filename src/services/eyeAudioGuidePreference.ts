@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEY = '@mindpulse/eye-audio-guide-enabled';
 
-/** Default: audio guide narration is ON. */
+/** Default: spoken eye guidance (20-20-20 break + Eye Reset) is ON. */
 const DEFAULT = true;
 
 export async function loadEyeAudioGuideEnabled(): Promise<boolean> {

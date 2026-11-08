@@ -13,6 +13,8 @@ export type ResetType = 'eye-break' | 'breathe' | 'move' | 'offline';
 
 export interface ScreenBalanceStats {
   resetsCompletedToday: number;
+  /** Offline and move resets only — eye-break and breathe resets are on-screen. */
+  screenFreeResetsToday: number;
   offlineMinutesToday: number;
   lastResetType: ResetType | null;
   lastResetCompletedAt: number | null;
@@ -25,6 +27,7 @@ interface StoredStats extends ScreenBalanceStats {
 
 const DEFAULT_STATS: ScreenBalanceStats = {
   resetsCompletedToday: 0,
+  screenFreeResetsToday: 0,
   offlineMinutesToday: 0,
   lastResetType: null,
   lastResetCompletedAt: null,
@@ -75,6 +78,8 @@ export async function recordResetCompleted(
   const current = await loadScreenBalanceStats(uid);
   const next: ScreenBalanceStats = {
     resetsCompletedToday: current.resetsCompletedToday + 1,
+    screenFreeResetsToday:
+      current.screenFreeResetsToday + (type === 'offline' || type === 'move' ? 1 : 0),
     offlineMinutesToday: current.offlineMinutesToday + offlineMinutes,
     lastResetType: type,
     lastResetCompletedAt: Date.now(),

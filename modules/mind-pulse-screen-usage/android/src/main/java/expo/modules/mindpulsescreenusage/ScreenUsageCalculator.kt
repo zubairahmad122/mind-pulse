@@ -44,10 +44,23 @@ object ScreenUsageCalculator {
 
   /**
    * Total foreground time per package (excluding [selfPackage]), from
-   * MOVE_TO_FOREGROUND / MOVE_TO_BACKGROUND event pairs, clamped to
-   * [startOfDayMs, nowMs]. A repeated foreground event for an already-open
-   * package is ignored (keeps the earliest start), and a package still
-   * open at `nowMs` keeps accruing up to `nowMs`.
+   * MOVE_TO_FOREGROUND / MOVE_TO_BACKGROUND events, clamped to
+   * [startOfDayMs, nowMs].
+   *
+   * **Exclusive foreground model** — only one package is "current" at a
+   * time. Android UsageEvents often leave apps without a matching
+   * BACKGROUND (killed process, multi-window noise, OEM quirks). The old
+   * multi-open map kept every stale FOREGROUND accruing in parallel, so a
+   * real ~6h day could sum to 15–20h. Opening MindPulse used to `continue`
+   * without closing the previous app, which made the inflation worse.
+   *
+   * Rules:
+   * - A new FOREGROUND closes the previous current package at that instant.
+   * - FOREGROUND for [selfPackage] closes the previous package but never
+   *   becomes current (MindPulse stays out of the totals).
+   * - BACKGROUND only closes if it matches the current package.
+   * - SCREEN_NON_INTERACTIVE (lock / screen-off) closes the current package.
+   * - A package still current at `nowMs` accrues up to `nowMs`.
    *
    * Single source of truth for both "Screen Time Today" (sum of every
    * value here) and "Most Used Today" (top entries here) — so the two
@@ -59,30 +72,46 @@ object ScreenUsageCalculator {
     nowMs: Long,
     selfPackage: String?,
   ): Map<String, Long> {
-    val openStarts = HashMap<String, Long>()
     val totals = HashMap<String, Long>()
+    var currentPackage: String? = null
+    var currentStart: Long? = null
 
     fun accrue(pkg: String, start: Long, end: Long) {
       val duration = clampedDurationMs(start, end, startOfDayMs, nowMs)
       if (duration > 0) totals[pkg] = (totals[pkg] ?: 0L) + duration
     }
 
+    fun closeCurrent(at: Long) {
+      val pkg = currentPackage
+      val start = currentStart
+      currentPackage = null
+      currentStart = null
+      if (pkg != null && start != null) accrue(pkg, start, at)
+    }
+
     for (event in events.sortedBy { it.timestamp }) {
-      val pkg = event.packageName ?: continue
-      if (pkg == selfPackage) continue
       when (event.type) {
+        EVENT_SCREEN_NON_INTERACTIVE -> closeCurrent(event.timestamp)
         EVENT_MOVE_TO_FOREGROUND -> {
-          if (!openStarts.containsKey(pkg)) openStarts[pkg] = event.timestamp
+          val pkg = event.packageName ?: continue
+          if (pkg == selfPackage) {
+            // Viewing Well Mode must stop the previous app's clock — but
+            // MindPulse itself never contributes to screen-time totals.
+            closeCurrent(event.timestamp)
+            continue
+          }
+          if (pkg == currentPackage) continue // keep earliest start
+          closeCurrent(event.timestamp)
+          currentPackage = pkg
+          currentStart = event.timestamp
         }
         EVENT_MOVE_TO_BACKGROUND -> {
-          val start = openStarts.remove(pkg) ?: continue
-          accrue(pkg, start, event.timestamp)
+          val pkg = event.packageName ?: continue
+          if (pkg == currentPackage) closeCurrent(event.timestamp)
         }
       }
     }
-    for ((pkg, start) in openStarts) {
-      accrue(pkg, start, nowMs)
-    }
+    closeCurrent(nowMs)
     return totals
   }
 
@@ -91,16 +120,10 @@ object ScreenUsageCalculator {
    * [computePerAppForegroundMs], clamped to the window's own elapsed
    * wall-clock duration.
    *
-   * The clamp is load-bearing, not defensive padding: only one app can
-   * truly be in the foreground at any instant, but `UsageStatsManager` can
-   * occasionally report overlapping or stale per-package foreground
-   * windows (multi-window/picture-in-picture, or a `MOVE_TO_FOREGROUND`
-   * that never got a matching `MOVE_TO_BACKGROUND`, e.g. across an OS
-   * update or a killed process). Summing per-app totals with no ceiling
-   * let that surface as a day showing more than 24 hours of screen time —
-   * physically impossible, but exactly what a blind sum can produce.
-   * Capping to the window's own duration here fixes it once for every
-   * caller (live "today" and every historical day in Weekly Trends alike).
+   * Exclusive foreground tracking (see [computePerAppForegroundMs]) already
+   * prevents most overlap inflation. The window clamp remains as a hard
+   * ceiling so a day can never report more screen time than wall-clock
+   * elapsed (live "today" and every historical day in Weekly Trends).
    */
   fun computeScreenTimeTodayMs(
     events: List<UsageEventRecord>,

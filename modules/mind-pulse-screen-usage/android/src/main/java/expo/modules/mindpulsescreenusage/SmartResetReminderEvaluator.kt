@@ -1,7 +1,8 @@
 package expo.modules.mindpulsescreenusage
 
 object SmartResetReminderEvaluator {
-  const val LONG_SESSION_MINUTES = 30
+  /** Matches product brief: remind after ~60 minutes of continuous usage. */
+  const val LONG_SESSION_MINUTES = 60
   const val APP_SWITCH_HIGH_THRESHOLD = 20
   const val RESET_COOLDOWN_MINUTES = 30
   const val NOTIFICATION_COOLDOWN_MINUTES = 90

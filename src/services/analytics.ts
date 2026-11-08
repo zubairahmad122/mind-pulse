@@ -70,6 +70,46 @@ export function trackAppOpen(): void {
   trackEvent('app_open');
 }
 
+export function trackOnboardingCompleted(step?: string): void {
+  trackEvent('onboarding_completed', step ? { step } : undefined);
+}
+
+export function trackDailyReminderOpened(source?: string): void {
+  trackEvent('daily_reminder_opened', source ? { source } : undefined);
+}
+
+export function trackEyeBreakStarted(source?: string): void {
+  trackEvent('eye_break_started', source ? { source } : undefined);
+}
+
+export function trackEyeBreakCompleted(source?: string): void {
+  trackEvent('eye_break_completed', source ? { source } : undefined);
+}
+
+export function trackDailyGoalCompleted(goalId: string): void {
+  trackEvent('daily_goal_completed', { goal_id: goalId });
+}
+
+export function trackReminderSnoozed(kind: string): void {
+  trackEvent('reminder_snoozed', { kind });
+}
+
+export function trackUsageAlertOpened(kind: 'long_session' | 'high_daily'): void {
+  trackEvent('usage_alert_opened', { kind });
+}
+
+/**
+ * Retention dashboards (Firebase / BigQuery) should derive:
+ * - DAU: distinct users with `app_open` on a calendar day
+ * - D1 / D7 retention: cohort of first `app_open` or `onboarding_completed`
+ *   returning with `app_open` on day+1 / day+7
+ * - Notification opt-in: `notification_permission_granted` /
+ *   `notification_permission_requested`
+ * - Notif → open: `daily_reminder_opened` after evening schedule (never
+ *   treat `ensureEveningReminderScheduled` as delivery)
+ * - Eye-break completion rate: `eye_break_completed` / `eye_break_started`
+ */
+
 /** Fired the first time an achievement is ever earned (never repeats). */
 export function trackAchievementUnlocked(achievementId: string): void {
   trackEvent('achievement_unlocked', { achievement_id: achievementId });

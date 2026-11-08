@@ -61,15 +61,32 @@ async function setupCategory(N: NotificationsModule): Promise<void> {
   ]);
 }
 
+const EYE_BREAK_COPY: { title: string; body: string }[] = [
+  {
+    title: 'Time to look away',
+    body: 'Find something 20 feet away for 20 seconds. Tap to start.',
+  },
+  {
+    title: 'Your eyes need a pause',
+    body: 'A quick 20-20-20 break keeps screen strain down. Tap for a guided break.',
+  },
+  {
+    title: '20 seconds is enough',
+    body: 'Look far away, blink gently, then come back. Tap to begin.',
+  },
+];
+
 function reminderContent(
   intervalMinutes?: EyeBreakIntervalMinutes,
 ): import('expo-notifications').NotificationContentInput {
+  const copy = EYE_BREAK_COPY[Math.floor(Math.random() * EYE_BREAK_COPY.length)];
   return {
-    title: 'Time to rest your eyes',
-    body: 'Look 20 feet away for 20 seconds. Tap for a guided break.',
+    title: copy.title,
+    body: copy.body,
     categoryIdentifier: EYE_BREAK_CATEGORY_ID,
     data: {
       kind: 'eye-break',
+      route: 'eye-break',
       ...(intervalMinutes ? { intervalMinutes } : {}),
     },
     ...(Platform.OS === 'android' ? { channelId: EYE_BREAK_CHANNEL_ID } : {}),

@@ -95,7 +95,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setLoading(false);
     });
-    return unsubscribe;
+    // If Firebase never delivers the first auth callback (offline/hung
+    // Play Services), don't leave the root layout waiting forever — that
+    // used to produce a blank white screen after the launch overlay timed out.
+    const loadingFallback = setTimeout(() => setLoading(false), 6000);
+    return () => {
+      unsubscribe();
+      clearTimeout(loadingFallback);
+    };
   }, []);
 
   const signInWithGoogle = async () => {

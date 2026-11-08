@@ -58,11 +58,9 @@ class ScreenUsageCalculatorTest {
 
   @Test
   fun `overlapping per-app totals never sum past the window's own elapsed duration`() {
-    // Two different packages, each individually accruing the full hour —
-    // a known UsageStatsManager quirk (multi-window, picture-in-picture, or
-    // a MOVE_TO_FOREGROUND that never got a matching background event).
-    // Blindly summed this would report 2 hours of screen time in a
-    // 1-hour window; physically that's impossible.
+    // Two packages both FOREGROUND at the same instant (UsageStats quirk /
+    // multi-window). Exclusive tracking keeps only one current — never 2h
+    // inside a 1h window.
     val events = listOf(
       UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart, "com.app.one"),
       UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_BACKGROUND, dayStart + hour, "com.app.one"),
@@ -74,7 +72,25 @@ class ScreenUsageCalculatorTest {
   }
 
   @Test
-  fun `a full day's overlapping totals clamp at 24 hours, never more`() {
+  fun `stale missing-background apps do not inflate a day toward 19h`() {
+    // The Weekly Trends "19h Thursday" bug: several apps get FOREGROUND and
+    // never BACKGROUND, so a multi-open map accrues them all in parallel.
+    // Exclusive tracking = wall-clock span of the last open app only.
+    val day = 24 * hour
+    val events = listOf(
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart, "com.chrome"),
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart + 2 * hour, "com.whatsapp"),
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart + 5 * hour, "com.youtube"),
+      // none of them ever get MOVE_TO_BACKGROUND — phone used ~ until 11h
+      UsageEventRecord(ScreenUsageCalculator.EVENT_SCREEN_NON_INTERACTIVE, dayStart + 11 * hour, null),
+    )
+    val total = ScreenUsageCalculator.computeScreenTimeTodayMs(events, dayStart, dayStart + day, selfPackage)
+    // chrome 2h + whatsapp 3h + youtube 6h = 11h (not 11+9+6 = 26h capped at 24)
+    assertEquals(11 * hour, total)
+  }
+
+  @Test
+  fun `a full day's overlapping totals never exceed exclusive wall-clock usage`() {
     val day = 24 * hour
     val events = listOf(
       UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart, "com.app.one"),
@@ -82,10 +98,35 @@ class ScreenUsageCalculatorTest {
       UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart, "com.app.two"),
       UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_BACKGROUND, dayStart + 16 * hour, "com.app.two"),
     )
-    // Blind sum would be 24h (app one) + 16h (app two) = 40h — exactly the
-    // "40 hours in a day" bug this test guards against.
+    // Blind multi-open sum was 40h → clamped to 24h. Exclusive tracking
+    // attributes the day to one current app at a time (~16h here).
     val total = ScreenUsageCalculator.computeScreenTimeTodayMs(events, dayStart, dayStart + day, selfPackage)
-    assertEquals(day, total)
+    assertEquals(16 * hour, total)
+  }
+
+  @Test
+  fun `opening MindPulse stops the previous app from keeping the clock running`() {
+    val events = listOf(
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart, "com.chrome"),
+      // User opens Well Mode — chrome must stop accruing even if Android
+      // never delivered chrome's MOVE_TO_BACKGROUND.
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart + 30 * 60_000, selfPackage),
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_BACKGROUND, dayStart + 40 * 60_000, selfPackage),
+    )
+    val total = ScreenUsageCalculator.computeScreenTimeTodayMs(events, dayStart, dayStart + hour, selfPackage)
+    assertEquals(30 * 60_000L, total)
+  }
+
+  @Test
+  fun `screen off closes the current app so lock-screen hours are not counted`() {
+    val events = listOf(
+      UsageEventRecord(ScreenUsageCalculator.EVENT_MOVE_TO_FOREGROUND, dayStart, "com.chrome"),
+      UsageEventRecord(ScreenUsageCalculator.EVENT_SCREEN_NON_INTERACTIVE, dayStart + 20 * 60_000, null),
+      // still no BACKGROUND for chrome — without screen-off handling this
+      // would keep accruing through the whole remaining hour.
+    )
+    val total = ScreenUsageCalculator.computeScreenTimeTodayMs(events, dayStart, dayStart + hour, selfPackage)
+    assertEquals(20 * 60_000L, total)
   }
 
   @Test

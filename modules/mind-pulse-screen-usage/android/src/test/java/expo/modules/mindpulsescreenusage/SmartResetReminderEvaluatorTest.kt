@@ -70,7 +70,7 @@ class SmartResetReminderEvaluatorTest {
   @Test
   fun `long session is eligible`() {
     val decision = SmartResetReminderEvaluator.evaluate(
-      input(currentSessionMs = 35 * 60_000L, currentSessionAvailable = true),
+      input(currentSessionMs = 65 * 60_000L, currentSessionAvailable = true),
       now,
     )
     assertTrue(decision.eligible)
@@ -96,7 +96,7 @@ class SmartResetReminderEvaluatorTest {
   fun `recent reset suppresses reminder`() {
     val decision = SmartResetReminderEvaluator.evaluate(
       input(
-        currentSessionMs = 35 * 60_000L,
+        currentSessionMs = 65 * 60_000L,
         currentSessionAvailable = true,
         lastResetCompletedAt = now - 10 * 60_000L,
       ),
@@ -110,7 +110,7 @@ class SmartResetReminderEvaluatorTest {
   fun `recent notification suppresses reminder`() {
     val decision = SmartResetReminderEvaluator.evaluate(
       input(
-        currentSessionMs = 35 * 60_000L,
+        currentSessionMs = 65 * 60_000L,
         currentSessionAvailable = true,
         lastNotificationAt = now - 10 * 60_000L,
       ),
@@ -124,7 +124,7 @@ class SmartResetReminderEvaluatorTest {
   fun `notification cooldown expiry allows eligible condition again`() {
     val decision = SmartResetReminderEvaluator.evaluate(
       input(
-        currentSessionMs = 35 * 60_000L,
+        currentSessionMs = 65 * 60_000L,
         currentSessionAvailable = true,
         lastNotificationAt = now - (SmartResetReminderEvaluator.NOTIFICATION_COOLDOWN_MINUTES + 1) * 60_000L,
       ),

@@ -5,7 +5,7 @@
 import './global.css';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -92,11 +92,20 @@ function RootLayoutNav() {
     }
   }, [user, isGuestMode, loading, segments, router]);
 
-  const appReady = (fontsLoaded || Boolean(fontsError)) && !loading;
+  const fontsReady = fontsLoaded || Boolean(fontsError);
+  const appReady = fontsReady && !loading;
+
+  // The launch overlay has an 8s hard ceiling. If auth/fonts are still
+  // pending when it finishes, Stack used to stay unmounted → blank white
+  // screen. Keep a dark placeholder (and mount Stack once fonts are ready)
+  // so the UI never goes empty.
+  useEffect(() => {
+    if (launchFinished) hideNativeSplash();
+  }, [launchFinished, hideNativeSplash]);
 
   return (
     <>
-      {appReady && (
+      {fontsReady && (appReady || launchFinished) && (
         <Stack
           screenOptions={{
             headerShown: false,
@@ -105,10 +114,15 @@ function RootLayoutNav() {
           }}
         />
       )}
+      {launchFinished && !appReady && (
+        <View style={[StyleSheet.absoluteFill, styles.bootPlaceholder]}>
+          <ActivityIndicator color={COLORS.purple} size="large" />
+        </View>
+      )}
       {!launchFinished && (
         <AnimatedLaunchScreen
           ready={appReady}
-          fontsReady={fontsLoaded || Boolean(fontsError)}
+          fontsReady={fontsReady}
           onReady={hideNativeSplash}
           onFinish={finishLaunch}
         />
@@ -143,5 +157,10 @@ function RootLayout() {
 export default Sentry.wrap(RootLayout);
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: COLORS.bg },
+  bootPlaceholder: {
+    backgroundColor: COLORS.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

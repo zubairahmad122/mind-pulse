@@ -27,7 +27,20 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useSleep } from "@/context/SleepContext";
 import { useSubscription } from "@/context/SubscriptionContext";
 import { useEveningReminderSetting } from "@/hooks/useEveningReminderSetting";
+import { useEyeAudioGuide } from "@/hooks/useEyeAudioGuide";
 import { useScreenTimeAlertSetting } from "@/hooks/useScreenTimeAlertSetting";
+import {
+  DAILY_LIMIT_OPTIONS,
+  getDailyScreenLimitHours,
+  getExcessiveUsageAlertsEnabled,
+  setDailyScreenLimitHours,
+  setExcessiveUsageAlertsEnabled,
+  type DailyLimitHours,
+} from "@/services/excessiveUsageAlerts";
+import {
+  formatReminderTime,
+  testEveningReminder,
+} from "@/services/eveningReminder";
 import { useEyeScore } from "@/hooks/useEyeScore";
 import { useMindScore } from "@/hooks/useMindScore";
 import { useSleepScore } from "@/hooks/useSleepScore";
@@ -38,6 +51,7 @@ import { calculateMindPulseScore } from "@/utils/scoring";
 import { addDaysISO, getMondayISO, todayISO } from "@/utils/dateUtils";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Activity,
   Bell,
@@ -51,6 +65,7 @@ import {
   Sparkles,
   TrendingUp,
   Trophy,
+  Volume2,
 } from "lucide-react-native";
 import {
   Alert,
@@ -182,12 +197,38 @@ export default function ProfileScreen() {
     enabled: reminderEnabled,
     loading: reminderLoading,
     toggle: toggleReminder,
+    preferredHour,
+    preferredMinute,
+    setPreference: setReminderPreference,
   } = useEveningReminderSetting(user?.uid);
+  const [dailyLimitHours, setDailyLimitHoursState] = useState<DailyLimitHours>(4);
+  const [usageAlertsEnabled, setUsageAlertsEnabled] = useState(true);
+  const [testReminderBusy, setTestReminderBusy] = useState(false);
   const {
     enabled: screenTimeAlertEnabled,
     loading: screenTimeAlertLoading,
     toggle: toggleScreenTimeAlert,
   } = useScreenTimeAlertSetting(user?.uid);
+  const {
+    enabled: eyeVoiceEnabled,
+    loaded: eyeVoiceLoaded,
+    toggle: toggleEyeVoice,
+  } = useEyeAudioGuide();
+
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all([
+      getDailyScreenLimitHours(user?.uid),
+      getExcessiveUsageAlertsEnabled(user?.uid),
+    ]).then(([hours, alertsEnabled]) => {
+      if (cancelled) return;
+      setDailyLimitHoursState(hours);
+      setUsageAlertsEnabled(alertsEnabled);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid]);
 
   const eyeResult = useEyeScore(user?.uid ?? undefined);
   const mindResult = useMindScore(user?.uid ?? undefined);
@@ -430,6 +471,46 @@ export default function ProfileScreen() {
 
         <GlassCard style={styles.settingsCard}>
           <View style={styles.settingsRow}>
+            <View
+              style={[
+                styles.settingsIconWrap,
+                {
+                  backgroundColor: eyeVoiceEnabled
+                    ? ACCENT + "26"
+                    : "rgba(255,255,255,0.08)",
+                  borderColor: eyeVoiceEnabled
+                    ? ACCENT + "40"
+                    : "rgba(255,255,255,0.12)",
+                },
+              ]}
+            >
+              <Volume2
+                size={18}
+                color={eyeVoiceEnabled ? ACCENT : colors.text.tertiary}
+                strokeWidth={2}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingsTitle}>Voice Guidance</Text>
+              <Text style={styles.settingsSub}>
+                {eyeVoiceEnabled
+                  ? `Spoken 20-20-20 guide (${langCode === "ur" ? "Urdu" : "English"})`
+                  : "Timer only — voice is off"}
+              </Text>
+            </View>
+            <Switch
+              value={eyeVoiceEnabled}
+              onValueChange={toggleEyeVoice}
+              disabled={!eyeVoiceLoaded}
+              trackColor={{ false: "#2A2460", true: ACCENT }}
+              thumbColor={eyeVoiceEnabled ? "#FFFFFF" : colors.text.secondary}
+              accessibilityLabel="Voice guidance for eye breaks"
+            />
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.settingsCard}>
+          <View style={styles.settingsRow}>
             {/* Bug fix: concatenating '26' onto an already-complete rgba() string
               produced an invalid color when disabled, which rendered brighter
               than every other icon container instead of a subtle neutral tint. */}
@@ -455,7 +536,9 @@ export default function ProfileScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.settingsTitle}>Daily Reminder</Text>
               <Text style={styles.settingsSub}>
-                {reminderEnabled ? "Evening nudge is on" : "Evening nudge is off"}
+                {reminderEnabled
+                  ? `On · ${formatReminderTime(preferredHour, preferredMinute)}`
+                  : "Evening nudge is off"}
               </Text>
             </View>
             <Switch
@@ -466,6 +549,111 @@ export default function ProfileScreen() {
               thumbColor={reminderEnabled ? "#FFFFFF" : colors.text.secondary}
             />
           </View>
+          {reminderEnabled && (
+            <View style={styles.reminderExtras}>
+              <View style={styles.langSegmentWrap}>
+                {[19, 20, 21].map(hour => (
+                  <TouchableOpacity
+                    key={hour}
+                    onPress={() => void setReminderPreference(hour, 30, true)}
+                    style={[
+                      styles.langSegment,
+                      preferredHour === hour && styles.langSegmentActive,
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.langSegmentText,
+                        preferredHour === hour && styles.langSegmentTextActive,
+                      ]}
+                    >
+                      {formatReminderTime(hour, 30)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TouchableOpacity
+                style={styles.testReminderBtn}
+                disabled={testReminderBusy}
+                onPress={() => {
+                  setTestReminderBusy(true);
+                  void testEveningReminder().then(ok => {
+                    setTestReminderBusy(false);
+                    Alert.alert(
+                      ok ? "Test scheduled" : "Couldn't send test",
+                      ok
+                        ? "You'll get a sample reminder in a few seconds."
+                        : "Check that notification permission is allowed.",
+                    );
+                  });
+                }}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.testReminderText}>
+                  {testReminderBusy ? "Sending…" : "Test Notification"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </GlassCard>
+
+        <GlassCard style={styles.settingsCard}>
+          <View style={styles.settingsRow}>
+            <View
+              style={[
+                styles.settingsIconWrap,
+                { backgroundColor: ACCENT + "26", borderColor: ACCENT + "40" },
+              ]}
+            >
+              <Activity size={18} color={ACCENT} strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingsTitle}>Daily Screen Limit</Text>
+              <Text style={styles.settingsSub}>
+                {usageAlertsEnabled
+                  ? "Alert when today's phone use hits this limit"
+                  : "Screen time alerts are off"}
+              </Text>
+            </View>
+            <Switch
+              value={usageAlertsEnabled}
+              onValueChange={next => {
+                setUsageAlertsEnabled(next);
+                void setExcessiveUsageAlertsEnabled(user?.uid, next);
+              }}
+              trackColor={{ false: "#2A2460", true: ACCENT }}
+              thumbColor={usageAlertsEnabled ? "#FFFFFF" : colors.text.secondary}
+              accessibilityLabel="Screen time alerts"
+            />
+          </View>
+          {usageAlertsEnabled && (
+          <View style={styles.langSegmentWrap}>
+            {DAILY_LIMIT_OPTIONS.map(hours => (
+              <TouchableOpacity
+                key={hours}
+                onPress={() => {
+                  setDailyLimitHoursState(hours);
+                  void setDailyScreenLimitHours(user?.uid, hours);
+                }}
+                style={[
+                  styles.langSegment,
+                  dailyLimitHours === hours && styles.langSegmentActive,
+                ]}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.langSegmentText,
+                    dailyLimitHours === hours && styles.langSegmentTextActive,
+                  ]}
+                >
+                  {hours}h
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          )}
         </GlassCard>
 
         <GlassCard style={styles.settingsCard}>
@@ -813,6 +1001,23 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.65)",
   },
   langSegmentTextActive: { color: "#FFFFFF", fontWeight: "700" },
+  reminderExtras: {
+    marginTop: spacing.md,
+    gap: 10,
+  },
+  testReminderBtn: {
+    alignItems: "center",
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  testReminderText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.text.primary,
+  },
   createWrap: { marginTop: spacing.md },
   // ── Weekly Activity ──
   weeklyTopRow: {

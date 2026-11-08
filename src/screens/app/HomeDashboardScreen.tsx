@@ -1,6 +1,8 @@
 import { DailyChallenge } from '@/components/home/DailyChallenge';
 import { FeaturedSection } from '@/components/home/FeaturedSection';
 import { FeatureGrid } from '@/components/home/FeatureGrid';
+import { DailyWellnessProgress } from '@/components/home/DailyWellnessProgress';
+import { FirstBreakOnboarding } from '@/components/home/FirstBreakOnboarding';
 import { HomeFeatureGuideSheet } from '@/components/home/HomeFeatureGuideSheet';
 import { ResetPickerSheet } from '@/components/home/ResetPickerSheet';
 import { TodaysJourneyCard } from '@/components/home/TodaysJourneyCard';
@@ -14,7 +16,7 @@ import { ROUTES } from '@/constants';
 import { FONTS, PILLAR_COLORS, SPACING, TYPOGRAPHY } from '@/constants/designSystem';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/context/SubscriptionContext';
-import { useWeeklyActivity } from '@/hooks/useActivity';
+import { useActivityHistory, useWeeklyActivity } from '@/hooks/useActivity';
 import { useTodayProgress } from '@/hooks/useTodayProgress';
 import { useEyeScore } from '@/hooks/useEyeScore';
 import { useGreeting } from '@/hooks/useGreeting';
@@ -23,12 +25,16 @@ import { useSleepScore } from '@/hooks/useSleepScore';
 import { saveDailyScore } from '@/services/dailyScorePersistence';
 import {
   ensureEveningReminderScheduled,
+  formatReminderTime,
   getEveningReminderEnabled,
+  getEveningReminderPreference,
   hasOfferedEveningReminder,
   markEveningReminderOffered,
   requestEveningReminderPermission,
   setEveningReminderEnabled,
+  setEveningReminderPreference,
 } from '@/services/eveningReminder';
+import { trackEvent, trackOnboardingCompleted } from '@/services/analytics';
 import { hasSeenHomeFeatureGuide, markHomeFeatureGuideSeen } from '@/services/homeFeatureGuidePersistence';
 import type { ResetType } from '@/services/screenBalancePersistence';
 import {
@@ -43,12 +49,13 @@ import {
 import { useWellnessStore } from '@/stores/useWellnessStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { User, Flame } from 'lucide-react-native';
 
 const ONBOARDING_PAYWALL_KEY = '@mindpulse/onboarding-paywall-shown';
 const STREAK_PAYWALL_KEY     = '@mindpulse/streak-paywall-shown';
+const FIRST_BREAK_KEY        = '@mindpulse/first-break-onboarding-seen';
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
@@ -65,11 +72,12 @@ export default function HomeDashboardScreen() {
   const firstName     = displayName?.split(' ')[0] ?? '';
   // No signup name yet (e.g. still hydrating, or no name on file) → the plain
   // time-of-day greeting, never the app's own brand name standing in for it.
-  const { text: greeting, icon: GreetingIcon, period: greetingPeriod } = useGreeting(firstName);
+  const { text: greeting, icon: GreetingIcon } = useGreeting(firstName);
 
   // ── First-time detection (computed inline for efficient re-renders) ───
   // Unified activity log (+ pre-log legacy counters, read-only) — real completions only.
   const { everCompletedAny: hasCompletedAnySession } = useTodayProgress();
+  const { ready: activityReady } = useActivityHistory();
   const { countsByType: weekCounts } = useWeeklyActivity();
 
   const eyeResult   = useEyeScore(user?.uid ?? undefined);
@@ -113,6 +121,13 @@ export default function HomeDashboardScreen() {
   // sequential instead of racing two sheets onto the screen at once.
   const [showReminderOffer, setShowReminderOffer] = useState(false);
   const [reminderOfferChecked, setReminderOfferChecked] = useState(false);
+  const [offerHour, setOfferHour] = useState(19);
+  const [offerMinute, setOfferMinute] = useState(30);
+
+  // ── First-break onboarding: offer one simple eye break after the feature
+  // guide and before reminder/paywall sheets. ──────────────────────────────
+  const [showFirstBreakOnboarding, setShowFirstBreakOnboarding] = useState(false);
+  const [firstBreakChecked, setFirstBreakChecked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,6 +140,46 @@ export default function HomeDashboardScreen() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    // Wait for the activity log, or returning users look brand new while it loads.
+    if (!featureGuideChecked || showFeatureGuide || !activityReady) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const seen = await AsyncStorage.getItem(FIRST_BREAK_KEY);
+        if (cancelled) return;
+        if (seen === '1' || hasCompletedAnySession) {
+          setFirstBreakChecked(true);
+          return;
+        }
+        setShowFirstBreakOnboarding(true);
+      } catch {
+        if (!cancelled) setFirstBreakChecked(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [featureGuideChecked, showFeatureGuide, activityReady, hasCompletedAnySession]);
+
+  const markFirstBreakSeen = useCallback(async () => {
+    setShowFirstBreakOnboarding(false);
+    setFirstBreakChecked(true);
+    try {
+      await AsyncStorage.setItem(FIRST_BREAK_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const acceptFirstBreak = useCallback(() => {
+    void markFirstBreakSeen();
+    void trackEvent('first_break_started', { source: 'first_session_onboarding' });
+    router.push(ROUTES.appEyeBreak as never);
+  }, [markFirstBreakSeen, router]);
+
+  const declineFirstBreak = useCallback(() => {
+    void markFirstBreakSeen();
+  }, [markFirstBreakSeen]);
+
   const dismissFeatureGuide = () => {
     setShowFeatureGuide(false);
     void markHomeFeatureGuideSeen();
@@ -134,14 +189,20 @@ export default function HomeDashboardScreen() {
     if (
       isPremium || !user?.uid ||
       !featureGuideChecked || showFeatureGuide ||
-      !reminderOfferChecked || showReminderOffer
+      !firstBreakChecked || showFirstBreakOnboarding ||
+      // The reminder offer only exists after a first session; it goes first.
+      (hasCompletedAnySession && !reminderOfferChecked) || showReminderOffer
     ) return;
     let cancelled = false;
     void (async () => {
       const onboardingKey   = `${ONBOARDING_PAYWALL_KEY}:${user.uid}`;
       const onboardingShown = await AsyncStorage.getItem(onboardingKey);
       if (cancelled) return;
-      if (!onboardingShown) { setShowOnboardingPaywall(true); return; }
+      // Delay soft paywall until the user has completed at least one session.
+      if (!onboardingShown && hasCompletedAnySession) {
+        setShowOnboardingPaywall(true);
+        return;
+      }
       if (streak < 3) return;
       const streakKey   = `${STREAK_PAYWALL_KEY}:${user.uid}`;
       const streakShown = await AsyncStorage.getItem(streakKey);
@@ -149,7 +210,18 @@ export default function HomeDashboardScreen() {
       if (!streakShown) setShowStreakPaywall(true);
     })();
     return () => { cancelled = true; };
-  }, [isPremium, user?.uid, streak, featureGuideChecked, showFeatureGuide, reminderOfferChecked, showReminderOffer]);
+  }, [
+    isPremium,
+    user?.uid,
+    streak,
+    featureGuideChecked,
+    showFeatureGuide,
+    firstBreakChecked,
+    showFirstBreakOnboarding,
+    reminderOfferChecked,
+    showReminderOffer,
+    hasCompletedAnySession,
+  ]);
 
   const dismissOnboardingPaywall = () => {
     setShowOnboardingPaywall(false);
@@ -161,42 +233,55 @@ export default function HomeDashboardScreen() {
   };
   const goToPremium = () => router.push(ROUTES.appPremium as never);
 
-  // ── Daily reminder offer — asked once, in-context, right after a user's
-  // first-ever Home visit, right after the feature guide — matching the
-  // standard pattern most apps use (ask for notification permission early,
-  // default the daily reminder on once granted) rather than waiting for a
-  // completed session. Still only ever requested from this explicit user
-  // action (the "Enable Reminder" tap), never silently. Runs before the
-  // paywall effect above (which waits on `reminderOfferChecked`), so this
-  // one only needs to wait on the feature guide, not on paywall state. ────
+  // ── Daily reminder offer — after the user has experienced a real first
+  // eye break (or any completed session). Permission is only requested from
+  // the explicit "Enable Daily Reminder" tap, never on cold open. ──────────
   useEffect(() => {
-    if (!featureGuideChecked || showFeatureGuide || !user?.uid) return;
+    if (
+      !featureGuideChecked || showFeatureGuide ||
+      !firstBreakChecked || showFirstBreakOnboarding ||
+      !hasCompletedAnySession ||
+      !user?.uid
+    ) return;
     let cancelled = false;
     void (async () => {
-      const [offered, alreadyEnabled] = await Promise.all([
+      const [offered, alreadyEnabled, pref] = await Promise.all([
         hasOfferedEveningReminder(user.uid),
         getEveningReminderEnabled(user.uid),
+        getEveningReminderPreference(user.uid),
       ]);
       if (cancelled) return;
+      setOfferHour(pref.preferredHour);
+      setOfferMinute(pref.preferredMinute);
       if (!offered && !alreadyEnabled) setShowReminderOffer(true);
       setReminderOfferChecked(true);
     })();
     return () => { cancelled = true; };
-  }, [featureGuideChecked, showFeatureGuide, user?.uid]);
+  }, [
+    featureGuideChecked,
+    showFeatureGuide,
+    firstBreakChecked,
+    showFirstBreakOnboarding,
+    hasCompletedAnySession,
+    user?.uid,
+  ]);
 
   const acceptReminderOffer = () => {
     setShowReminderOffer(false);
     void (async () => {
       await markEveningReminderOffered(user?.uid);
+      await setEveningReminderPreference(user?.uid, offerHour, offerMinute, true);
       const granted = await requestEveningReminderPermission();
-      if (!granted) return; // denied at the OS level — leave it off, already marked "offered"
+      if (!granted) return;
       await setEveningReminderEnabled(user?.uid, true);
       await ensureEveningReminderScheduled(user?.uid);
+      trackOnboardingCompleted('daily_reminder_enabled');
     })();
   };
   const declineReminderOffer = () => {
     setShowReminderOffer(false);
     void markEveningReminderOffered(user?.uid);
+    trackEvent('reminder_offer_declined');
   };
 
   useEffect(() => {
@@ -210,15 +295,16 @@ export default function HomeDashboardScreen() {
 
   return (
     <ScreenShell scroll={true} ambient={<AmbientBackground subtle />} bannerAd>
-      {/* ── Header — greeting (screen-title scale) + inline streak, avatar ── */}
+      {/* ── Header: greeting + profile, then full-width Start Break ── */}
       <StaggerItem index={0}>
-        <View style={{
-          flexDirection: 'row', alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          paddingTop: SPACING.screenTop, marginBottom: SPACING.titleGap,
-        }}>
-          <View style={{ flex: 1, marginRight: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View style={{ paddingTop: SPACING.screenTop, marginBottom: SPACING.titleGap }}>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}>
+            <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Text
                 numberOfLines={1}
                 style={{
@@ -235,40 +321,48 @@ export default function HomeDashboardScreen() {
                 <GreetingIcon size={20} color="rgba(245,247,251,0.85)" strokeWidth={2.2} />
               )}
             </View>
+
             <TouchableOpacity
-              onPress={() => router.push(ROUTES.appChallenges as never)}
+              onPress={() => router.push(ROUTES.appProfile as never)}
               activeOpacity={0.7}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}
+              accessibilityRole="button"
+              accessibilityLabel="Profile"
             >
-              <Flame
-                size={13}
-                color={streak > 0 ? PILLAR_COLORS.challenge : 'rgba(245,247,251,0.4)'}
-                fill={streak > 0 ? PILLAR_COLORS.challenge : 'transparent'}
-                strokeWidth={1.5}
-              />
-              <Text style={{ fontSize: TYPOGRAPHY.subtitle.fontSize, fontWeight: TYPOGRAPHY.subtitle.fontWeight, color: TYPOGRAPHY.subtitle.color }}>
-                {streak > 0
-                  ? `${streak} Day Streak`
-                  : greetingPeriod === 'Night'
-                    ? 'Wind down before bed'
-                    : 'Start your streak today'}
-              </Text>
+              <View style={{
+                width: 40, height: 40, borderRadius: 20,
+                alignItems: 'center', justifyContent: 'center',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.15)',
+              }}>
+                <User size={18} color="rgba(245,247,251,0.7)" strokeWidth={2} />
+              </View>
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity
-            onPress={() => router.push(ROUTES.appProfile as never)}
-            activeOpacity={0.7}
-          >
-            <View style={{
-              width: 40, height: 40, borderRadius: 20,
-              alignItems: 'center', justifyContent: 'center',
-              backgroundColor: 'rgba(255,255,255,0.08)',
+            onPress={() => router.push(ROUTES.appEyeBreak as never)}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Start Break"
+            style={{
+              marginTop: 14,
+              backgroundColor: 'rgba(77, 225, 193, 0.14)',
               borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.15)',
-            }}>
-              <User size={18} color="rgba(245,247,251,0.7)" strokeWidth={2} />
-            </View>
+              borderColor: 'rgba(77, 225, 193, 0.35)',
+              paddingVertical: 14,
+              paddingHorizontal: 20,
+              borderRadius: 18,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{
+              fontFamily: FONTS.heading,
+              fontSize: 17,
+              fontWeight: '700',
+              color: '#FFFFFF',
+              letterSpacing: 0.2,
+            }}>Start Break</Text>
           </TouchableOpacity>
         </View>
       </StaggerItem>
@@ -280,8 +374,15 @@ export default function HomeDashboardScreen() {
         </View>
       </StaggerItem>
 
-      {/* ── FEATURED — compact Screen Balance + Focus shortcuts ─────── */}
+      {/* ── Daily wellness goals — real completions only ─────────────── */}
       <StaggerItem index={2}>
+        <View style={{ marginTop: SPACING.section }}>
+          <DailyWellnessProgress />
+        </View>
+      </StaggerItem>
+
+      {/* ── FEATURED — compact Screen Balance + Focus shortcuts ─────── */}
+      <StaggerItem index={3}>
         <View style={{ marginTop: SPACING.section }}>
           <FeaturedSection
             uid={user?.uid}
@@ -294,14 +395,14 @@ export default function HomeDashboardScreen() {
       </StaggerItem>
 
       {/* ── Today's Challenge ───────────────────────────────────────── */}
-      <StaggerItem index={3}>
+      <StaggerItem index={4}>
         <View style={{ marginTop: SPACING.section }}>
           <DailyChallenge worstArea={focusArea} ready={!anyLoading} />
         </View>
       </StaggerItem>
 
       {/* ── Quick Actions ────────────────────────────────────────── */}
-      <StaggerItem index={4}>
+      <StaggerItem index={5}>
         <View style={{ marginTop: SPACING.section }}>
           <SectionLabel first>QUICK ACTIONS</SectionLabel>
           <FeatureGrid
@@ -323,7 +424,7 @@ export default function HomeDashboardScreen() {
           carries that, so a second uppercase header would just repeat it
           and cost extra height for a strip that's meant to read as a
           quick teaser, not a major section. ── */}
-      <StaggerItem index={5}>
+      <StaggerItem index={6}>
         <View style={{ marginTop: SPACING.section }}>
           <WeeklyProgressRow
             icon={<Flame size={13} color={PILLAR_COLORS.challenge} fill={PILLAR_COLORS.challenge} strokeWidth={1.5} />}
@@ -331,7 +432,10 @@ export default function HomeDashboardScreen() {
             value={anyLoading ? '–' : `${mindPulseScore}/100`}
             percent={anyLoading ? 0 : mindPulseScore}
             accentColor={theme.color}
-            onPress={() => router.push(ROUTES.appChallenges as never)}
+            onPress={() => {
+              trackEvent('weekly_report_opened');
+              router.push(ROUTES.appChallenges as never);
+            }}
           />
         </View>
       </StaggerItem>
@@ -344,15 +448,83 @@ export default function HomeDashboardScreen() {
         onClose={dismissFeatureGuide}
         onStartFocus={() => router.push(ROUTES.appFocusBlock as never)}
       />
+      <FirstBreakOnboarding
+        visible={showFirstBreakOnboarding}
+        onAccept={acceptFirstBreak}
+        onDecline={declineFirstBreak}
+      />
       <SoftPaywallModal
         visible={showReminderOffer}
         emoji="🔔"
         title="Stay on track"
-        subtitle="A single, calm reminder each evening to keep your routine going — easy to turn off anytime in Settings."
-        ctaLabel="Enable Reminder"
+        subtitle="A calm daily nudge helps you return. Pick a time, preview the reminder, then enable — we only ask the OS after you tap Enable."
+        ctaLabel="Enable Daily Reminder"
         onUpgrade={acceptReminderOffer}
         onDismiss={declineReminderOffer}
-      />
+      >
+        <View style={{ gap: 12 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: 6,
+              padding: 4,
+              borderRadius: 24,
+              backgroundColor: 'rgba(255,255,255,0.05)',
+            }}
+          >
+            {[19, 20, 21].map(hour => {
+              const selected = offerHour === hour && offerMinute === 30;
+              return (
+                <TouchableOpacity
+                  key={hour}
+                  onPress={() => {
+                    setOfferHour(hour);
+                    setOfferMinute(30);
+                  }}
+                  style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    paddingVertical: 10,
+                    borderRadius: 16,
+                    backgroundColor: selected ? '#6C63FF' : 'transparent',
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: selected ? '700' : '600',
+                      color: selected ? '#FFFFFF' : 'rgba(255,255,255,0.65)',
+                    }}
+                  >
+                    {formatReminderTime(hour, 30)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <View
+            style={{
+              borderRadius: 14,
+              paddingVertical: 12,
+              paddingHorizontal: 14,
+              backgroundColor: 'rgba(255,255,255,0.06)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.1)',
+            }}
+          >
+            <Text style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>
+              PREVIEW · {formatReminderTime(offerHour, offerMinute)}
+            </Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF', marginBottom: 2 }}>
+              Your eyes deserve a little rest
+            </Text>
+            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 18 }}>
+              Take a quick 20-second eye break. Tap to start.
+            </Text>
+          </View>
+        </View>
+      </SoftPaywallModal>
       <SoftPaywallModal
         visible={!isPremium && showOnboardingPaywall}
         emoji="✨"

@@ -126,11 +126,14 @@ export function AnimatedLaunchScreen({
   // broken.
   useEffect(() => {
     const ceiling = setTimeout(() => {
+      // Always dismiss the native splash too — otherwise Android can keep
+      // showing the system Splash Screen window after this overlay exits.
+      onReady();
       exit.stopAnimation();
       finish();
     }, 8000);
     return () => clearTimeout(ceiling);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot ceiling, must not reset if `finish`'s identity happens to change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot ceiling, must not reset if callbacks' identities change.
   }, []);
 
   // ── Entrance interpolations ─────────────────────────────────────────────

@@ -1,6 +1,8 @@
 node_modules/
 .expo/
 .firebase/
+.claude/settings.local.json
+dist/
 android/app/build/
 android/.gradle/
 android/build/

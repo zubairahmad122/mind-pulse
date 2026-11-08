@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ensureEveningReminderScheduled,
   getEveningReminderEnabled,
+  getEveningReminderPreference,
   requestEveningReminderPermission,
   setEveningReminderEnabled,
+  setEveningReminderPreference,
 } from '@/services/eveningReminder';
 
 /** Settings-screen toggle for the evening loss-aversion reminder. Mirrors
@@ -12,15 +14,22 @@ import {
 export function useEveningReminderSetting(uid?: string) {
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [preferredHour, setPreferredHour] = useState(19);
+  const [preferredMinute, setPreferredMinute] = useState(30);
 
   useEffect(() => {
     let cancelled = false;
-    getEveningReminderEnabled(uid).then((val) => {
-      if (!cancelled) {
-        setEnabled(val);
-        setLoading(false);
-      }
-    });
+    void (async () => {
+      const [val, pref] = await Promise.all([
+        getEveningReminderEnabled(uid),
+        getEveningReminderPreference(uid),
+      ]);
+      if (cancelled) return;
+      setEnabled(val);
+      setPreferredHour(pref.preferredHour);
+      setPreferredMinute(pref.preferredMinute);
+      setLoading(false);
+    })();
     return () => {
       cancelled = true;
     };
@@ -42,5 +51,21 @@ export function useEveningReminderSetting(uid?: string) {
     [uid],
   );
 
-  return { enabled, loading, toggle };
+  const setPreference = useCallback(
+    async (hour: number, minute: number, customHoursEnabled: boolean) => {
+      setPreferredHour(hour);
+      setPreferredMinute(minute);
+      await setEveningReminderPreference(uid, hour, minute, customHoursEnabled);
+    },
+    [uid],
+  );
+
+  return {
+    enabled,
+    loading,
+    toggle,
+    preferredHour,
+    preferredMinute,
+    setPreference,
+  };
 }

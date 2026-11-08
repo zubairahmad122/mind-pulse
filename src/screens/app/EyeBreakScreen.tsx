@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Check } from 'lucide-react-native';
+import { Check, Volume2, VolumeX } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   StyleSheet,
@@ -33,6 +33,8 @@ import { EyeGuideButton, EyeGuideSheet, type EyeGuideContent } from '@/component
 import { ScreenShell } from '@/components/layout/ScreenShell';
 import { AmbientBackground } from '@/components/ui/AmbientBackground';
 import { useAuth } from '@/context/AuthContext';
+import { useAudioGuide } from '@/hooks/useAudioGuide';
+import { useEyeAudioGuide } from '@/hooks/useEyeAudioGuide';
 import { useSessionClock } from '@/hooks/useSessionClock';
 import { useSessionLifecycle } from '@/hooks/useSessionLifecycle';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -46,6 +48,8 @@ import { spacing } from '@/constants/spacing';
 import { GradientCTA } from '@/components/ui/GradientCTA';
 import { recordEyeBreakReminderEvent } from '@/services/eyeBreakReminderEvents';
 import { useSessionCompleteMonetization } from '@/services/ads/useSessionCompleteMonetization';
+import { trackEyeBreakCompleted, trackEyeBreakStarted } from '@/services/analytics';
+import { setEyeBreakActive } from '@/services/activeEyeBreak';
 
 const DEFAULT_DURATION = 20;
 const EYE_ACCENT = PILLAR_COLORS.eye;
@@ -308,6 +312,8 @@ export default function EyeBreakScreen() {
   }>();
   const { user } = useAuth();
   const reducedMotion = useReducedMotion();
+  const audioGuide = useEyeAudioGuide();
+  const { play, stop, pause, resume } = useAudioGuide();
 
   // Parse duration
   const parsedDuration = Number(params.duration);
@@ -326,6 +332,7 @@ export default function EyeBreakScreen() {
   const [lifecyclePaused, setLifecyclePaused] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const reminderResolvedRef = useRef(false);
+  const voiceStartedRef = useRef(false);
   const fromReminder = params.source === 'reminder';
 
   const { isBackgrounded } = useSessionLifecycle({
@@ -337,6 +344,7 @@ export default function EyeBreakScreen() {
 
   const completeBreak = useCallback(() => {
     if (isBackgrounded) return;
+    stop();
     setDone(true);
     if (!breakRecordedRef.current) {
       breakRecordedRef.current = true;
@@ -351,6 +359,9 @@ export default function EyeBreakScreen() {
       });
     }
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    trackEyeBreakCompleted(
+      typeof params.source === 'string' ? params.source : 'manual',
+    );
     void recordBreakTaken(user?.uid ?? undefined);
     void incrementBreaksTaken(user?.uid ?? undefined);
     void recordResetCompleted(user?.uid ?? undefined, 'eye-break');
@@ -362,10 +373,11 @@ export default function EyeBreakScreen() {
         notificationId: params.notificationId,
       });
     }
-  }, [isBackgrounded, fromReminder, params.notificationId, user?.uid, breakSeconds]);
+  }, [isBackgrounded, fromReminder, params.notificationId, params.source, user?.uid, breakSeconds, stop]);
 
   useEffect(() => {
     return () => {
+      stop();
       if (!fromReminder || reminderResolvedRef.current) return;
       reminderResolvedRef.current = true;
       void recordEyeBreakReminderEvent(user?.uid, {
@@ -374,7 +386,7 @@ export default function EyeBreakScreen() {
         notificationId: params.notificationId,
       });
     };
-  }, [fromReminder, params.notificationId, user?.uid]);
+  }, [fromReminder, params.notificationId, user?.uid, stop]);
 
   const { secondsLeft } = useSessionClock({
     totalSeconds: breakSeconds,
@@ -384,10 +396,73 @@ export default function EyeBreakScreen() {
     onComplete: completeBreak,
   });
 
-  // Soft landing haptic
+  // Soft landing haptic + analytics (timer starts when this screen mounts).
   useEffect(() => {
+    setEyeBreakActive(true);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    trackEyeBreakStarted(
+      typeof params.source === 'string' ? params.source : 'manual',
+    );
+    return () => setEyeBreakActive(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per mount
   }, []);
+
+  useEffect(() => {
+    if (done) setEyeBreakActive(false);
+  }, [done]);
+
+  // Voice guidance — only while the break timer is actively running.
+  // Language comes from LanguageContext via useAudioGuide (ur → hi clips).
+  useEffect(() => {
+    if (done) {
+      stop();
+      voiceStartedRef.current = false;
+      return;
+    }
+    if (!audioGuide.loaded) return;
+    if (!audioGuide.enabled) {
+      stop();
+      // So Profile unmute / mid-break unmute can start a fresh clip.
+      voiceStartedRef.current = false;
+      return;
+    }
+    if (lifecyclePaused || isBackgrounded) {
+      pause();
+      return;
+    }
+    if (voiceStartedRef.current) {
+      resume();
+      return;
+    }
+    voiceStartedRef.current = true;
+    play('eyes/break-2020', 0, 1, { protect: true });
+  }, [
+    done,
+    audioGuide.loaded,
+    audioGuide.enabled,
+    lifecyclePaused,
+    isBackgrounded,
+    play,
+    pause,
+    resume,
+    stop,
+  ]);
+
+  const toggleVoice = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (audioGuide.enabled) {
+      stop();
+    } else {
+      // Allow the effect to start a fresh clip after unmute.
+      voiceStartedRef.current = false;
+    }
+    audioGuide.toggle();
+  }, [audioGuide, stop]);
+
+  const exitBreak = useCallback(() => {
+    stop();
+    router.back();
+  }, [stop, router]);
 
   const guideContent: EyeGuideContent = {
     title: breakSeconds === 20 ? '20-20-20 Eye Break' : 'Take Break',
@@ -421,7 +496,20 @@ export default function EyeBreakScreen() {
             />
           </View>
           <Text style={styles.eyebrow}>EYE BREAK</Text>
-          <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()} hitSlop={12}>
+          <TouchableOpacity
+            style={[styles.voiceBtn, !audioGuide.enabled && styles.voiceBtnMuted]}
+            onPress={toggleVoice}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={audioGuide.enabled ? 'Mute voice guidance' : 'Unmute voice guidance'}
+          >
+            {audioGuide.enabled ? (
+              <Volume2 size={16} color={EYE_ACCENT} strokeWidth={2.2} />
+            ) : (
+              <VolumeX size={16} color={colors.text.secondary} strokeWidth={2.2} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.closeBtn} onPress={exitBreak} hitSlop={12}>
             <Ionicons name="close" size={18} color={colors.text.secondary} />
           </TouchableOpacity>
         </View>
@@ -454,7 +542,7 @@ export default function EyeBreakScreen() {
           {/* Skip break — subtle text action */}
           <TouchableOpacity
             style={styles.skipBtn}
-            onPress={() => router.back()}
+            onPress={exitBreak}
             activeOpacity={0.7}
             hitSlop={12}
           >
@@ -491,7 +579,7 @@ export default function EyeBreakScreen() {
           </Text>
           <GradientCTA
             label="Done"
-            onPress={() => router.back()}
+            onPress={exitBreak}
             textColor="#03212C"
             style={styles.doneCta}
           />
@@ -530,6 +618,22 @@ const styles = StyleSheet.create({
     letterSpacing: 2.4,
     color: EYE_ACCENT,
     textAlign: 'center',
+  },
+  voiceBtn: {
+    position: 'absolute',
+    right: 64,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(77, 225, 193, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(77, 225, 193, 0.28)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voiceBtnMuted: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   closeBtn: {
     position: 'absolute',

@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowRight, HeartPulse, Moon, Sparkles, TrendingUp } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -16,6 +17,8 @@ type Props = {
   subtitle: string;
   ctaLabel?: string;
   variant?: 'default' | 'welcome';
+  /** Optional middle content (e.g. reminder time chips + preview). */
+  children?: ReactNode;
   onUpgrade: () => void;
   onDismiss: () => void;
 };
@@ -31,6 +34,7 @@ export function SoftPaywallModal({
   subtitle,
   ctaLabel = 'Unlock Pro',
   variant = 'default',
+  children,
   onUpgrade,
   onDismiss,
 }: Props) {
@@ -161,6 +165,7 @@ export function SoftPaywallModal({
                 <Text style={styles.emoji}>{emoji}</Text>
                 <Text style={styles.title}>{title}</Text>
                 <Text style={styles.subtitle}>{subtitle}</Text>
+                {children ? <View style={styles.childrenWrap}>{children}</View> : null}
                 <GradientCTA label={ctaLabel} onPress={onUpgrade} style={styles.upgradeBtn} />
                 <TouchableOpacity onPress={onDismiss} activeOpacity={0.7}>
                   <Text style={styles.dismissText}>Maybe later</Text>
@@ -254,6 +259,11 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: spacing.lg,
     paddingHorizontal: spacing.md,
+  },
+  childrenWrap: {
+    width: '100%',
+    marginTop: -spacing.sm,
+    marginBottom: spacing.md,
   },
   upgradeBtn: {
     width: '100%',

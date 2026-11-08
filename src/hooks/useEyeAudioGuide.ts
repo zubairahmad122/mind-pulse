@@ -5,8 +5,9 @@ import {
 } from '@/services/eyeAudioGuidePreference';
 
 /**
- * Canonical persisted preference for Eye Reset spoken narration.
- * One source of truth — used across overview, preparation, and active session.
+ * Canonical persisted preference for Eye spoken narration (20-20-20 break +
+ * Eye Reset sessions). One source of truth — Profile toggle and in-session
+ * mute icons all read/write this.
  */
 export function useEyeAudioGuide() {
   const [enabled, setEnabled] = useState(true); // optimistic default

@@ -1,27 +1,29 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
-import { cancelEveningReminder, ensureEveningReminderScheduled } from '@/services/eveningReminder';
+import {
+  cancelEveningReminderForDate,
+  ensureEveningReminderScheduled,
+} from '@/services/eveningReminder';
 import { useDailyActivityProgress } from '@/hooks/useActivity';
+import { todayISO } from '@/utils/dateUtils';
 
 /**
- * Keeps the evening reminder in sync with today's completion state: cancels
- * it the moment any pillar is completed today, and (re-)arms it for today on
- * mount and on every app-foreground otherwise. Entirely a no-op if the user
- * hasn't enabled the reminder or hasn't granted notification permission —
- * see eveningReminder.ts.
+ * Keeps the evening reminder rolling window filled, and cancels *only today's*
+ * reminder once the user completes any real activity. Upcoming days stay
+ * scheduled so the habit loop survives days without opening the app.
  */
 export function useEveningReminderSync(): void {
   const { user } = useAuth();
   const uid = user?.uid;
-
-  // Any completed activity today (unified log) — not just Eye.
   const { isActive: completedToday, ready } = useDailyActivityProgress();
 
   const sync = () => {
-    if (!ready) return; // never (re-)arm off a still-loading log
+    if (!ready) return;
     if (completedToday) {
-      void cancelEveningReminder(uid);
+      void cancelEveningReminderForDate(uid, todayISO()).then(() =>
+        ensureEveningReminderScheduled(uid),
+      );
     } else {
       void ensureEveningReminderScheduled(uid);
     }
@@ -30,7 +32,7 @@ export function useEveningReminderSync(): void {
   useEffect(sync, [completedToday, ready, uid]);
 
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
+    const sub = AppState.addEventListener('change', state => {
       if (state === 'active') sync();
     });
     return () => sub.remove();

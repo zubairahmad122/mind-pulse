@@ -23,10 +23,23 @@ describe('screenBalancePersistence — stats', () => {
     const stats = await loadScreenBalanceStats(undefined);
     expect(stats).toEqual({
       resetsCompletedToday: 0,
+      screenFreeResetsToday: 0,
       offlineMinutesToday: 0,
       lastResetType: null,
       lastResetCompletedAt: null,
     });
+  });
+
+  it('counts only offline and move resets as screen-free', async () => {
+    await recordResetCompleted(undefined, 'eye-break');
+    await recordResetCompleted(undefined, 'breathe');
+    const afterOnScreen = await loadScreenBalanceStats(undefined);
+    expect(afterOnScreen.screenFreeResetsToday).toBe(0);
+
+    await recordResetCompleted(undefined, 'move');
+    await recordResetCompleted(undefined, 'offline', 5);
+    const afterScreenFree = await loadScreenBalanceStats(undefined);
+    expect(afterScreenFree.screenFreeResetsToday).toBe(2);
   });
 
   it('records a completed reset and accumulates offline minutes', async () => {

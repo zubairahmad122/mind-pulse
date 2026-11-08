@@ -50,7 +50,9 @@ export type AudioClipId =
   | 'eyes/reset-quick'
   | 'eyes/reset-nearfar'
   | 'eyes/reset-shift'
-  | 'eyes/reset-complete';
+  | 'eyes/reset-complete'
+  /** Full 20-20-20 eye-break narration (plays once when the break starts). */
+  | 'eyes/break-2020';
 
 /** Map the app language to one of the recorded guide languages. */
 export function resolveGuideLang(langCode: string): GuideLang {
@@ -228,5 +230,9 @@ export const AUDIO_GUIDE: Record<AudioClipId, Record<GuideLang, number>> = {
   'eyes/reset-complete': {
     en: require('@/assets/audio/guide/en/eyes/reset-complete.mp3'),
     hi: require('@/assets/audio/guide/hi/eyes/reset-complete.mp3'),
+  },
+  'eyes/break-2020': {
+    en: require('@/assets/audio/guide/en/eyes/break-2020.mp3'),
+    hi: require('@/assets/audio/guide/hi/eyes/break-2020.mp3'),
   },
 };
