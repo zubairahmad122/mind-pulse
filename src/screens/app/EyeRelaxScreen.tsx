@@ -1,4 +1,4 @@
-import { useDailyActivityProgress } from "@/hooks/useActivity";
+import { useActivityHistory, useDailyActivityProgress } from "@/hooks/useActivity";
 import { CompanionActivitySheet } from "@/components/eye/CompanionActivitySheet";
 import { CompanionSettingsSheet } from "@/components/eye/CompanionSettingsSheet";
 import { EyeCheckinSheet, type CheckinMode } from "@/components/eye/EyeCheckinSheet";
@@ -43,8 +43,11 @@ import { useDesktopCompanion } from "@/hooks/useDesktopCompanion";
 import { useEyeBreakEnforcer } from "@/hooks/useEyeBreakEnforcer";
 import { useEyeProgress } from "@/hooks/useEyeProgress";
 import { useEyeScore } from "@/hooks/useEyeScore";
+import { useTodayProgress } from "@/hooks/useTodayProgress";
+import { StreakPaywallPrompt } from "@/components/eye/StreakPaywallPrompt";
+import { consumeFirstResetPending } from "@/services/firstRunFlow";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import {
   ArrowRight,
   AlertCircle,
@@ -705,9 +708,20 @@ export default function EyeRelaxScreen() {
     enabled: breakEnabled,
     loading: breakLoading,
     toggle: toggleBreak,
+    refresh: refreshBreak,
   } = useEyeBreakEnforcer(user?.uid);
   const eyeScore = useEyeScore(user?.uid);
   const hasAnySessions = eyeScore.hasAnySessions ?? false;
+  const { everCompletedAny } = useTodayProgress();
+  const { ready: activityReady } = useActivityHistory();
+  const isNewUser = activityReady && !everCompletedAny;
+
+  // The reset's end screen can turn reminders on while this tab stays mounted.
+  useFocusEffect(refreshBreak);
+
+  useEffect(() => {
+    if (consumeFirstResetPending()) router.push(ROUTES.appQuickEyeReset as never);
+  }, [router]);
   const { weekDots, streak: eyeStreak } = useEyeProgress(user?.uid);
 
   const [checkinMode, setCheckinMode] = useState<CheckinMode | null>(null);
@@ -755,6 +769,27 @@ export default function EyeRelaxScreen() {
         />
 
         {/* ── 1. Today's Eye Care — hero card ── */}
+        {isNewUser ? (
+        <StaggerItem index={0}>
+          <HeroCard style={styles.heroCard}>
+            <View style={styles.heroInner}>
+              <Text style={styles.heroLabel}>DAY 1 — START HERE</Text>
+              <Text style={styles.heroTitleText}>Eyes tired from screens?</Text>
+              <Text style={styles.heroMessage}>
+                A guided 2-minute reset for screen-weary eyes.
+              </Text>
+              <View style={{ marginTop: spacing.sm }}>
+                <GradientCTA
+                  label="Start 2-min reset"
+                  icon={<ArrowRight size={17} color="#03212C" strokeWidth={2.5} />}
+                  textColor="#03212C"
+                  onPress={() => router.push(ROUTES.appQuickEyeReset as never)}
+                />
+              </View>
+            </View>
+          </HeroCard>
+        </StaggerItem>
+        ) : (
         <StaggerItem index={0}>
           <HeroCard style={styles.heroCard}>
             <View style={styles.heroInner}>
@@ -830,6 +865,7 @@ export default function EyeRelaxScreen() {
             </View>
           </HeroCard>
         </StaggerItem>
+        )}
 
         {/* ── 2. Quick Actions ── */}
         <StaggerItem index={1}>
@@ -1105,6 +1141,7 @@ export default function EyeRelaxScreen() {
           onClose={() => setCheckinMode(null)}
           uid={user?.uid}
         />
+        <StreakPaywallPrompt />
       </ScreenTransition>
     </ScreenShell>
   );

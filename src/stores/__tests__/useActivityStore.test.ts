@@ -21,8 +21,10 @@ jest.mock('@react-native-firebase/firestore', () => ({
 }));
 
 const mockTrack = jest.fn((_event: unknown) => undefined);
+const mockFirstSession = jest.fn((_type: unknown) => undefined);
 jest.mock('@/services/analytics', () => ({
   trackActivityCompleted: (event: unknown) => mockTrack(event),
+  trackFirstSessionDone: (type: unknown) => mockFirstSession(type),
 }));
 
 import { hydrateActivityLog, recordActivity, useActivityStore } from '../useActivityStore';
@@ -70,6 +72,14 @@ describe('unified activity store', () => {
     await recordActivity('userA', input('a1', { score: 42 }));
     await flush();
     expect(mockTrack).toHaveBeenCalledWith(expect.objectContaining({ type: 'MIND_GAME_COMPLETED', source: 'pattern-shift', score: 42 }));
+  });
+
+  test('sends first_session_done only for the first completion on an account', async () => {
+    await recordActivity('userA', input('first'));
+    await recordActivity('userA', input('first'));
+    await recordActivity('userA', input('second'));
+    expect(mockFirstSession).toHaveBeenCalledTimes(1);
+    expect(mockFirstSession).toHaveBeenCalledWith('MIND_GAME_COMPLETED');
   });
 
   test('activity is scoped per account — switching accounts never shows the other log', async () => {

@@ -12,7 +12,6 @@ import { ScreenTransition } from "@/components/ui/ScreenTransition";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { MindGameCard } from "@/components/mind/MindGameCard";
 import {
-  MillsCardArtwork,
   MindGameArtwork,
   PatternShiftCardArtwork,
   SchulteCardArtwork,
@@ -63,11 +62,9 @@ const FEATURED_GAME =
   MIND_GAMES[Math.floor(Date.now() / 86_400_000) % MIND_GAMES.length];
 
 const SCHULTE_ACCENT = PALETTE.indigoLight;
-const MILLS_ACCENT = "#37D5D0";
 const PATTERN_ACCENT = "#9D7CFF";
 const TIME_FLOW_ACCENT = "#4DE1C1";
 const SCHULTE_ARTWORK = <SchulteCardArtwork />;
-const MILLS_ARTWORK = <MillsCardArtwork />;
 const PATTERN_ARTWORK = <PatternShiftCardArtwork />;
 const TIME_FLOW_ARTWORK = <TimeFlowCardArtwork />;
 const MATH_GAP_ARTWORK = <MathGapCardArtwork />;
@@ -430,17 +427,6 @@ export default function MindScreen() {
       artwork: SCHULTE_ARTWORK,
       route: ROUTES.appSchulteNexus,
       accessibilityLabel: `Schulte Nexus, Number Search, ${progress.schulteTier}, 2 to 3 minutes`,
-    },
-    {
-      id: "mills",
-      title: "Mills",
-      category: "Strategy",
-      description: "Plan ahead. Align. Capture.",
-      metadata: "10–20 min  •  Two Player",
-      accent: MILLS_ACCENT,
-      artwork: MILLS_ARTWORK,
-      route: ROUTES.appMills,
-      accessibilityLabel: "Mills, Strategy, Two Player, 10 to 20 minutes",
     },
     {
       id: "pattern-shift",

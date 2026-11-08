@@ -45,7 +45,7 @@ function formatDuration(seconds: number): string {
   return `${minutes} min`;
 }
 
-export default function FocusBlockScreen() {
+export default function FocusBlockScreen({ asTab = false }: { asTab?: boolean }) {
   const router = useRouter();
   const { user } = useAuth();
   const [durationMinutes, setDurationMinutes] = useState<(typeof DURATIONS)[number]>(25);
@@ -188,7 +188,7 @@ export default function FocusBlockScreen() {
       <ScreenHeader
         title="Focus Block"
         subtitle="Choose one thing to focus on."
-        showBack
+        showBack={!asTab}
         subtitleLines={1}
       />
 

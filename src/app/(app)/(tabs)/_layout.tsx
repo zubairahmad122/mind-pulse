@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MAIN_APP_TABS } from '@/constants';
+import { HIDDEN_APP_TABS } from '@/constants/navigation';
 import {
   FLOATING_TAB_BAR_HEIGHT,
   GlassTabBar,
@@ -33,12 +34,9 @@ export default function AppTabsLayout() {
           {MAIN_APP_TABS.map(({ name, title }) => (
             <Tabs.Screen key={name} name={name} options={{ title }} />
           ))}
-          {/* Hidden tabs — accessible via push, not shown in bar */}
-          <Tabs.Screen name="report" options={{ href: null }} />
-          <Tabs.Screen name="recovery" options={{ href: null }} />
-          {/* Streaks/achievements — was the "Challenges" tab; Mind took its
-              slot in the bar, so it's reachable via push only now. */}
-          <Tabs.Screen name="streaks" options={{ href: null }} />
+          {HIDDEN_APP_TABS.map(name => (
+            <Tabs.Screen key={name} name={name} options={{ href: null }} />
+          ))}
         </Tabs>
       </TabBarSpaceProvider>
     </SleepLockProvider>

@@ -93,7 +93,9 @@ export function GlassTabBar({ state, navigation }: GlassTabBarProps) {
         <View style={{ position: 'absolute', inset: 0, backgroundColor: BOTTOM_NAV.bg }} />
 
         {items.map(({ tab, routeIndex, route }) => {
-          const isFocused = state.index === routeIndex;
+          // Hidden routes are opened from More, so More stays lit on them.
+          const onHiddenRoute = !items.some(item => item.routeIndex === state.index);
+          const isFocused = state.index === routeIndex || (tab.name === 'more' && onHiddenRoute);
           const Icon = isFocused ? tab.iconFocused : tab.icon;
 
           const onPress = () => {
@@ -102,7 +104,7 @@ export function GlassTabBar({ state, navigation }: GlassTabBarProps) {
               target: route.key,
               canPreventDefault: true,
             });
-            if (!isFocused && !event.defaultPrevented) {
+            if (state.index !== routeIndex && !event.defaultPrevented) {
               void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               navigation.navigate(route.name);
             }

@@ -44,7 +44,7 @@ export default function OfflineSessionScreen() {
 
   const { phase, remainingSeconds, durationSeconds } = useOfflineSession(user?.uid, initialDuration);
 
-  const finish = () => router.replace(ROUTES.appHome as never);
+  const finish = () => router.replace(ROUTES.appEyeRelax as never);
 
   if (phase === 'completed') {
     return (

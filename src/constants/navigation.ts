@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react-native';
-import { Home, Moon, Leaf, Eye, Brain, User } from 'lucide-react-native';
+import { Eye, Menu, Timer } from 'lucide-react-native';
 
 /** @deprecated Use LucideIcon from 'lucide-react-native' instead. Kept for backward compat. */
 export type IoniconName = LucideIcon;
@@ -12,10 +12,19 @@ export type MainAppTabConfig = {
 };
 
 export const MAIN_APP_TABS: MainAppTabConfig[] = [
-  { name: 'home', title: 'Home', icon: Home, iconFocused: Home },
-  { name: 'sleep', title: 'Sleep', icon: Moon, iconFocused: Moon },
-  { name: 'relax', title: 'Relax', icon: Leaf, iconFocused: Leaf },
-  { name: 'eye-relax', title: 'Eye', icon: Eye, iconFocused: Eye },
-  { name: 'challenges', title: 'Mind', icon: Brain, iconFocused: Brain },
-  { name: 'profile', title: 'Profile', icon: User, iconFocused: User },
+  { name: 'eye-relax', title: 'Eyes', icon: Eye, iconFocused: Eye },
+  { name: 'focus', title: 'Focus', icon: Timer, iconFocused: Timer },
+  { name: 'more', title: 'More', icon: Menu, iconFocused: Menu },
+];
+
+/** Tab routes opened from More or by push, never shown in the bar. */
+export const HIDDEN_APP_TABS = [
+  'home',
+  'sleep',
+  'relax',
+  'challenges',
+  'profile',
+  'report',
+  'recovery',
+  'streaks',
 ];

@@ -26,6 +26,7 @@ import {
 } from '@/constants';
 import type { OnboardingSlide } from '@/constants/onboarding';
 import { useAuth } from '@/context/AuthContext';
+import { setFirstResetPending } from '@/services/firstRunFlow';
 import { markOnboardingComplete } from '@/services/onboardingPersistence';
 import { rs } from '@/utils/responsive';
 
@@ -54,8 +55,8 @@ export default function OnboardingScreen() {
       return;
     }
 
-    void markOnboardingComplete();
-    router.push(ROUTES.authCreateAccount);
+    setFirstResetPending(true);
+    void enterAsGuest();
   };
 
   const goBack = () => {
@@ -73,12 +74,17 @@ export default function OnboardingScreen() {
     router.push(ROUTES.authSignIn);
   };
 
-  const goSkip = async () => {
+  const goSkip = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    void enterAsGuest();
+  };
+
+  const enterAsGuest = async () => {
     try {
       await continueAsGuest();
       void markOnboardingComplete();
     } catch (error) {
+      setFirstResetPending(false);
       Alert.alert(
         'Could Not Continue',
         error instanceof Error ? error.message : 'Please try again.',
@@ -88,7 +94,7 @@ export default function OnboardingScreen() {
 
   const primaryLabel: Record<string, string> = {
     focus: 'Start Focusing',
-    eyes: 'Protect My Eyes',
+    eyes: 'Start 2-min reset',
     sleep: 'Explore Sleep',
     mind: 'Get Started Free',
   };

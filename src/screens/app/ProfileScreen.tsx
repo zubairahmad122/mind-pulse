@@ -389,8 +389,8 @@ export default function ProfileScreen() {
           <StatCell
             icon={Flame}
             color={PILLAR_COLORS.challenge}
-            value={String(streak)}
-            label="Day streak"
+            value={streak > 0 || sessions.length > 0 ? String(streak) : "Day 1"}
+            label={streak > 0 || sessions.length > 0 ? "Day streak" : "Start here"}
             context={streak > 0 ? "Keep going" : undefined}
             progress={streak > 0 ? streakProgress : undefined}
           />
@@ -744,7 +744,7 @@ export default function ProfileScreen() {
                   journey.
                 </Text>
                 <TouchableOpacity
-                  onPress={() => router.push(ROUTES.appHome as never)}
+                  onPress={() => router.push(ROUTES.appEyeRelax as never)}
                   activeOpacity={0.85}
                   style={styles.weeklyStartBtn}
                 >

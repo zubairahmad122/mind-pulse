@@ -1,7 +1,7 @@
 import { memo, type ReactNode } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { LinearGradient as ViewGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Defs, G, LinearGradient, Line, Path, RadialGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { PatternGlyphView } from '@/components/games/patternShift/PatternGlyphView';
 import { generateGlyph } from '@/engine/core/games/patternShift';
 
@@ -47,18 +47,6 @@ export const SchulteCardArtwork = memo(function SchulteCardArtwork({ size = 76 }
   </Svg>;
 });
 
-export const MillsCardArtwork = memo(function MillsCardArtwork({ size = 76 }: ArtworkProps) {
-  return <Svg width={size} height={size} viewBox="0 0 80 80" accessible={false}>
-    <Defs><RadialGradient id="millsGlow"><Stop offset="0" stopColor={CYAN} stopOpacity=".24"/><Stop offset="1" stopColor={CYAN} stopOpacity="0"/></RadialGradient></Defs><Circle cx="40" cy="35" r="35" fill="url(#millsGlow)"/>
-    <G fill="none" stroke={CYAN} strokeOpacity=".7" strokeWidth="1.3">
-      <Rect x="9" y="9" width="62" height="62" rx="2" /><Rect x="22" y="22" width="36" height="36" rx="2" />
-      <Line x1="40" y1="9" x2="40" y2="22" /><Line x1="40" y1="58" x2="40" y2="71" /><Line x1="9" y1="40" x2="22" y2="40" /><Line x1="58" y1="40" x2="71" y2="40" />
-    </G>
-    <Line x1="22" y1="22" x2="58" y2="22" stroke={VIOLET} strokeOpacity=".5" strokeWidth="2.2" strokeLinecap="round" />
-    <Circle cx="22" cy="23.5" r="5.5" fill="#0F0C29" opacity=".75"/><Circle cx="40" cy="23.5" r="5.5" fill="#0F0C29" opacity=".75"/><Circle cx="58" cy="23.5" r="5.5" fill="#0F0C29" opacity=".75"/><Circle cx="22" cy="22" r="5" fill={CYAN} stroke="#DFFFFF" strokeWidth="1" /><Circle cx="40" cy="22" r="5" fill={CYAN} stroke="#DFFFFF" strokeWidth="1" /><Circle cx="58" cy="22" r="5" fill={VIOLET} stroke="#E8DEFF" strokeWidth="1" />
-    <Circle cx="58" cy="58" r="4" fill="#11162E" stroke={VIOLET} strokeWidth="1.2" />
-  </Svg>;
-});
 
 export const PatternShiftCardArtwork = memo(function PatternShiftCardArtwork({ size = 76 }: ArtworkProps) {
   return <PatternGlyphView glyph={PATTERN_CARD_GLYPH} size={size} emphasis="target" />;
@@ -92,8 +80,8 @@ export const MindGameArtwork = memo(function MindGameArtwork({
   variant?: ArtworkVariant;
 }) {
   const size = variant === 'featured' ? 88 : 76;
-  const accent=gameId==='pattern-shift'?VIOLET:gameId==='mills'?'#37D5D0':gameId==='schulte'?BLUE:CYAN;
-  const artwork=gameId==='math-gap'?<MathGapCardArtwork size={size}/>:gameId==='time-flow'?<TimeFlowCardArtwork size={size}/>:gameId==='pattern-shift'?<PatternShiftCardArtwork size={size}/>:gameId==='mills'?<MillsCardArtwork size={size}/>:<SchulteCardArtwork size={size}/>;
+  const accent=gameId==='pattern-shift'?VIOLET:gameId==='schulte'?BLUE:CYAN;
+  const artwork=gameId==='math-gap'?<MathGapCardArtwork size={size}/>:gameId==='time-flow'?<TimeFlowCardArtwork size={size}/>:gameId==='pattern-shift'?<PatternShiftCardArtwork size={size}/>:<SchulteCardArtwork size={size}/>;
   return <GameArtworkFrame accent={accent} variant={variant}>{artwork}</GameArtworkFrame>;
 });
 

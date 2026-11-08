@@ -23,6 +23,7 @@ import {
 export function useEyeBreakEnforcer(uid?: string) {
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [reloadCount, setReloadCount] = useState(0);
   const [intervalMinutes, setIntervalMinutes] = useState<EyeBreakIntervalMinutes>(
     DEFAULT_EYE_BREAK_INTERVAL,
   );
@@ -61,7 +62,10 @@ export function useEyeBreakEnforcer(uid?: string) {
     return () => {
       cancelled = true;
     };
-  }, [uid]);
+  }, [uid, reloadCount]);
+
+  /** Re-reads saved state after reminders were changed from another screen. */
+  const refresh = useCallback(() => setReloadCount(count => count + 1), []);
 
   const toggle = useCallback(
     async (next: boolean) => {
@@ -156,6 +160,7 @@ export function useEyeBreakEnforcer(uid?: string) {
     intervalMinutes,
     permissionDenied,
     schedule,
+    refresh,
     toggle,
     changeInterval,
     changeScheduleMode,

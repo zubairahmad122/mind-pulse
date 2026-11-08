@@ -265,7 +265,7 @@ export async function setEveningReminderEnabled(
     trackEvent('reminder_disabled', { kind: 'evening' });
     await cancelAllEveningReminders(uid);
   } else {
-    trackEvent('daily_reminder_enabled');
+    trackEvent('reminder_enabled', { kind: 'evening' });
   }
 }
 

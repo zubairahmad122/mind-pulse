@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ArrowLeftRight,
   Check,
@@ -72,7 +72,14 @@ import {
   type EyeComfortRating,
 } from '@/services/eyeComfortPersistence';
 import { getComfortChange } from '@/utils/eyeComfort';
-import { EYE_RESET_DURATION_SECONDS, EYE_RESET_STEPS_SECONDS } from '@/constants/eyeRelax';
+import { EYE_RESET_STEPS_SECONDS } from '@/constants/eyeRelax';
+import { trackEvent } from '@/services/analytics';
+import {
+  enableFirstRunBreakReminders,
+  markBreakReminderOfferShown,
+  shouldOfferBreakReminders,
+} from '@/services/firstRunFlow';
+import { maybeRequestStoreReview } from '@/services/storeReview';
 import { useEyeAudioGuide } from '@/hooks/useEyeAudioGuide';
 import { useSessionCompleteMonetization } from '@/services/ads/useSessionCompleteMonetization';
 
@@ -205,6 +212,8 @@ const ENCOURAGEMENT: Record<number, string> = {
 };
 
 const TOTAL_DURATION = STEPS.reduce((s, x) => s + x.durationSeconds, 0);
+/** First four steps (105s) plus the 20s far-look recovery: about two minutes. */
+const QUICK_STEPS = STEPS.slice(0, 4);
 
 /** 210 → "3 min 30 sec"; 180 → "3 min". */
 function formatTotal(seconds: number): string {
@@ -346,6 +355,21 @@ export default function CVSProtocolScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { recordCompletion, streak } = useEyeProgress(user?.uid);
+  const { quick } = useLocalSearchParams<{ quick?: string }>();
+  const isQuick = quick === '1';
+  const sessionSteps = isQuick ? QUICK_STEPS : STEPS;
+  const sessionDuration = sessionSteps.reduce((s, x) => s + x.durationSeconds, 0);
+  const [reminderOffer, setReminderOffer] = useState<'checking' | 'ask' | 'answered' | 'not-needed'>('checking');
+
+  useEffect(() => {
+    let cancelled = false;
+    void shouldOfferBreakReminders(user?.uid).then(offer => {
+      if (!cancelled) setReminderOffer(offer ? 'ask' : 'not-needed');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid]);
   const { play, stop: stopVoice, pause: pauseVoice, resume: resumeVoice } = useAudioGuide();
   const audioGuide = useEyeAudioGuide();
 
@@ -358,13 +382,28 @@ export default function CVSProtocolScreen() {
     [audioGuide.enabled, play],
   );
 
-  const [phase, setPhase] = useState<Phase>('idle');
+  const [phase, setPhase] = useState<Phase>(isQuick ? 'calibrate' : 'idle');
   // Natural break: the session just finished (never mid-session).
   const { maybeShow: maybeShowInterstitial } = useSessionCompleteMonetization();
   const sessionDone = phase === 'done';
   useEffect(() => {
-    if (sessionDone) void maybeShowInterstitial();
-  }, [sessionDone, maybeShowInterstitial]);
+    if (!sessionDone || reminderOffer === 'checking') return;
+    if (reminderOffer === 'ask') {
+      void markBreakReminderOfferShown(user?.uid);
+      return; // The ad or paywall waits until the question is answered.
+    }
+    void (async () => {
+      if (reminderOffer === 'not-needed' && (await maybeRequestStoreReview())) return;
+      void maybeShowInterstitial();
+    })();
+  }, [sessionDone, reminderOffer, maybeShowInterstitial, user?.uid]);
+
+  async function answerReminderOffer(accepted: boolean) {
+    void Haptics.selectionAsync();
+    setReminderOffer('answered');
+    if (accepted) await enableFirstRunBreakReminders(user?.uid);
+    else trackEvent('reminder_offer_declined', { kind: 'eye_break' });
+  }
   const [stepIndex, setStepIndex] = useState(0);
   // Bump to force a fresh countdown without changing the step (Restart
   // Exercise / re-run) — the step timer itself lives in useSessionClock.
@@ -431,7 +470,7 @@ export default function CVSProtocolScreen() {
     }
   }, [audioGuide.enabled, phase, stopVoice]);
 
-  const step = STEPS[stepIndex];
+  const step = sessionSteps[stepIndex];
   const guideContent: EyeGuideContent =
     phase === 'active' || phase === 'countdown' ? stepGuideContent(step) : EYE_RESET_GUIDE_CONTENT;
 
@@ -507,7 +546,7 @@ export default function CVSProtocolScreen() {
   // voice right as the new exercise fades in (it replaces any previous clip).
   useEffect(() => {
     if (phase !== 'active') return;
-    guidedPlay(STEP_CLIPS[STEPS[stepIndex].id], stepIndex === 0 ? 400 : 1100, 1);
+    guidedPlay(STEP_CLIPS[sessionSteps[stepIndex].id], stepIndex === 0 ? 400 : 1100, 1);
   }, [phase, stepIndex, play]);
 
   // Coaching line: fade in with each new exercise, fade out after ~3s.
@@ -557,9 +596,9 @@ export default function CVSProtocolScreen() {
     return () => clearInterval(interval);
   }, [phase, paused, interstitial, isBackgrounded]);
 
-  const elapsedBefore = STEPS.slice(0, stepIndex).reduce((s, x) => s + x.durationSeconds, 0);
+  const elapsedBefore = sessionSteps.slice(0, stepIndex).reduce((s, x) => s + x.durationSeconds, 0);
   const elapsed = elapsedBefore + (step.durationSeconds - secondsLeft);
-  const progressPct = Math.min(1, elapsed / TOTAL_DURATION);
+  const progressPct = Math.min(1, elapsed / sessionDuration);
 
   useEffect(() => {
     progressAnim.value = withTiming(progressPct, {
@@ -584,7 +623,7 @@ export default function CVSProtocolScreen() {
 
   function goNext() {
     const next = stepIndex + 1;
-    if (next >= STEPS.length) {
+    if (next >= sessionSteps.length) {
       // Final exercise done → 20-20-20 recovery. Never auto-advance into it
       // while away; defer until the app returns.
       if (isBackgroundedRef.current) { pendingRecoveryRef.current = true; return; }
@@ -612,7 +651,7 @@ export default function CVSProtocolScreen() {
     clearInterstitialTimers();
     setInterstitial({
       doneTitle: step.title,
-      nextTitle: STEPS[next].title,
+      nextTitle: sessionSteps[next].title,
       encouragement: ENCOURAGEMENT[stepIndex],
     });
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -739,6 +778,10 @@ export default function CVSProtocolScreen() {
     // Calibration holds while the recorded session intro speaks (~20s),
     // then 3-2-1 into the first exercise. 30s cap in case audio stalls.
     setPhase('calibrate');
+    if (isQuick) {
+      interstitialTimersRef.current.push(setTimeout(startPrep, 1200));
+      return;
+    }
     guidedPlay('eyes/reset-intro', 400, 1, { protect: true, onDone: startPrep });
     interstitialTimersRef.current.push(setTimeout(startPrep, 30000));
   }
@@ -746,8 +789,21 @@ export default function CVSProtocolScreen() {
   // Session end: 20-20-20 recovery first, then the celebration screen.
   function finishSession() {
     stopVoice();
+    if (isQuick) {
+      completeSession(null);
+      return;
+    }
     setPhase('checkin-after');
   }
+
+  // The quick reset starts straight away: no intro screen or comfort check-in.
+  const quickStartedRef = useRef(false);
+  useEffect(() => {
+    if (!isQuick || quickStartedRef.current) return;
+    quickStartedRef.current = true;
+    begin(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on open
+  }, [isQuick]);
 
   function completeSession(after: EyeComfortRating | null) {
     // Completion can only run in the foreground — while backgrounded the
@@ -769,7 +825,7 @@ export default function CVSProtocolScreen() {
         type: 'EYE_RESET_COMPLETED',
         source: 'cvs-protocol',
         timestamp: completedAt,
-        durationSeconds: EYE_RESET_DURATION_SECONDS + 20, // 7 guided steps + 20-20-20 recovery
+        durationSeconds: sessionDuration + 20, // guided steps + 20-20-20 recovery
       });
       void saveEyeComfortRecord(user?.uid, {
         completedAt: Date.now(),
@@ -823,9 +879,9 @@ export default function CVSProtocolScreen() {
           {phase === 'active' ? (
             <View style={styles.headerProgress}>
               <Animated.Text key={stepIndex} entering={FadeIn.duration(300)} style={styles.exerciseCount}>
-                Exercise {stepIndex + 1} of {STEPS.length}
+                Exercise {stepIndex + 1} of {sessionSteps.length}
               </Animated.Text>
-              <StepDots count={STEPS.length} current={stepIndex} />
+              <StepDots count={sessionSteps.length} current={stepIndex} />
               <View style={styles.progressTrack}><Animated.View style={[styles.progressFill, progressFillStyle]} /></View>
             </View>
           ) : (
@@ -869,11 +925,11 @@ export default function CVSProtocolScreen() {
             <View style={styles.summaryRow}>
               <View style={styles.summaryChip}>
                 <Clock size={11} color={colors.text.tertiary} />
-                <Text style={styles.summaryChipText}>{formatTotalShort(TOTAL_DURATION)}</Text>
+                <Text style={styles.summaryChipText}>{formatTotalShort(sessionDuration)}</Text>
               </View>
               <View style={styles.summaryChip}>
                 <Eye size={11} color={colors.text.tertiary} />
-                <Text style={styles.summaryChipText}>{STEPS.length} Exercises</Text>
+                <Text style={styles.summaryChipText}>{sessionSteps.length} Exercises</Text>
               </View>
               <View style={styles.summaryChip}>
                 <Check size={11} color={colors.text.tertiary} />
@@ -883,7 +939,7 @@ export default function CVSProtocolScreen() {
 
             {/* Exercise list — icon + name + one-liner + duration */}
             <GlassCard style={styles.stepList}>
-              {STEPS.map((s, i) => (
+              {sessionSteps.map((s, i) => (
                 <TouchableOpacity
                   key={s.id}
                   activeOpacity={0.6}
@@ -1083,10 +1139,10 @@ export default function CVSProtocolScreen() {
 
               {/* Coming up next — fixed-height slot so controls never shift */}
               <View style={styles.nextUpSlot}>
-                {secondsLeft <= 10 && stepIndex < STEPS.length - 1 && !interstitial && (
+                {secondsLeft <= 10 && stepIndex < sessionSteps.length - 1 && !interstitial && (
                   <Animated.View entering={FadeIn.duration(450)} style={styles.nextUpChip}>
                     <Text style={styles.nextUpLabel}>NEXT</Text>
-                    <Text style={styles.nextUpTitle}>{STEPS[stepIndex + 1].title}</Text>
+                    <Text style={styles.nextUpTitle}>{sessionSteps[stepIndex + 1].title}</Text>
                   </Animated.View>
                 )}
               </View>
@@ -1235,25 +1291,45 @@ export default function CVSProtocolScreen() {
               </View>
               <Text style={styles.heroTitle}>Excellent work</Text>
               <Text style={styles.heroSub}>Your eyes should feel lighter.{'\n'}Take one slow blink.</Text>
-              <Text style={styles.heroMeta}>Rested for {formatTotal(TOTAL_DURATION)}</Text>
+              <Text style={styles.heroMeta}>Rested for {formatTotal(sessionDuration)}</Text>
               <GlassCard style={styles.completionRow}>
-                <View style={styles.completionStat}><Text style={styles.completionValue}>{STEPS.length}</Text><Text style={styles.completionLabel}>exercises</Text></View>
+                <View style={styles.completionStat}><Text style={styles.completionValue}>{sessionSteps.length}</Text><Text style={styles.completionLabel}>exercises</Text></View>
                 <View style={styles.completionDivider} />
-                <View style={styles.completionStat}><Text style={styles.completionValue}>{formatTotal(TOTAL_DURATION)}</Text><Text style={styles.completionLabel}>rested</Text></View>
+                <View style={styles.completionStat}><Text style={styles.completionValue}>{formatTotal(sessionDuration)}</Text><Text style={styles.completionLabel}>rested</Text></View>
                 <View style={styles.completionDivider} />
-                <View style={styles.completionStat}><Text style={styles.completionValue}>{streak}</Text><Text style={styles.completionLabel}>day streak</Text></View>
+                <View style={styles.completionStat}><Text style={styles.completionValue}>{Math.max(streak, 1)}</Text><Text style={styles.completionLabel}>day streak</Text></View>
               </GlassCard>
-              <GradientCTA
-                label="DONE"
-                onPress={() => router.back()}
-                textColor="#03212C"
-                letterSpacing={1.5}
-                style={styles.cta}
-              />
-              <TouchableOpacity style={styles.secondaryBtn} onPress={repeatSession} activeOpacity={0.7}>
-                <RotateCcw size={14} color={ACCENT} />
-                <Text style={styles.secondaryBtnText}>Repeat</Text>
-              </TouchableOpacity>
+              {reminderOffer === 'ask' ? (
+                <GlassCard style={styles.reminderOffer}>
+                  <Text style={styles.reminderOfferTitle}>Remind me every 30 min?</Text>
+                  <Text style={styles.reminderOfferSub}>
+                    A gentle nudge to rest your eyes while you work.
+                  </Text>
+                  <GradientCTA
+                    label="Yes, remind me"
+                    onPress={() => void answerReminderOffer(true)}
+                    textColor="#03212C"
+                    style={styles.cta}
+                  />
+                  <TouchableOpacity style={styles.secondaryBtn} onPress={() => void answerReminderOffer(false)} activeOpacity={0.7}>
+                    <Text style={styles.secondaryBtnText}>Not now</Text>
+                  </TouchableOpacity>
+                </GlassCard>
+              ) : (
+                <>
+                  <GradientCTA
+                    label="DONE"
+                    onPress={() => router.back()}
+                    textColor="#03212C"
+                    letterSpacing={1.5}
+                    style={styles.cta}
+                  />
+                  <TouchableOpacity style={styles.secondaryBtn} onPress={repeatSession} activeOpacity={0.7}>
+                    <RotateCcw size={14} color={ACCENT} />
+                    <Text style={styles.secondaryBtnText}>Repeat</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </ScrollView>
           </Animated.View>
         )}
@@ -1539,6 +1615,9 @@ const styles = StyleSheet.create({
 
   // Done — completion screen
   doneRoot: { flex: 1, alignSelf: 'stretch', paddingHorizontal: 16 },
+  reminderOffer: { width: '100%', alignItems: 'center', gap: 8 },
+  reminderOfferTitle: { fontSize: 19, fontWeight: '700', color: colors.text.primary, textAlign: 'center' },
+  reminderOfferSub: { fontSize: 14, color: colors.text.secondary, textAlign: 'center', marginBottom: 6 },
   doneScrollContent: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 14, paddingVertical: 20 },
   secondaryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18, paddingVertical: 8 },
   secondaryBtnText: { fontSize: 12.5, color: ACCENT, fontWeight: '700' },

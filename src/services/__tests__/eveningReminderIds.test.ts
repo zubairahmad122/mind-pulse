@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { trackEvent } from '@/services/analytics';
 import {
   cancelEveningReminderForDate,
   ensureEveningReminderScheduled,
@@ -51,6 +52,8 @@ describe('completing an activity today', () => {
 
   it('keeps today out of later refills but leaves upcoming days scheduled', async () => {
     await setEveningReminderEnabled('u1', true);
+    expect(trackEvent).toHaveBeenCalledWith('reminder_enabled', { kind: 'evening' });
+
     await ensureEveningReminderScheduled('u1');
     expect(scheduledIds()).toContain('evening-reminder-2026-11-09');
 

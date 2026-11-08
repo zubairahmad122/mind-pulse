@@ -84,7 +84,7 @@ function RootLayoutNav() {
     // Guests need access to sign-in and account creation so they can convert
     // their anonymous/local session into a permanent account.
     if (hasAccess && inAuth && !isGuestAuthEntry) {
-      router.replace(ROUTES.appHome as never);
+      router.replace(ROUTES.appEyeRelax as never);
     }
 
     if (!hasAccess && inApp) {

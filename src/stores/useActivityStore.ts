@@ -70,7 +70,9 @@ export async function recordActivity(
     // Lazy: keeps every completion point importable without native Firebase
     // Analytics (unit tests, first run before a rebuild). Never breaks a flow.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    (require('@/services/analytics') as typeof import('@/services/analytics')).trackActivityCompleted(event);
+    const analytics = require('@/services/analytics') as typeof import('@/services/analytics');
+    analytics.trackActivityCompleted(event);
+    if (events.length === 1) analytics.trackFirstSessionDone(event.type);
   } catch {
     // analytics unavailable — skip
   }

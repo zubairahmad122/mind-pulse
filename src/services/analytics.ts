@@ -70,6 +70,16 @@ export function trackAppOpen(): void {
   trackEvent('app_open');
 }
 
+/** The intro slides are finished, skipped, or left for sign-in. Once per install. */
+export function trackOnboardingDone(): void {
+  trackEvent('onboarding_done');
+}
+
+/** The first activity ever completed on this account. */
+export function trackFirstSessionDone(activityType: string): void {
+  trackEvent('first_session_done', { activity_type: activityType });
+}
+
 export function trackOnboardingCompleted(step?: string): void {
   trackEvent('onboarding_completed', step ? { step } : undefined);
 }
